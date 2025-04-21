@@ -22,6 +22,32 @@ pub struct MohoState {
     export_state: ExportState,
 }
 
+impl MohoState {
+    pub fn new(
+        inner_state: InnerStateCommitment,
+        next_vk: InnerVerificationKey,
+        export_state: ExportState,
+    ) -> Self {
+        Self {
+            inner_state,
+            next_vk,
+            export_state,
+        }
+    }
+
+    pub fn inner_state(&self) -> InnerStateCommitment {
+        self.inner_state
+    }
+
+    pub fn next_vk(&self) -> &InnerVerificationKey {
+        &self.next_vk
+    }
+
+    pub fn export_state(&self) -> &ExportState {
+        &self.export_state
+    }
+}
+
 /// Exported state for consumers.
 #[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
 pub struct ExportState {
@@ -30,6 +56,12 @@ pub struct ExportState {
     /// This MUST be sorted by the `container_id` and MUST NOT contain
     /// entries with duplicate `container_id`s.
     containers: Vec<ExportContainer>,
+}
+
+impl ExportState {
+    pub fn containers(&self) -> &[ExportContainer] {
+        &self.containers
+    }
 }
 
 /// Container intended to be consumed by a particular protocol.
@@ -52,6 +84,20 @@ pub struct ExportContainer {
     entries: Vec<ExportEntry>,
 }
 
+impl ExportContainer {
+    pub fn container_id(&self) -> u16 {
+        self.container_id
+    }
+
+    pub fn common_payload(&self) -> &[u8] {
+        &self.common_payload
+    }
+
+    pub fn entries(&self) -> &[ExportEntry] {
+        &self.entries
+    }
+}
+
 /// A specific entry payload
 #[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
 pub struct ExportEntry {
@@ -64,4 +110,14 @@ pub struct ExportEntry {
     ///
     /// In practice, this will contain all the assignment data.
     payload: Vec<u8>,
+}
+
+impl ExportEntry {
+    pub fn entry_id(&self) -> u32 {
+        self.entry_id
+    }
+
+    pub fn payload(&self) -> &[u8] {
+        &self.payload
+    }
 }

@@ -1,0 +1,9 @@
+[package]
+name = "moho-runtime-interface"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+moho-types.workspace = true
+
+borsh.workspace = true

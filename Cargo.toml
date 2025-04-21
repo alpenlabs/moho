@@ -1,11 +1,15 @@
 [workspace]
 members = [
-	"crates/types"
+        "crates/runtime-impl",
+        "crates/runtime-interface",
+        "crates/types"
 ]
 
 resolver = "3"
 
 [workspace.dependencies]
-moho-types = { path = "crates/types/" }
+moho-runtime-impl = { path = "crates/runtime-impl" }
+moho-runtime-interface = { path = "crates/runtime-interface" }
+moho-types = { path = "crates/types" }
 
 borsh = { version = "1.5.7", features = ["derive"] }

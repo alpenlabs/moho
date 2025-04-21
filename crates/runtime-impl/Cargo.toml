@@ -1,0 +1,8 @@
+[package]
+name = "moho-runtime-impl"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+moho-runtime-interface.workspace = true
+moho-types.workspace = true
