@@ -1,47 +1,80 @@
 //! Core runtime types.
 
+use std::io::Cursor;
+
+use borsh::BorshDeserialize;
 use moho_runtime_interface::MohoProgram;
 use moho_types::{
-    ExportContainer, ExportState, MohoAttestation, MohoState, MohoStateCommitment, ProofSystem,
-    StateRefAttestation, StateReference,
+    ExportContainer, ExportState, MAX_EXPORT_CONTAINERS, MAX_EXPORT_ENTRIES, MAX_PAYLOAD_SIZE,
+    MohoAttestation, MohoState, MohoStateCommitment, StateRefAttestation, StateReference,
 };
 
-/// Verifies a new state ref attestation is a consistent extension of a previous
-/// state attestation.
+use crate::RuntimeInput;
+
+/// Verifies the runtime's input.  Returns a new [`MohoAttestation`] for the
+/// state transition.
 ///
 /// # Panics
 ///
-/// if it's incorrect
-pub fn verify_relation<P: MohoProgram>(
-    prev_state_attestation: &StateRefAttestation,
-    next_attestation: &StateRefAttestation,
+/// If it's incorrect.
+pub fn verify_input<P: MohoProgram>(input: RuntimeInput) -> MohoAttestation {
+    let inner_pre_state = deserialize_borsh::<P::State>(input.inner_pre_state())
+        .expect("runtime: deserialize pre state");
+    let inner_input = deserialize_borsh::<P::StepInput>(input.input_payload())
+        .expect("runtime: deserialize inner input");
+
+    // Compute and verify the transition attestation.
+    let post_ref_att = compute_transition_attestation::<P>(
+        input.pre_state_ref(),
+        input.moho_pre_state(),
+        &inner_pre_state,
+        &inner_input,
+    );
+
+    // Check the attestation matches the reference in the input.
+    assert_eq!(
+        input.post_state_commitment(),
+        post_ref_att.commitment(),
+        "runtime: post state commitment match"
+    );
+
+    // Assemble the final attestation.
+    let pre_commitment = compute_moho_state_commitment(input.moho_pre_state());
+    let pre_ref_att = StateRefAttestation::new(*input.pre_state_ref(), pre_commitment);
+    MohoAttestation::new(pre_ref_att, post_ref_att)
+}
+
+fn deserialize_borsh<T: BorshDeserialize>(buf: &[u8]) -> Result<T, borsh::io::Error> {
+    let mut cur = Cursor::new(buf);
+    borsh::from_reader::<_, T>(&mut cur)
+}
+
+/// Verifies an input is a valid extension of a previous state reference and
+/// state, returning an attestation to that new state.
+///
+/// # Panics
+///
+/// If it's incorrect.
+fn compute_transition_attestation<P: MohoProgram>(
+    pre_state_ref: &StateReference,
     pre_moho_state: &MohoState,
     pre_inner_state: &P::State,
     input: &P::StepInput,
-) {
-    // Compute the transition.
-    let post_state = compute_transition::<P>(
-        prev_state_attestation.reference(),
-        pre_moho_state,
-        pre_inner_state,
-        input,
-    );
-
-    // Checks the input refs match.
+) -> StateRefAttestation {
+    // Check the input's parent extends it properly.
     let input_ref = P::compute_input_reference(input);
+    let prev_input_ref = P::extract_prev_reference(input);
     assert_eq!(
-        input_ref,
-        *next_attestation.reference(),
-        "runtime: input ref mismatch"
+        prev_input_ref, *pre_state_ref,
+        "runtime: input parent mismatch"
     );
 
-    // Checks the state commitments match.
+    // Compute the transition.
+    let post_state = compute_transition::<P>(pre_state_ref, pre_moho_state, pre_inner_state, input);
+
+    // Construct the attestation.
     let post_state_commitment = compute_moho_state_commitment(&post_state);
-    assert_eq!(
-        post_state_commitment,
-        *next_attestation.commitment(),
-        "runtime: post state commitment match"
-    );
+    StateRefAttestation::new(input_ref, post_state_commitment)
 }
 
 /// Computes and verifies a transition against an attestation we are trying to
@@ -77,6 +110,7 @@ pub fn compute_transition<P: MohoProgram>(
 
 /// Computes the state commitment to a moho state.
 fn compute_moho_state_commitment(state: &MohoState) -> MohoStateCommitment {
+    // TODO SSZ merkle hashing
     unimplemented!()
 }
 
@@ -97,6 +131,10 @@ fn compute_wrapping_moho_state<P: MohoProgram>(state: &P::State) -> MohoState {
 
 /// Performs structural sanity checks on the export state structure.
 fn check_export_state_structure(estate: &ExportState) -> bool {
+    if estate.containers().len() > MAX_EXPORT_CONTAINERS {
+        return false;
+    }
+
     for pair in estate.containers().windows(2) {
         let a = &pair[0];
         let b = &pair[1];
@@ -113,12 +151,18 @@ fn check_export_state_structure(estate: &ExportState) -> bool {
         }
     }
 
-    // TODO payload size checks
-
     true
 }
 
 fn check_export_cont_structure(cont: &ExportContainer) -> bool {
+    if cont.entries().len() > MAX_EXPORT_ENTRIES {
+        return false;
+    }
+
+    if cont.common_payload().len() > MAX_PAYLOAD_SIZE {
+        return false;
+    }
+
     for pair in cont.entries().windows(2) {
         let a = &pair[0];
         let b = &pair[1];
@@ -128,7 +172,11 @@ fn check_export_cont_structure(cont: &ExportContainer) -> bool {
         }
     }
 
-    // TODO payload size checks
+    for e in cont.entries() {
+        if e.payload().len() > MAX_PAYLOAD_SIZE {
+            return false;
+        }
+    }
 
     true
 }
