@@ -14,7 +14,7 @@ moho-types = { path = "crates/types" }
 
 borsh = { version = "1.5.7", features = ["derive"] }
 
-[lints]
+[workspace.lints]
 rust.missing_debug_implementations = "warn"
 rust.rust_2018_idioms = { level = "deny", priority = -1 }
 rust.unreachable_pub = "warn"
@@ -27,7 +27,7 @@ rust.missing_docs = "warn"
 rustdoc.all = "warn"
 
 [profile.release]
-opt-level = "3"   # Optimized for size, use 3 for speed
+opt-level = 3   # Optimized for size, use 3 for speed
 lto = true        # Enable Link Time Optimization
 codegen-units = 1 # Reduced to increase optimizations
 panic = "abort"   # Abort on panic
