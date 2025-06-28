@@ -3,7 +3,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 
 /// Verification key for the inner state transition.
-#[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
+#[derive(Clone, Debug, Default, BorshDeserialize, BorshSerialize)]
 pub struct InnerVerificationKey(Vec<u8>);
 
 /// Generic proof.
