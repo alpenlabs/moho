@@ -2,6 +2,7 @@
 
 mod constants;
 mod id;
+mod merkle;
 mod proof;
 mod relation;
 mod state;
