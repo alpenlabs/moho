@@ -4,7 +4,9 @@ use std::{
 };
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use moho_types::{MohoAttestation, MohoStateCommitment, StateRefAttestation, StateReference};
+use moho_types::{
+    MerkleProof, MohoAttestation, MohoStateCommitment, StateRefAttestation, StateReference,
+};
 use zkaleido::{Proof, VerifyingKey, ZkVm, ZkVmProgram, ZkVmProgramPerf};
 use zkaleido_native_adapter::{NativeHost, NativeMachine};
 
@@ -23,8 +25,10 @@ pub struct MohoRecursiveInput {
     pub(crate) initial_state: StateRefAttestation,
     /// Final state
     pub(crate) final_state: StateRefAttestation,
+    /// Verifying Key to verify the step proof from initial_state to final_state
+    pub(crate) next_vk: VerifyingKey,
     /// Merkle proof of next_vk within initial_state
-    pub(crate) next_vk_proof: Proof,
+    pub(crate) next_vk_proof: MerkleProof,
 }
 
 impl ZkVmProgram for MohoRecursiveProgram {

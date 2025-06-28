@@ -3,7 +3,8 @@
 //! This module is using borsh as a transitive measure.
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use moho_types::{ExportState, InnerStateCommitment, InnerVerificationKey, StateReference};
+use moho_types::{ExportState, InnerStateCommitment, StateReference};
+use zkaleido::VerifyingKey;
 
 /// Trait implementation for the Moho program.
 pub trait MohoProgram {

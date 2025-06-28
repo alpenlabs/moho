@@ -1,9 +1,10 @@
 //! Moho state container types
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use zkaleido::VerifyingKey;
 
 use crate::{
-    InnerStateCommitment, InnerVerificationKey, MohoStateCommitment,
+    InnerStateCommitment, MohoStateCommitment,
     merkle::{MerkleProof, MerkleTree},
 };
 
@@ -17,7 +18,7 @@ pub struct MohoState {
     inner_state: InnerStateCommitment,
 
     /// The verification key used for the next state transition.
-    next_vk: InnerVerificationKey,
+    next_vk: VerifyingKey,
 
     /// Export state to be read by consumers.
     ///
@@ -28,7 +29,7 @@ pub struct MohoState {
 impl MohoState {
     pub fn new(
         inner_state: InnerStateCommitment,
-        next_vk: InnerVerificationKey,
+        next_vk: VerifyingKey,
         export_state: ExportState,
     ) -> Self {
         Self {
@@ -42,7 +43,7 @@ impl MohoState {
         self.inner_state
     }
 
-    pub fn next_vk(&self) -> &InnerVerificationKey {
+    pub fn next_vk(&self) -> &VerifyingKey {
         &self.next_vk
     }
 
@@ -254,7 +255,7 @@ mod tests {
     fn test_merkle_proof_next_vk() {
         // Create a mock state
         let inner_state = InnerStateCommitment::default();
-        let next_vk = InnerVerificationKey::default();
+        let next_vk = VerifyingKey::default();
         let export_state = ExportState { containers: vec![] };
 
         let state = MohoState::new(inner_state, next_vk.clone(), export_state);
@@ -278,7 +279,7 @@ mod tests {
     #[test]
     fn test_commitment_consistency() {
         let inner_state = InnerStateCommitment::default();
-        let next_vk = InnerVerificationKey::default();
+        let next_vk = VerifyingKey::default();
         let export_state = ExportState { containers: vec![] };
 
         let state1 = MohoState::new(inner_state, next_vk.clone(), export_state.clone());
