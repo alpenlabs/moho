@@ -4,7 +4,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 
 macro_rules! inst_id {
     ($name:ident) => {
-        #[derive(Copy, Clone, Debug, Eq, PartialEq, BorshDeserialize, BorshSerialize)]
+        #[derive(Copy, Clone, Debug, Eq, PartialEq, Default, BorshDeserialize, BorshSerialize)]
         pub struct $name([u8; 32]);
 
         impl $name {
