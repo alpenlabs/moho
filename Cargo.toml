@@ -15,6 +15,7 @@ moho-types = { path = "crates/types" }
 
 borsh = { version = "1.5.7", features = ["derive"] }
 sha2 = { version = "0.10.9" }
+zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc11" }
 
 [workspace.lints]
 rust.missing_debug_implementations = "warn"
