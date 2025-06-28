@@ -184,6 +184,7 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "moho-types",
+ "zkaleido",
 ]
 
 [[package]]
@@ -192,6 +193,7 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "sha2",
+ "zkaleido",
 ]
 
 [[package]]
