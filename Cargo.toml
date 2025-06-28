@@ -1,5 +1,10 @@
 [workspace]
-members = ["crates/runtime-impl", "crates/runtime-interface", "crates/types"]
+members = [
+  "crates/runtime-impl",
+  "crates/runtime-interface",
+  "crates/types",
+  "crates/recursive-proof",
+]
 
 resolver = "3"
 
