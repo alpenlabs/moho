@@ -10,25 +10,29 @@ use moho_types::{
 use zkaleido::{Proof, VerifyingKey, ZkVm, ZkVmProgram, ZkVmProgramPerf};
 use zkaleido_native_adapter::{NativeHost, NativeMachine};
 
+use crate::transition::MohoTransitionWithProof;
+
 #[derive(Debug)]
 pub struct MohoRecursiveProgram;
 
+/// Input data for generating a recursive Moho proof that combines incremental and recursive proofs.
+///
+/// `MohoRecursiveInput` contains all the necessary components to create a new recursive proof
+/// by combining a previous recursive proof (if it exists) with a new incremental step proof.
+/// This enables efficient proof composition where each new recursive proof can represent
+/// an arbitrarily long chain of state transitions while maintaining constant verification time.
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub struct MohoRecursiveInput {
     /// Moho proof’s own vk, necessary to verify the previous proof
     pub(crate) moho_vk: VerifyingKey,
     /// Previous recursive moho proof
-    pub(crate) prev_proof: Option<Proof>,
-    /// Incremental moho proof
-    pub(crate) step_proof: Proof,
-    /// Initial state
-    pub(crate) initial_state: StateRefAttestation,
-    /// Final state
-    pub(crate) final_state: StateRefAttestation,
+    pub(crate) prev_recursive_proof: Option<MohoTransitionWithProof>,
+    /// Incremental step proof
+    pub(crate) incremental_step_proof: MohoTransitionWithProof,
     /// Verifying Key to verify the step proof from initial_state to final_state
-    pub(crate) next_vk: VerifyingKey,
+    pub(crate) step_proof_vk: VerifyingKey,
     /// Merkle proof of next_vk within initial_state
-    pub(crate) next_vk_proof: MerkleProof,
+    pub(crate) step_vk_merkle_proof: MerkleProof,
 }
 
 impl ZkVmProgram for MohoRecursiveProgram {

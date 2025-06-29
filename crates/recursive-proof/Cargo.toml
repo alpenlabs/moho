@@ -6,8 +6,9 @@ edition = "2024"
 [dependencies]
 borsh.workspace = true
 moho-types.workspace = true
-zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc11" }
-zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc11" }
+thiserror.workspace = true
+zkaleido.workspace = true
+zkaleido-native-adapter.workspace = true
 
 
 [lints]

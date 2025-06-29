@@ -14,8 +14,11 @@ moho-runtime-interface = { path = "crates/runtime-interface" }
 moho-types = { path = "crates/types" }
 
 borsh = { version = "1.5.7", features = ["derive"] }
+hex = { version = "0.4" }
 sha2 = { version = "0.10.9" }
+thiserror = { version = "2" }
 zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc11" }
+zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc11" }
 
 [workspace.lints]
 rust.missing_debug_implementations = "warn"
