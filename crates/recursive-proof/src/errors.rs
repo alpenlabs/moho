@@ -3,19 +3,25 @@ use std::fmt::Debug;
 use moho_types::StateRefAttestation;
 use thiserror::Error;
 
-use crate::transition::{MohoStateTransition, Transition};
+use crate::transition::MohoStateTransition;
 
+/// Errors that can occur when working with Moho state transitions.
 #[derive(Error, Debug)]
 pub enum MohoError {
+    /// Indicates that two transitions cannot be chained because the end of the first
+    /// does not align with the start of the second.
     #[error(transparent)]
     InvalidMohoChain(#[from] TransitionChainError<StateRefAttestation>),
 
+    /// Occurs when the incremental proof for a transition is invalid.
     #[error("invalid incremental proof for transition {0:?}")]
-    InvalidIncrementalProof(MohoStateTransition),
+    InvalidIncrementalProof(#[source] InvalidProofError),
 
+    /// Occurs when the recursive proof for a transition is invalid.
     #[error("invalid recursive proof for transition {0:?}")]
-    InvalidRecursiveProof(MohoStateTransition),
+    InvalidRecursiveProof(#[source] InvalidProofError),
 
+    /// Indicates that a Merkle proof provided is invalid.
     #[error("invalid merkle proof")]
     InvalidMerkleProof,
 }

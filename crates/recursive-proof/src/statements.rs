@@ -1,15 +1,46 @@
 use moho_types::{MerkleTree, MohoState};
 use zkaleido::ZkVmEnv;
 
-use crate::program::MohoRecursiveInput;
+use crate::{MohoError, MohoStateTransition, program::MohoRecursiveInput};
 
+/// Reads a recursive Moho proof from the zkVM, verifies it, and commits the resulting state
+/// transition.
+///
+/// # Arguments
+///
+/// * `zkvm` - A reference to an implementation of the ZkVmEnv trait, providing the zkVM environment
+///   for reading and committing Borsh-encoded data.
+///
+/// # Panics
+///
+/// This function will panic if `verify_and_chain_transition` returns an Err,
+/// as it calls `unwrap` on the result. Errors are mapped to `MohoError` variants.
 pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
-    // 0. Read the input
     let input: MohoRecursiveInput = zkvm.read_borsh();
+    let full_transition = verify_and_chain_transition(input).unwrap();
+    zkvm.commit_borsh(&full_transition);
+}
 
-    // 1. Verify that the incremental proof vk is part of the moho state
+/// Verifies and chains recursive Moho proof with inductive proof to produce a complete state
+/// transition.
+///
+/// This function performs the following steps in order:
+/// 1. Verifies that the provided step verification key (VK) is included in the current Moho state
+///    Merkle commitment.
+/// 2. Verifies the incremental proof against the given VK.
+/// 3. If a previous recursive proof exists, verifies it and chains its state transition with the
+///    current one.
+///
+/// # Returns
+///
+/// A `Result` containing the full `MohoStateTransition` if verification succeeds,
+/// or a `MohoError` indicating the first failure encountered.
+pub fn verify_and_chain_transition(
+    input: MohoRecursiveInput,
+) -> Result<MohoStateTransition, MohoError> {
+    // 1: Ensure the incremental proof VK is part of the Moho state Merkle root.
     let next_vk_hash = MerkleTree::hash_serializable(&input.step_proof_vk);
-    assert!(MohoState::verify_proof_against_commitment(
+    if !MohoState::verify_proof_against_commitment(
         input
             .incremental_step_proof
             .transition()
@@ -17,26 +48,37 @@ pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
             .commitment(),
         &input.step_vk_merkle_proof,
         &next_vk_hash,
-    ));
+    ) {
+        // Fail early if the Merkle proof is invalid
+        return Err(MohoError::InvalidMerkleProof);
+    }
 
-    // 2. Verify the incremental proof
+    // 2: Verify the correctness of the incremental step proof itself.
     input
         .incremental_step_proof
-        .verify(input.step_proof_vk)
-        .unwrap();
+        .verify(&input.step_proof_vk)
+        .map_err(|e| MohoError::InvalidIncrementalProof(e))?;
 
-    // 3. Verify the recursive proof if any to construct the full transition
-    let full_transition = match &input.prev_recursive_proof {
-        Some(prev_proof) => {
-            prev_proof.verify(input.moho_vk).unwrap();
-            prev_proof
-                .transition()
-                .clone()
-                .chain(input.incremental_step_proof.transition().clone())
-                .unwrap()
-        }
-        None => input.incremental_step_proof.transition().clone(),
-    };
+    // Extract the incremental step transition and proof
+    let (step_t, _step_proof) = input.incremental_step_proof.into_parts();
 
-    zkvm.commit_borsh(&full_transition);
+    // Step 3: If there is a previous recursive proof, verify and chain it.
+    if let Some(prev_proof) = input.prev_recursive_proof {
+        // Verify the previous recursive proof against the Moho VK
+        prev_proof
+            .verify(&input.moho_vk)
+            .map_err(|e| MohoError::InvalidRecursiveProof(e))?;
+
+        // Extract the previous state transition
+        let (prev_t, _proof) = prev_proof.into_parts();
+
+        // Chain the previous transition with the new base transition, returning the combined
+        // transition
+        return Ok(prev_t
+            .chain(step_t)
+            .map_err(|e| MohoError::InvalidMohoChain(e))?);
+    }
+
+    // No previous proof: return the base transition directly
+    Ok(step_t)
 }
