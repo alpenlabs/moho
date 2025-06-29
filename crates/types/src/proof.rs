@@ -14,3 +14,15 @@ pub trait ProofSystem {
     /// If this returns false, the proof is invalid.
     fn verify_proof<'p>(vk: &VerifyingKey, proof: &Proof, public_params: &PublicValues) -> bool;
 }
+
+pub struct MockProofSystem {}
+
+impl ProofSystem for MockProofSystem {
+    fn check_vk(_vk: &VerifyingKey) -> bool {
+        true
+    }
+
+    fn verify_proof<'p>(_vk: &VerifyingKey, _proof: &Proof, _public_params: &PublicValues) -> bool {
+        true
+    }
+}
