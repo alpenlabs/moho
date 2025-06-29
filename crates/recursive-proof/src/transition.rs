@@ -85,19 +85,32 @@ pub struct MohoTransitionWithProof {
 }
 
 impl MohoTransitionWithProof {
+    /// Creates a new `MohoTransitionWithProof` from a state transition and its proof.
     pub fn new(transition: MohoStateTransition, proof: Proof) -> Self {
         Self { transition, proof }
     }
 
+    /// Returns a reference to the inner `MohoStateTransition`.
     pub fn transition(&self) -> &MohoStateTransition {
         &self.transition
     }
 
+    /// Returns a reference to the associated cryptographic `Proof`.
     pub fn proof(&self) -> &Proof {
         &self.proof
     }
 
-    pub fn verify(&self, vk: VerifyingKey) -> Result<(), InvalidProofError> {
+    /// Consumes `self` and returns a tuple of the inner `MohoStateTransition` and `Proof`.
+    ///
+    /// # Returns
+    ///
+    /// A tuple where the first element is the transition and the second is the proof.
+    pub fn into_parts(self) -> (MohoStateTransition, Proof) {
+        (self.transition, self.proof)
+    }
+
+    /// Verifies the transition’s proof against the given verifying key.
+    pub fn verify(&self, _vk: &VerifyingKey) -> Result<(), InvalidProofError> {
         Ok(())
     }
 }

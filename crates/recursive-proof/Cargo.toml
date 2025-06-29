@@ -8,8 +8,6 @@ borsh.workspace = true
 moho-types.workspace = true
 thiserror.workspace = true
 zkaleido.workspace = true
-zkaleido-native-adapter.workspace = true
-
 
 [lints]
 workspace = true

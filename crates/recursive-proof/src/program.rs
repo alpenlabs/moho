@@ -1,17 +1,11 @@
-use std::{
-    panic::{AssertUnwindSafe, catch_unwind},
-    sync::Arc,
-};
-
 use borsh::{BorshDeserialize, BorshSerialize};
-use moho_types::{
-    MerkleProof, MohoAttestation, MohoStateCommitment, StateRefAttestation, StateReference,
-};
-use zkaleido::{Proof, VerifyingKey, ZkVm, ZkVmProgram, ZkVmProgramPerf};
-use zkaleido_native_adapter::{NativeHost, NativeMachine};
+use moho_types::{MerkleProof, MohoAttestation};
+use zkaleido::{VerifyingKey, ZkVmProgram, ZkVmProgramPerf};
 
 use crate::transition::MohoTransitionWithProof;
 
+/// A host-agnostic ZkVM “program” that encapsulates the recursive proof logic
+/// for the Moho protocol.
 #[derive(Debug)]
 pub struct MohoRecursiveProgram;
 
