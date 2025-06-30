@@ -1,0 +1,13 @@
+[package]
+name = "moho-recursive-proof"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+borsh.workspace = true
+moho-types.workspace = true
+thiserror.workspace = true
+zkaleido.workspace = true
+
+[lints]
+workspace = true

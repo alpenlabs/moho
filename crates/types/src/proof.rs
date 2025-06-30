@@ -1,33 +1,28 @@
 //! Proof related types.
 
-use borsh::{BorshDeserialize, BorshSerialize};
-
-/// Verification key for the inner state transition.
-#[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
-pub struct InnerVerificationKey(Vec<u8>);
-
-/// Generic proof.
-#[derive(Clone, Debug)]
-pub struct Proof<'p>(&'p [u8]);
-
-/// Generic public parameters.
-// TODO how should this actually work?
-#[derive(Clone, Debug)]
-pub struct PublicParams<'i>(&'i [u8]);
+use zkaleido::{Proof, PublicValues, VerifyingKey};
 
 /// Abstraction over inner proof proving system.
 pub trait ProofSystem {
     /// Sanity checks a verification key.
     ///
     /// If this returns false, the proof is invalid.
-    fn check_vk(vk: &InnerVerificationKey) -> bool;
+    fn check_vk(vk: &VerifyingKey) -> bool;
 
     /// Verifies a proof against a verification key.
     ///
     /// If this returns false, the proof is invalid.
-    fn verify_proof<'p>(
-        vk: &InnerVerificationKey,
-        proof: &Proof<'p>,
-        public_params: &PublicParams<'p>,
-    ) -> bool;
+    fn verify_proof<'p>(vk: &VerifyingKey, proof: &Proof, public_params: &PublicValues) -> bool;
+}
+
+pub struct MockProofSystem {}
+
+impl ProofSystem for MockProofSystem {
+    fn check_vk(_vk: &VerifyingKey) -> bool {
+        true
+    }
+
+    fn verify_proof<'p>(_vk: &VerifyingKey, _proof: &Proof, _public_params: &PublicValues) -> bool {
+        true
+    }
 }
