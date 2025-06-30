@@ -1,4 +1,4 @@
-//! Implementation of the runtime around a [`MohoProgram`].
+//! Implementation of the runtime around a [`moho_runtime_interface::MohoProgram`].
 
 mod input;
 mod runtime;

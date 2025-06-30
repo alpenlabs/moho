@@ -103,13 +103,11 @@ pub fn compute_transition<P: MohoProgram>(
 
     // Compute the new state and wrap it.
     let post_state = P::process_transition(pre_inner_state, input);
-    let post_outer_state = compute_wrapping_moho_state::<P>(&post_state);
-
-    post_outer_state
+    compute_wrapping_moho_state::<P>(&post_state)
 }
 
 /// Computes the state commitment to a moho state.
-fn compute_moho_state_commitment(state: &MohoState) -> MohoStateCommitment {
+fn compute_moho_state_commitment(_state: &MohoState) -> MohoStateCommitment {
     // TODO SSZ merkle hashing
     unimplemented!()
 }
