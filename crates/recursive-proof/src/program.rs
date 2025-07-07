@@ -1,13 +1,15 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use moho_types::{MerkleProof, MohoAttestation};
-use zkaleido::{VerifyingKey, ZkVmProgram, ZkVmProgramPerf};
+use zkaleido::{ZkVmProgram, ZkVmProgramPerf, ZkVmVerifier};
 
 use crate::transition::MohoTransitionWithProof;
 
 /// A host-agnostic ZkVM “program” that encapsulates the recursive proof logic
 /// for the Moho protocol.
 #[derive(Debug)]
-pub struct MohoRecursiveProgram;
+pub struct MohoRecursiveProgram<V> {
+    _phantom: V,
+}
 
 /// Input data for generating a recursive Moho proof that combines incremental and recursive proofs.
 ///
@@ -16,21 +18,21 @@ pub struct MohoRecursiveProgram;
 /// This enables efficient proof composition where each new recursive proof can represent
 /// an arbitrarily long chain of state transitions while maintaining constant verification time.
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
-pub struct MohoRecursiveInput {
+pub struct MohoRecursiveInput<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> {
     /// Moho proof’s own vk, necessary to verify the previous proof
-    pub(crate) moho_vk: VerifyingKey,
+    pub(crate) moho_vk: V,
     /// Previous recursive moho proof
     pub(crate) prev_recursive_proof: Option<MohoTransitionWithProof>,
     /// Incremental step proof
     pub(crate) incremental_step_proof: MohoTransitionWithProof,
     /// Verifying Key to verify the step proof from initial_state to final_state
-    pub(crate) step_proof_vk: VerifyingKey,
+    pub(crate) step_proof_vk: V,
     /// Merkle proof of next_vk within initial_state
     pub(crate) step_vk_merkle_proof: MerkleProof,
 }
 
-impl ZkVmProgram for MohoRecursiveProgram {
-    type Input = MohoRecursiveInput;
+impl<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> ZkVmProgram for MohoRecursiveProgram<V> {
+    type Input = MohoRecursiveInput<V>;
     type Output = MohoAttestation;
 
     fn name() -> String {
@@ -60,4 +62,7 @@ impl ZkVmProgram for MohoRecursiveProgram {
     }
 }
 
-impl ZkVmProgramPerf for MohoRecursiveProgram {}
+impl<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> ZkVmProgramPerf
+    for MohoRecursiveProgram<V>
+{
+}

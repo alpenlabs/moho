@@ -42,4 +42,4 @@ where
 
 #[derive(Debug, Error)]
 #[error("Cannot prove validity of the moho state transition {0:?}")]
-pub struct InvalidProofError(MohoStateTransition);
+pub struct InvalidProofError(pub MohoStateTransition);

@@ -1,5 +1,6 @@
+use borsh::{BorshDeserialize, BorshSerialize};
 use moho_types::{MerkleTree, MohoState};
-use zkaleido::ZkVmEnv;
+use zkaleido::{NoopVerifier, ZkVmEnv, ZkVmVerifier};
 
 use crate::{MohoError, MohoStateTransition, program::MohoRecursiveInput};
 
@@ -15,8 +16,8 @@ use crate::{MohoError, MohoStateTransition, program::MohoRecursiveInput};
 ///
 /// This function will panic if `verify_and_chain_transition` returns an Err,
 /// as it calls `unwrap` on the result. Errors are mapped to `MohoError` variants.
-pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
-    let input: MohoRecursiveInput = zkvm.read_borsh();
+pub fn process_recursive_moho_proof<V>(zkvm: &impl ZkVmEnv) {
+    let input: MohoRecursiveInput<NoopVerifier> = zkvm.read_borsh();
     let full_transition = verify_and_chain_transition(input).unwrap();
     zkvm.commit_borsh(&full_transition);
 }
@@ -35,8 +36,8 @@ pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
 ///
 /// A `Result` containing the full `MohoStateTransition` if verification succeeds,
 /// or a `MohoError` indicating the first failure encountered.
-pub fn verify_and_chain_transition(
-    input: MohoRecursiveInput,
+pub fn verify_and_chain_transition<V: ZkVmVerifier + BorshSerialize + BorshDeserialize>(
+    input: MohoRecursiveInput<V>,
 ) -> Result<MohoStateTransition, MohoError> {
     // 1: Ensure the incremental proof VK is part of the Moho state Merkle root.
     let next_vk_hash = MerkleTree::hash_serializable(&input.step_proof_vk);
