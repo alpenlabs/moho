@@ -1,6 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use moho_types::{MerkleTree, MohoState};
-use zkaleido::{NoopVerifier, ZkVmEnv, ZkVmVerifier};
+use zkaleido::{ZkVmEnv, ZkVmVerifier};
 
 use crate::{MohoError, MohoStateTransition, program::MohoRecursiveInput};
 
@@ -16,8 +16,10 @@ use crate::{MohoError, MohoStateTransition, program::MohoRecursiveInput};
 ///
 /// This function will panic if `verify_and_chain_transition` returns an Err,
 /// as it calls `unwrap` on the result. Errors are mapped to `MohoError` variants.
-pub fn process_recursive_moho_proof<V>(zkvm: &impl ZkVmEnv) {
-    let input: MohoRecursiveInput<NoopVerifier> = zkvm.read_borsh();
+pub fn process_recursive_moho_proof<V: ZkVmVerifier + BorshSerialize + BorshDeserialize>(
+    zkvm: &impl ZkVmEnv,
+) {
+    let input: MohoRecursiveInput<V> = zkvm.read_borsh();
     let full_transition = verify_and_chain_transition(input).unwrap();
     zkvm.commit_borsh(&full_transition);
 }

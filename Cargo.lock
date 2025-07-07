@@ -173,6 +173,7 @@ dependencies = [
  "moho-types",
  "thiserror 2.0.12",
  "zkaleido",
+ "zkaleido-native-adapter",
 ]
 
 [[package]]
@@ -373,4 +374,15 @@ dependencies = [
  "borsh",
  "serde",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "zkaleido-native-adapter"
+version = "0.1.0"
+source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.1.0-alpha-rc14#1c31aa3b24234cd1d5c781e520563428fec7bbba"
+dependencies = [
+ "bincode",
+ "borsh",
+ "serde",
+ "zkaleido",
 ]

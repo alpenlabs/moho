@@ -9,5 +9,8 @@ moho-types.workspace = true
 thiserror.workspace = true
 zkaleido.workspace = true
 
+[target.'cfg(not(target_os = "zkvm"))'.dependencies]
+zkaleido-native-adapter.workspace = true
+
 [lints]
 workspace = true

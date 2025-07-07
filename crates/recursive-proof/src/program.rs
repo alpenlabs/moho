@@ -1,8 +1,14 @@
+use std::{
+    panic::{AssertUnwindSafe, catch_unwind},
+    sync::Arc,
+};
+
 use borsh::{BorshDeserialize, BorshSerialize};
 use moho_types::{MerkleProof, MohoAttestation};
-use zkaleido::{ZkVmProgram, ZkVmProgramPerf, ZkVmVerifier};
+use zkaleido::{NoopVerifier, ZkVmError, ZkVmProgram, ZkVmProgramPerf, ZkVmResult, ZkVmVerifier};
+use zkaleido_native_adapter::{NativeHost, NativeMachine};
 
-use crate::transition::MohoTransitionWithProof;
+use crate::{process_recursive_moho_proof, transition::MohoTransitionWithProof};
 
 /// A host-agnostic ZkVM “program” that encapsulates the recursive proof logic
 /// for the Moho protocol.
@@ -65,4 +71,28 @@ impl<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> ZkVmProgram for MohoRe
 impl<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> ZkVmProgramPerf
     for MohoRecursiveProgram<V>
 {
+}
+
+impl<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> MohoRecursiveProgram<V> {
+    /// Returns the native host for the moho recursive program
+    pub fn native_host() -> NativeHost {
+        NativeHost {
+            process_proof: Arc::new(Box::new(move |zkvm: &NativeMachine| {
+                catch_unwind(AssertUnwindSafe(|| {
+                    process_recursive_moho_proof::<NoopVerifier>(zkvm);
+                }))
+                .map_err(|_| ZkVmError::ExecutionError(Self::name()))?;
+                Ok(())
+            })),
+        }
+    }
+
+    /// Executes the moho recursive program in the native mode
+    pub fn execute(
+        input: &<Self as ZkVmProgram>::Input,
+    ) -> ZkVmResult<<Self as ZkVmProgram>::Output> {
+        // Get the native host and delegate to the trait's execute method
+        let host = Self::native_host();
+        <Self as ZkVmProgram>::execute(input, &host)
+    }
 }
