@@ -365,7 +365,7 @@ dependencies = [
 [[package]]
 name = "zkaleido"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.1.0-alpha-rc11#a1c73b01641b1a46c73acb4851a8e913a2ce216d"
+source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.1.0-alpha-rc14#1c31aa3b24234cd1d5c781e520563428fec7bbba"
 dependencies = [
  "arbitrary",
  "async-trait",
