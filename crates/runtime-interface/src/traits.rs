@@ -3,7 +3,8 @@
 //! This module is using borsh as a transitive measure.
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use moho_types::{ExportState, InnerStateCommitment, InnerVerificationKey, StateReference};
+use moho_types::{ExportState, InnerStateCommitment, StateReference};
+use zkaleido::VerifyingKey;
 
 /// Trait implementation for the Moho program.
 pub trait MohoProgram {
@@ -29,7 +30,7 @@ pub trait MohoProgram {
     fn process_transition(pre_state: &Self::State, inp: &Self::StepInput) -> Self::State;
 
     /// Extracts the next vk from the state.
-    fn extract_next_vk(state: &Self::State) -> InnerVerificationKey;
+    fn extract_next_vk(state: &Self::State) -> VerifyingKey;
 
     /// Extracts the exported output from the state.
     fn extract_export_state(state: &Self::State) -> ExportState;
