@@ -8,11 +8,13 @@ pub struct InnerVerificationKey(Vec<u8>);
 
 /// Generic proof.
 #[derive(Clone, Debug)]
+#[expect(unused)]
 pub struct Proof<'p>(&'p [u8]);
 
 /// Generic public parameters.
 // TODO how should this actually work?
 #[derive(Clone, Debug)]
+#[expect(unused)]
 pub struct PublicParams<'i>(&'i [u8]);
 
 /// Abstraction over inner proof proving system.

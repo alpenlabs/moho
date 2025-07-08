@@ -1,3 +1,5 @@
+//! moho types
+
 mod constants;
 mod id;
 mod proof;

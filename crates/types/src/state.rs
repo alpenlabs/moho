@@ -59,6 +59,10 @@ pub struct ExportState {
 }
 
 impl ExportState {
+    pub fn new(containers: Vec<ExportContainer>) -> Self {
+        Self { containers }
+    }
+
     pub fn containers(&self) -> &[ExportContainer] {
         &self.containers
     }
@@ -85,6 +89,14 @@ pub struct ExportContainer {
 }
 
 impl ExportContainer {
+    pub fn new(container_id: u16, common_payload: Vec<u8>, entries: Vec<ExportEntry>) -> Self {
+        Self {
+            container_id,
+            common_payload,
+            entries,
+        }
+    }
+
     pub fn container_id(&self) -> u16 {
         self.container_id
     }
@@ -113,6 +125,10 @@ pub struct ExportEntry {
 }
 
 impl ExportEntry {
+    pub fn new(entry_id: u32, payload: Vec<u8>) -> Self {
+        Self { entry_id, payload }
+    }
+
     pub fn entry_id(&self) -> u32 {
         self.entry_id
     }

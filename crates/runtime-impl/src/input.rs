@@ -1,7 +1,7 @@
 //! Runtime input.
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use moho_types::{MohoState, MohoStateCommitment, StateRefAttestation, StateReference};
+use moho_types::{MohoState, MohoStateCommitment, StateReference};
 
 #[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
 pub struct RuntimeInput {
