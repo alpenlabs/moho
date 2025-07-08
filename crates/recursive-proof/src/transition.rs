@@ -117,7 +117,7 @@ impl MohoTransitionWithProof {
         let receipt = ProofReceipt::new(self.proof.clone(), public_values);
         match verifier.verify(&receipt) {
             Ok(_) => Ok(()),
-            Err(_) => Err(InvalidProofError(self.transition.clone())),
+            Err(_) => Err(InvalidProofError(Box::new(self.transition.clone()))),
         }
     }
 }
