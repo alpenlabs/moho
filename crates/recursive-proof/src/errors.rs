@@ -11,7 +11,7 @@ pub enum MohoError {
     /// Indicates that two transitions cannot be chained because the end of the first
     /// does not align with the start of the second.
     #[error(transparent)]
-    InvalidMohoChain(#[from] TransitionChainError<StateRefAttestation>),
+    InvalidMohoChain(#[from] Box<TransitionChainError<StateRefAttestation>>),
 
     /// Occurs when the incremental proof for a transition is invalid.
     #[error("invalid incremental proof for transition {0:?}")]
@@ -42,4 +42,4 @@ where
 
 #[derive(Debug, Error)]
 #[error("Cannot prove validity of the moho state transition {0:?}")]
-pub struct InvalidProofError(pub MohoStateTransition);
+pub struct InvalidProofError(pub Box<MohoStateTransition>);

@@ -60,7 +60,7 @@ pub fn verify_and_chain_transition<V: ZkVmVerifier + BorshSerialize + BorshDeser
     input
         .incremental_step_proof
         .verify(&input.step_proof_vk)
-        .map_err(|e| MohoError::InvalidIncrementalProof(e))?;
+        .map_err(MohoError::InvalidIncrementalProof)?;
 
     // Extract the incremental step transition and proof
     let (step_t, _step_proof) = input.incremental_step_proof.into_parts();
@@ -70,16 +70,16 @@ pub fn verify_and_chain_transition<V: ZkVmVerifier + BorshSerialize + BorshDeser
         // Verify the previous recursive proof against the Moho VK
         prev_proof
             .verify(&input.moho_vk)
-            .map_err(|e| MohoError::InvalidRecursiveProof(e))?;
+            .map_err(MohoError::InvalidRecursiveProof)?;
 
         // Extract the previous state transition
         let (prev_t, _proof) = prev_proof.into_parts();
 
         // Chain the previous transition with the new base transition, returning the combined
         // transition
-        return Ok(prev_t
+        return prev_t
             .chain(step_t)
-            .map_err(|e| MohoError::InvalidMohoChain(e))?);
+            .map_err(|e| MohoError::InvalidMohoChain(Box::new(e)));
     }
 
     // No previous proof: return the base transition directly
