@@ -102,8 +102,8 @@ pub fn compute_transition<P: MohoProgram>(
     );
 
     // Compute the new state and wrap it.
-    let post_state = P::process_transition(pre_inner_state, input);
-    compute_wrapping_moho_state::<P>(&post_state)
+    let (post_state, step_output) = P::process_transition(pre_inner_state, input);
+    compute_wrapping_moho_state::<P>(&post_state, &step_output)
 }
 
 /// Computes the state commitment to a moho state.
@@ -114,12 +114,15 @@ fn compute_moho_state_commitment(_state: &MohoState) -> MohoStateCommitment {
 
 /// Computes the exported Moho state from the inner state, also checking the
 /// verification key and export correctness.
-fn compute_wrapping_moho_state<P: MohoProgram>(state: &P::State) -> MohoState {
+fn compute_wrapping_moho_state<P: MohoProgram>(
+    state: &P::State,
+    step_output: &P::StepOutput,
+) -> MohoState {
     let inner_root = P::compute_state_commitment(state);
 
-    let next_vk = P::extract_next_vk(state);
+    let next_vk = P::extract_next_vk(step_output);
 
-    let export_state = P::extract_export_state(state);
+    let export_state = P::extract_export_state(step_output);
     if !check_export_state_structure(&export_state) {
         panic!("runtime: invalid export state structure");
     }
