@@ -30,6 +30,10 @@ impl RuntimeInput {
         &self.moho_pre_state
     }
 
+    pub fn moho_pre_state_mut(&mut self) -> &mut MohoState {
+        &mut self.moho_pre_state
+    }
+
     pub fn inner_pre_state(&self) -> &[u8] {
         &self.inner_pre_state
     }
