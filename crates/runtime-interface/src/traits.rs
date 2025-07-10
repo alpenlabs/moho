@@ -34,8 +34,13 @@ pub trait MohoProgram {
         inp: &Self::StepInput,
     ) -> (Self::State, Self::StepOutput);
 
-    /// Extracts the next vk from the output.
-    fn extract_next_vk(output: &Self::StepOutput) -> InnerVerificationKey;
+    /// Extracts the next inner verification key from a step’s output.
+    ///
+    /// # Returns
+    ///
+    /// - `Some(InnerVerificationKey)` if the inner verification key has been updated.
+    /// - `None` if there is no update to the inner verification key.
+    fn extract_next_vk(output: &Self::StepOutput) -> Option<InnerVerificationKey>;
 
     /// Extracts the exported output from the output.
     fn extract_export_state(output: &Self::StepOutput) -> ExportState;

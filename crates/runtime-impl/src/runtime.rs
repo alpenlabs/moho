@@ -103,7 +103,7 @@ pub fn compute_transition<P: MohoProgram>(
 
     // Compute the new state and wrap it.
     let (post_state, step_output) = P::process_transition(pre_inner_state, input);
-    compute_wrapping_moho_state::<P>(&post_state, &step_output)
+    compute_wrapping_moho_state::<P>(&pre_moho_state, &post_state, &step_output)
 }
 
 /// Computes the state commitment to a moho state.
@@ -115,12 +115,18 @@ fn compute_moho_state_commitment(_state: &MohoState) -> MohoStateCommitment {
 /// Computes the exported Moho state from the inner state, also checking the
 /// verification key and export correctness.
 fn compute_wrapping_moho_state<P: MohoProgram>(
+    pre_moho_state: &MohoState,
     state: &P::State,
     step_output: &P::StepOutput,
 ) -> MohoState {
     let inner_root = P::compute_state_commitment(state);
 
-    let next_vk = P::extract_next_vk(step_output);
+    // Determine the next inner verification key: use the updated key if available, otherwise fall
+    // back to the previous one
+    let next_vk = match P::extract_next_vk(step_output) {
+        Some(vk) => vk,
+        None => pre_moho_state.next_vk().clone(),
+    };
 
     let export_state = P::extract_export_state(step_output);
     if !check_export_state_structure(&export_state) {
