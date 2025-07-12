@@ -17,16 +17,21 @@ use crate::RuntimeInput;
 /// # Panics
 ///
 /// If it's incorrect.
-pub fn verify_input<P: MohoProgram>(input: RuntimeInput) -> MohoAttestation {
+pub fn verify_input<P: MohoProgram>(input: &mut RuntimeInput) -> MohoAttestation {
     let inner_pre_state = deserialize_borsh::<P::State>(input.inner_pre_state())
         .expect("runtime: deserialize pre state");
     let inner_input = deserialize_borsh::<P::StepInput>(input.input_payload())
         .expect("runtime: deserialize inner input");
 
+    // Get the immutable values first
+    let pre_state_ref = *input.pre_state_ref();
+    let pre_commitment = compute_moho_state_commitment(input.moho_pre_state());
+    let pre_ref_att = StateRefAttestation::new(pre_state_ref, pre_commitment);
+
     // Compute and verify the transition attestation.
     let post_ref_att = compute_transition_attestation::<P>(
-        input.pre_state_ref(),
-        input.moho_pre_state(),
+        &pre_state_ref,
+        input.moho_pre_state_mut(),
         &inner_pre_state,
         &inner_input,
     );
@@ -39,8 +44,6 @@ pub fn verify_input<P: MohoProgram>(input: RuntimeInput) -> MohoAttestation {
     );
 
     // Assemble the final attestation.
-    let pre_commitment = compute_moho_state_commitment(input.moho_pre_state());
-    let pre_ref_att = StateRefAttestation::new(*input.pre_state_ref(), pre_commitment);
     MohoAttestation::new(pre_ref_att, post_ref_att)
 }
 
@@ -57,7 +60,7 @@ fn deserialize_borsh<T: BorshDeserialize>(buf: &[u8]) -> Result<T, borsh::io::Er
 /// If it's incorrect.
 fn compute_transition_attestation<P: MohoProgram>(
     pre_state_ref: &StateReference,
-    pre_moho_state: &MohoState,
+    moho_state: &mut MohoState,
     pre_inner_state: &P::State,
     input: &P::StepInput,
 ) -> StateRefAttestation {
@@ -70,26 +73,26 @@ fn compute_transition_attestation<P: MohoProgram>(
     );
 
     // Compute the transition.
-    let post_state = compute_transition::<P>(pre_state_ref, pre_moho_state, pre_inner_state, input);
+    transition_moho_state::<P>(pre_state_ref, moho_state, pre_inner_state, input);
 
     // Construct the attestation.
-    let post_state_commitment = compute_moho_state_commitment(&post_state);
+    let post_state_commitment = compute_moho_state_commitment(moho_state);
     StateRefAttestation::new(input_ref, post_state_commitment)
 }
 
 /// Computes and verifies a transition against an attestation we are trying to
 /// prove.
-pub fn compute_transition<P: MohoProgram>(
+pub fn transition_moho_state<P: MohoProgram>(
     pre_state_ref: &StateReference,
-    pre_moho_state: &MohoState,
+    moho_state: &mut MohoState,
     pre_inner_state: &P::State,
     input: &P::StepInput,
-) -> MohoState {
+) {
     // Check the pre-state matches that in the moho pre-state.
     let computed_inner_state_root = P::compute_state_commitment(pre_inner_state);
     assert_eq!(
         computed_inner_state_root,
-        pre_moho_state.inner_state(),
+        moho_state.inner_state(),
         "runtime: input moho state mismatch"
     );
 
@@ -102,8 +105,8 @@ pub fn compute_transition<P: MohoProgram>(
     );
 
     // Compute the new state and wrap it.
-    let post_state = P::process_transition(pre_inner_state, input);
-    compute_wrapping_moho_state::<P>(&post_state)
+    let output = P::process_transition(pre_inner_state, input);
+    update_wrapping_moho_state::<P>(moho_state, &output)
 }
 
 /// Computes the state commitment to a moho state.
@@ -114,17 +117,27 @@ fn compute_moho_state_commitment(_state: &MohoState) -> MohoStateCommitment {
 
 /// Computes the exported Moho state from the inner state, also checking the
 /// verification key and export correctness.
-fn compute_wrapping_moho_state<P: MohoProgram>(state: &P::State) -> MohoState {
-    let inner_root = P::compute_state_commitment(state);
+fn update_wrapping_moho_state<P: MohoProgram>(
+    moho_state: &mut MohoState,
+    step_output: &P::StepOutput,
+) {
+    let inner_state = P::extract_post_state(step_output);
+    let inner_root = P::compute_state_commitment(inner_state);
 
-    let next_vk = P::extract_next_vk(state);
+    // Determine the next inner verification key: use the updated key if available, otherwise fall
+    // back to the previous one
+    let next_vk = match P::extract_next_vk(step_output) {
+        Some(vk) => vk,
+        None => moho_state.next_vk().clone(),
+    };
 
-    let export_state = P::extract_export_state(state);
-    if !check_export_state_structure(&export_state) {
+    P::update_export_state(moho_state.export_state_mut(), step_output);
+    if !check_export_state_structure(moho_state.export_state()) {
         panic!("runtime: invalid export state structure");
     }
 
-    MohoState::new(inner_root, next_vk, export_state)
+    moho_state.update_next_vk(next_vk);
+    moho_state.update_inner_state(inner_root);
 }
 
 /// Performs structural sanity checks on the export state structure.
