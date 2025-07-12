@@ -25,6 +25,8 @@ pub fn verify_input<P: MohoProgram>(input: &mut RuntimeInput) -> MohoAttestation
 
     // Get the immutable values first
     let pre_state_ref = *input.pre_state_ref();
+    let pre_commitment = compute_moho_state_commitment(input.moho_pre_state());
+    let pre_ref_att = StateRefAttestation::new(pre_state_ref, pre_commitment);
 
     // Compute and verify the transition attestation.
     let post_ref_att = compute_transition_attestation::<P>(
@@ -42,8 +44,6 @@ pub fn verify_input<P: MohoProgram>(input: &mut RuntimeInput) -> MohoAttestation
     );
 
     // Assemble the final attestation.
-    let pre_commitment = compute_moho_state_commitment(input.moho_pre_state());
-    let pre_ref_att = StateRefAttestation::new(pre_state_ref, pre_commitment);
     MohoAttestation::new(pre_ref_att, post_ref_att)
 }
 
@@ -105,8 +105,8 @@ pub fn transition_moho_state<P: MohoProgram>(
     );
 
     // Compute the new state and wrap it.
-    let (post_state, step_output) = P::process_transition(pre_inner_state, input);
-    update_wrapping_moho_state::<P>(moho_state, &post_state, &step_output)
+    let output = P::process_transition(pre_inner_state, input);
+    update_wrapping_moho_state::<P>(moho_state, &output)
 }
 
 /// Computes the state commitment to a moho state.
@@ -119,10 +119,10 @@ fn compute_moho_state_commitment(_state: &MohoState) -> MohoStateCommitment {
 /// verification key and export correctness.
 fn update_wrapping_moho_state<P: MohoProgram>(
     moho_state: &mut MohoState,
-    state: &P::State,
     step_output: &P::StepOutput,
 ) {
-    let inner_root = P::compute_state_commitment(state);
+    let inner_state = P::extract_post_state(step_output);
+    let inner_root = P::compute_state_commitment(inner_state);
 
     // Determine the next inner verification key: use the updated key if available, otherwise fall
     // back to the previous one

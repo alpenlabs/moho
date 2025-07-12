@@ -29,10 +29,7 @@ pub trait MohoProgram {
     ///
     /// If this returns error, proving fails.
     // TODO make result type
-    fn process_transition(
-        pre_state: &Self::State,
-        inp: &Self::StepInput,
-    ) -> (Self::State, Self::StepOutput);
+    fn process_transition(pre_state: &Self::State, inp: &Self::StepInput) -> Self::StepOutput;
 
     /// Extracts the next inner verification key from a step’s output.
     ///
@@ -41,6 +38,9 @@ pub trait MohoProgram {
     /// - `Some(InnerVerificationKey)` if the inner verification key has been updated.
     /// - `None` if there is no update to the inner verification key.
     fn extract_next_vk(output: &Self::StepOutput) -> Option<InnerVerificationKey>;
+
+    /// Extracts the inner state after a transition from the step’s output.
+    fn extract_post_state(output: &Self::StepOutput) -> &Self::State;
 
     /// Updates the exported state from the output.
     fn update_export_state(export_state: &mut ExportState, output: &Self::StepOutput);
