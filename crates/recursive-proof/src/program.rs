@@ -26,13 +26,13 @@ pub struct MohoRecursiveProgram<V> {
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub struct MohoRecursiveInput<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> {
     /// Moho proof’s own vk, necessary to verify the previous proof
-    pub(crate) moho_vk: V,
+    pub(crate) moho_verifier: V,
     /// Previous recursive moho proof
     pub(crate) prev_recursive_proof: Option<MohoTransitionWithProof>,
     /// Incremental step proof
     pub(crate) incremental_step_proof: MohoTransitionWithProof,
     /// Verifying Key to verify the step proof from initial_state to final_state
-    pub(crate) step_proof_vk: V,
+    pub(crate) step_proof_verifier: V,
     /// Merkle proof of next_vk within initial_state
     pub(crate) step_vk_merkle_proof: MerkleProof,
 }
