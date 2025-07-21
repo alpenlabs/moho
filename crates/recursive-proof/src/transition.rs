@@ -18,8 +18,8 @@ impl<T> Transition<T> {
     ///
     /// # Arguments
     ///
-    /// * `from` - The starting state
-    /// * `to` - The destination state
+    /// * `from` - The starting state i.e. the state before the transition occurs
+    /// * `to` - The destination state i.e. the state after the transition completes
     pub fn new(from: T, to: T) -> Self {
         Self {
             from_state: from,
@@ -27,17 +27,17 @@ impl<T> Transition<T> {
         }
     }
 
-    /// Returns a reference to the source state of this transition.
+    /// Returns a reference to the starting state before the transition occurs.
     pub fn from(&self) -> &T {
         &self.from_state
     }
 
-    /// Returns a reference to the target state of this transition.
+    /// Returns a reference to the final state after the transition completes.
     pub fn to(&self) -> &T {
         &self.to_state
     }
 
-    /// Consumes the transition and returns the source and target states as a tuple.
+    /// Consumes the transition and returns the states before and after the transition.
     pub fn into_states(self) -> (T, T) {
         (self.from_state, self.to_state)
     }

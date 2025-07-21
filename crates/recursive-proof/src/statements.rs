@@ -4,18 +4,27 @@ use zkaleido::{VerifyingKey, ZkVmEnv, ZkVmVerifier};
 
 use crate::{MohoError, MohoStateTransition, program::MohoRecursiveInput};
 
-/// Reads a recursive Moho proof from the zkVM, verifies it, and commits the resulting state
-/// transition.
+/// Entry point for processing recursive Moho proofs within a zkVM environment.
+///
+/// This function reads a [`MohoRecursiveInput`] from the zkVM, performs verification
+/// and chaining of the proof components, then commits the resulting complete state
+/// transition back to the zkVM.
 ///
 /// # Arguments
 ///
-/// * `zkvm` - A reference to an implementation of the ZkVmEnv trait, providing the zkVM environment
-///   for reading and committing Borsh-encoded data.
+/// * `zkvm` - A zkVM environment that implements [`ZkVmEnv`] for reading input data and committing
+///   output data using Borsh serialization
+///
+/// # Type Parameters
+///
+/// * `V` - A verifier type that implements `ZkVmVerifier + BorshSerialize + BorshDeserialize` for
+///   proof verification operations
 ///
 /// # Panics
 ///
-/// This function will panic if `verify_and_chain_transition` returns an Err,
-/// as it calls `unwrap` on the result. Errors are mapped to `MohoError` variants.
+/// Panics if proof verification or chaining fails, as this function calls
+/// `unwrap()` on the result from `verify_and_chain_transition`. Consider using
+/// `verify_and_chain_transition` directly for error handling.
 pub fn process_recursive_moho_proof<V: ZkVmVerifier + BorshSerialize + BorshDeserialize>(
     zkvm: &impl ZkVmEnv,
 ) {
