@@ -80,25 +80,27 @@ pub fn verify_and_chain_transition<V: ZkVmVerifier + BorshSerialize + BorshDeser
     // Extract the incremental step transition and proof
     let (step_t, _step_proof) = input.incremental_step_proof.into_parts();
 
-    // Step 3: If there is a previous recursive proof, verify and chain it.
-    if let Some(prev_proof) = input.prev_recursive_proof {
-        // Verify the previous recursive proof against the Moho VK
-        prev_proof
-            .verify(&input.moho_verifier)
-            .map_err(MohoError::InvalidRecursiveProof)?;
+    // Step 3: Handle previous recursive proof chaining
+    match input.prev_recursive_proof {
+        // No previous proof: return the incremental step transition directly
+        None => Ok(step_t),
 
-        // Extract the previous state transition
-        let (prev_t, _proof) = prev_proof.into_parts();
+        // Previous proof exists: verify and chain with current step
+        Some(prev_proof) => {
+            // Verify the previous recursive proof against the Moho VK
+            prev_proof
+                .verify(&input.moho_verifier)
+                .map_err(MohoError::InvalidRecursiveProof)?;
 
-        // Chain the previous transition with the new base transition, returning the combined
-        // transition
-        return prev_t
-            .chain(step_t)
-            .map_err(|e| MohoError::InvalidMohoChain(Box::new(e)));
+            // Extract the previous state transition
+            let (prev_t, _proof) = prev_proof.into_parts();
+
+            // Chain the previous transition with the current step transition
+            prev_t
+                .chain(step_t)
+                .map_err(|e| MohoError::InvalidMohoChain(Box::new(e)))
+        }
     }
-
-    // No previous proof: return the base transition directly
-    Ok(step_t)
 }
 
 #[cfg(test)]
