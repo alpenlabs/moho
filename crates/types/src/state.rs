@@ -47,16 +47,8 @@ impl MohoState {
         &self.export_state
     }
 
-    pub fn export_state_mut(&mut self) -> &mut ExportState {
-        &mut self.export_state
-    }
-
-    pub fn update_next_vk(&mut self, next_vk: InnerVerificationKey) {
-        self.next_vk = next_vk
-    }
-
-    pub fn update_inner_state(&mut self, inner_state: InnerStateCommitment) {
-        self.inner_state = inner_state
+    pub fn into_export_state(self) -> ExportState {
+        self.export_state
     }
 }
 

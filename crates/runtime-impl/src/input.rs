@@ -30,10 +30,6 @@ impl RuntimeInput {
         &self.moho_pre_state
     }
 
-    pub fn moho_pre_state_mut(&mut self) -> &mut MohoState {
-        &mut self.moho_pre_state
-    }
-
     pub fn inner_pre_state(&self) -> &[u8] {
         &self.inner_pre_state
     }
@@ -44,5 +40,9 @@ impl RuntimeInput {
 
     pub fn post_state_commitment(&self) -> &MohoStateCommitment {
         &self.post_state_commitment
+    }
+
+    pub fn into_pre_state(self) -> MohoState {
+        self.moho_pre_state
     }
 }

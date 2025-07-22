@@ -42,6 +42,6 @@ pub trait MohoProgram {
     /// Extracts the inner state after a transition from the step’s output.
     fn extract_post_state(output: &Self::StepOutput) -> &Self::State;
 
-    /// Updates the exported state from the output.
-    fn update_export_state(export_state: &mut ExportState, output: &Self::StepOutput);
+    /// Computes the updated exported state from the output.
+    fn compute_export_state(export_state: ExportState, output: &Self::StepOutput) -> ExportState;
 }
