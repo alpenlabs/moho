@@ -13,6 +13,9 @@ pub trait MohoProgram {
     /// Private input to process the next state.
     type StepInput: BorshDeserialize + BorshSerialize;
 
+    /// Output after processing the step input
+    type StepOutput;
+
     /// Computes the reference to the input state.
     fn compute_input_reference(input: &Self::StepInput) -> StateReference;
 
@@ -26,11 +29,19 @@ pub trait MohoProgram {
     ///
     /// If this returns error, proving fails.
     // TODO make result type
-    fn process_transition(pre_state: &Self::State, inp: &Self::StepInput) -> Self::State;
+    fn process_transition(pre_state: &Self::State, inp: &Self::StepInput) -> Self::StepOutput;
 
-    /// Extracts the next vk from the state.
-    fn extract_next_vk(state: &Self::State) -> InnerVerificationKey;
+    /// Extracts the next inner verification key from a step’s output.
+    ///
+    /// # Returns
+    ///
+    /// - `Some(InnerVerificationKey)` if the inner verification key has been updated.
+    /// - `None` if there is no update to the inner verification key.
+    fn extract_next_vk(output: &Self::StepOutput) -> Option<InnerVerificationKey>;
 
-    /// Extracts the exported output from the state.
-    fn extract_export_state(state: &Self::State) -> ExportState;
+    /// Extracts the inner state after a transition from the step’s output.
+    fn extract_post_state(output: &Self::StepOutput) -> &Self::State;
+
+    /// Computes the updated exported state from the output.
+    fn compute_export_state(export_state: ExportState, output: &Self::StepOutput) -> ExportState;
 }

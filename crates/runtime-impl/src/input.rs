@@ -41,4 +41,8 @@ impl RuntimeInput {
     pub fn post_state_commitment(&self) -> &MohoStateCommitment {
         &self.post_state_commitment
     }
+
+    pub fn into_pre_state(self) -> MohoState {
+        self.moho_pre_state
+    }
 }

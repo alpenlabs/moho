@@ -46,6 +46,10 @@ impl MohoState {
     pub fn export_state(&self) -> &ExportState {
         &self.export_state
     }
+
+    pub fn into_export_state(self) -> ExportState {
+        self.export_state
+    }
 }
 
 /// Exported state for consumers.
@@ -65,6 +69,17 @@ impl ExportState {
 
     pub fn containers(&self) -> &[ExportContainer] {
         &self.containers
+    }
+
+    pub fn add_entry(&mut self, container_id: u16, entry: ExportEntry) {
+        // REVIEW: check if ignoring if container_id is a good enough solution
+        if let Some(container) = self
+            .containers
+            .iter_mut()
+            .find(|container| container.container_id() == container_id)
+        {
+            container.add_entry(entry);
+        }
     }
 }
 
@@ -107,6 +122,10 @@ impl ExportContainer {
 
     pub fn entries(&self) -> &[ExportEntry] {
         &self.entries
+    }
+
+    pub fn add_entry(&mut self, entry: ExportEntry) {
+        self.entries.push(entry);
     }
 }
 
