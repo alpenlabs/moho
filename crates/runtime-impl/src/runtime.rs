@@ -23,7 +23,6 @@ pub fn verify_input<P: MohoProgram>(input: RuntimeInput) -> MohoAttestation {
     let inner_input = deserialize_borsh::<P::StepInput>(input.input_payload())
         .expect("runtime: deserialize inner input");
 
-    // Get the immutable values first
     let pre_state_ref = *input.pre_state_ref();
     let pre_commitment = compute_moho_state_commitment(input.moho_pre_state());
     let pre_ref_att = StateRefAttestation::new(pre_state_ref, pre_commitment);
@@ -62,7 +61,7 @@ fn deserialize_borsh<T: BorshDeserialize>(buf: &[u8]) -> Result<T, borsh::io::Er
 /// If it's incorrect.
 fn compute_transition_attestation<P: MohoProgram>(
     pre_state_ref: &StateReference,
-    moho_state: MohoState,
+    pre_moho_state: MohoState,
     pre_inner_state: &P::State,
     input: &P::StepInput,
 ) -> StateRefAttestation {
@@ -75,19 +74,18 @@ fn compute_transition_attestation<P: MohoProgram>(
     );
 
     // Compute the transition.
-    let new_moho_state =
-        transition_moho_state::<P>(pre_state_ref, moho_state, pre_inner_state, input);
+    let post_state = compute_transition::<P>(pre_state_ref, pre_moho_state, pre_inner_state, input);
 
     // Construct the attestation.
-    let post_state_commitment = compute_moho_state_commitment(&new_moho_state);
+    let post_state_commitment = compute_moho_state_commitment(&post_state);
     StateRefAttestation::new(input_ref, post_state_commitment)
 }
 
 /// Computes and verifies a transition against an attestation we are trying to
 /// prove.
-pub fn transition_moho_state<P: MohoProgram>(
+pub fn compute_transition<P: MohoProgram>(
     pre_state_ref: &StateReference,
-    moho_state: MohoState,
+    pre_moho_state: MohoState,
     pre_inner_state: &P::State,
     input: &P::StepInput,
 ) -> MohoState {
@@ -95,7 +93,7 @@ pub fn transition_moho_state<P: MohoProgram>(
     let computed_inner_state_root = P::compute_state_commitment(pre_inner_state);
     assert_eq!(
         computed_inner_state_root,
-        moho_state.inner_state(),
+        pre_moho_state.inner_state(),
         "runtime: input moho state mismatch"
     );
 
@@ -109,7 +107,7 @@ pub fn transition_moho_state<P: MohoProgram>(
 
     // Compute the new state and wrap it.
     let output = P::process_transition(pre_inner_state, input);
-    compute_wrapping_moho_state::<P>(moho_state, &output)
+    compute_wrapping_moho_state::<P>(pre_moho_state, &output)
 }
 
 /// Computes the state commitment to a moho state.
@@ -124,8 +122,8 @@ fn compute_wrapping_moho_state<P: MohoProgram>(
     moho_state: MohoState,
     step_output: &P::StepOutput,
 ) -> MohoState {
-    let inner_state = P::extract_post_state(step_output);
-    let inner_root = P::compute_state_commitment(inner_state);
+    let post_inner_state = P::extract_post_state(step_output);
+    let post_inner_root = P::compute_state_commitment(post_inner_state);
 
     // Determine the next inner verification key: use the updated key if available, otherwise fall
     // back to the previous one
@@ -136,7 +134,7 @@ fn compute_wrapping_moho_state<P: MohoProgram>(
 
     let new_export_state = P::compute_export_state(moho_state.into_export_state(), step_output);
 
-    let new_moho_state = MohoState::new(inner_root, next_vk, new_export_state);
+    let new_moho_state = MohoState::new(post_inner_root, next_vk, new_export_state);
 
     if !check_export_state_structure(new_moho_state.export_state()) {
         panic!("runtime: invalid export state structure");
