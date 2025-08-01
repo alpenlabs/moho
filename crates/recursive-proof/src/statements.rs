@@ -7,8 +7,8 @@ use crate::{MohoError, MohoStateTransition, program::MohoRecursiveInput};
 /// Entry point for processing recursive Moho proofs within a zkVM environment.
 ///
 /// This function reads a [`MohoRecursiveInput`] from the zkVM, performs verification
-/// and chaining of the proof components, then commits the resulting complete state
-/// transition back to the zkVM.
+/// of the proof components and chaining of the corresponding states, then commits the resulting
+/// complete state transition back to the zkVM.
 ///
 /// # Arguments
 ///
@@ -33,8 +33,8 @@ pub fn process_recursive_moho_proof<V: ZkVmVerifier + BorshSerialize + BorshDese
     zkvm.commit_borsh(&full_transition);
 }
 
-/// Verifies and chains recursive Moho proof with inductive proof to produce a complete state
-/// transition.
+/// Verifies the inductive and recursive Moho proofs and chains the corresponding states produce a
+/// complete state transition.
 ///
 /// This function performs the following steps in order:
 /// 1. Verifies that the provided step verification key (VK) is included in the current Moho state
@@ -80,7 +80,7 @@ pub fn verify_and_chain_transition<V: ZkVmVerifier + BorshSerialize + BorshDeser
     // Extract the incremental step transition and proof
     let (step_t, _step_proof) = input.incremental_step_proof.into_parts();
 
-    // Step 3: Handle previous recursive proof chaining
+    // Step 3: Handle previous recursive proof and previous and new state chaining
     match input.prev_recursive_proof {
         // No previous proof: return the incremental step transition directly
         None => Ok(step_t),

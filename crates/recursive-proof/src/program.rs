@@ -31,9 +31,9 @@ pub struct MohoRecursiveInput<V: ZkVmVerifier + BorshSerialize + BorshDeserializ
     pub(crate) prev_recursive_proof: Option<MohoTransitionWithProof>,
     /// Incremental step proof
     pub(crate) incremental_step_proof: MohoTransitionWithProof,
-    /// Verifying Key to verify the step proof from initial_state to final_state
+    /// Verifying Key to verify the incremenal step proof from initial_state to final_state
     pub(crate) step_proof_verifier: V,
-    /// Merkle proof of next_vk within initial_state
+    /// Merkle proof of `step_proof_verifier` within initial_state
     pub(crate) step_vk_merkle_proof: MerkleProof,
 }
 
