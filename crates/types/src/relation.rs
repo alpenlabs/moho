@@ -34,7 +34,7 @@ impl MohoAttestation {
 }
 
 /// A mapping of a state reference to its corresponding state commitment.
-#[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
+#[derive(Clone, Debug, PartialEq, BorshDeserialize, BorshSerialize)]
 pub struct StateRefAttestation {
     reference: StateReference,
     commitment: MohoStateCommitment,
