@@ -65,7 +65,7 @@ impl MerkleTree {
         let mut current_index = proof.leaf_index as usize;
 
         for sibling in &proof.path {
-            if current_index % 2 == 0 {
+            if current_index.is_multiple_of(2) {
                 // Current node is left child
                 current_hash = Self::hash_internal(&current_hash, sibling);
             } else {
@@ -104,7 +104,7 @@ impl MerkleTree {
 
         // Build path bottom-up
         while current_level.len() > 1 {
-            let sibling_index = if current_index % 2 == 0 {
+            let sibling_index = if current_index.is_multiple_of(2) {
                 current_index + 1
             } else {
                 current_index - 1
