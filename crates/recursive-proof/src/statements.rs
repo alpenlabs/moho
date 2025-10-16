@@ -1,6 +1,5 @@
-use borsh::{BorshDeserialize, BorshSerialize};
 use moho_types::{MerkleTree, MohoState};
-use zkaleido::{VerifyingKey, ZkVmEnv, ZkVmVerifier};
+use zkaleido::{VerifyingKey, ZkVmEnv};
 
 use crate::{MohoError, MohoStateTransition, program::MohoRecursiveInput};
 
@@ -25,10 +24,8 @@ use crate::{MohoError, MohoStateTransition, program::MohoRecursiveInput};
 /// Panics if proof verification or chaining fails, as this function calls
 /// `unwrap()` on the result from `verify_and_chain_transition`. Consider using
 /// `verify_and_chain_transition` directly for error handling.
-pub fn process_recursive_moho_proof<V: ZkVmVerifier + BorshSerialize + BorshDeserialize>(
-    zkvm: &impl ZkVmEnv,
-) {
-    let input: MohoRecursiveInput<V> = zkvm.read_borsh();
+pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
+    let input: MohoRecursiveInput = zkvm.read_borsh();
     let full_transition = verify_and_chain_transition(input).unwrap();
     zkvm.commit_borsh(&full_transition);
 }
@@ -47,8 +44,8 @@ pub fn process_recursive_moho_proof<V: ZkVmVerifier + BorshSerialize + BorshDese
 ///
 /// A `Result` containing the full `MohoStateTransition` if verification succeeds,
 /// or a `MohoError` indicating the first failure encountered.
-pub fn verify_and_chain_transition<V: ZkVmVerifier + BorshSerialize + BorshDeserialize>(
-    input: MohoRecursiveInput<V>,
+pub fn verify_and_chain_transition(
+    input: MohoRecursiveInput,
 ) -> Result<MohoStateTransition, MohoError> {
     // 1: Ensure the incremental proof VK is part of the Moho state Merkle root.
 
@@ -105,56 +102,25 @@ pub fn verify_and_chain_transition<V: ZkVmVerifier + BorshSerialize + BorshDeser
 
 #[cfg(test)]
 mod tests {
-    use borsh::{BorshDeserialize, BorshSerialize};
     use moho_types::{
         ExportState, InnerStateCommitment, MohoState, MohoStateCommitment, StateRefAttestation,
         StateReference,
     };
-    use zkaleido::{Proof, ProofReceipt, VerifyingKey, ZkVmError, ZkVmVerifier};
+    use strata_predicate::PredicateKey;
+    use zkaleido::Proof;
 
     use super::*;
     use crate::transition::{MohoTransitionWithProof, Transition};
 
-    /// Mock verifier for testing proof verification logic.
-    ///
-    /// This verifier compares proof bytes against its internal ID string.
-    /// It succeeds when proof bytes match the ID, fails otherwise.
-    #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
-    struct MockVerifier {
-        id: String,
-    }
-
-    impl MockVerifier {
-        fn new(id: String) -> Self {
-            Self { id }
-        }
-
-        fn to_vk(&self) -> VerifyingKey {
-            VerifyingKey::new(borsh::to_vec(&MockVerifier::new("ASM".to_string())).unwrap())
-        }
-    }
-
-    impl ZkVmVerifier for MockVerifier {
-        fn verify(&self, receipt: &ProofReceipt) -> Result<(), ZkVmError> {
-            if receipt.proof().as_bytes() != self.id.as_bytes() {
-                Err(ZkVmError::ExecutionError(
-                    "Mock verification failed".to_string(),
-                ))
-            } else {
-                Ok(())
-            }
-        }
-    }
-
-    fn create_state(id: u8, vk: VerifyingKey) -> MohoState {
+    fn create_state(id: u8, predicate: PredicateKey) -> MohoState {
         let inner = InnerStateCommitment::new([id; 32]);
         let export = ExportState::new(vec![]);
-        MohoState::new(inner, vk, export)
+        MohoState::new(inner, predicate, export)
     }
 
     fn create_commitment(id: u8) -> MohoStateCommitment {
-        let vk = MockVerifier::new("ASM".to_string()).to_vk();
-        create_state(id, vk).compute_commitment()
+        let predicate = PredicateKey::always_accept();
+        create_state(id, predicate).compute_commitment()
     }
 
     fn create_attestation(id: u8) -> StateRefAttestation {
@@ -181,14 +147,14 @@ mod tests {
         MohoTransitionWithProof::new(t, proof)
     }
 
-    fn create_input(from: u8, to: u8, prev: Option<(u8, u8)>) -> MohoRecursiveInput<MockVerifier> {
-        let moho_v = MockVerifier::new("Moho".to_string());
-        let step_v = MockVerifier::new("ASM".to_string());
+    fn create_input(from: u8, to: u8, prev: Option<(u8, u8)>) -> MohoRecursiveInput {
+        let moho_v = PredicateKey::always_accept();
+        let step_v = PredicateKey::always_accept();
 
         let step_proof = create_step_proof(from, to);
         let prev_proof = prev.map(|(f, t)| create_recursive_proof(f, t));
 
-        let merkle_proof = create_state(from, step_v.to_vk()).generate_next_vk_proof();
+        let merkle_proof = create_state(from, step_v.clone()).generate_next_vk_proof();
 
         MohoRecursiveInput {
             moho_verifier: moho_v,
@@ -246,14 +212,14 @@ mod tests {
     fn test_verify_and_chain_transition_invalid_merkle_proof() {
         // Test with wrong verifier - should fail Merkle proof check
         let mut inp = create_input(2, 3, None);
-        inp.step_proof_verifier = MockVerifier::new("ASM 2".to_string());
+        inp.step_proof_verifier = PredicateKey::never_accept();
 
         let result = verify_and_chain_transition(inp.clone());
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), MohoError::InvalidMerkleProof));
 
         // Test with correct verifier - should succeed
-        inp.step_proof_verifier = MockVerifier::new("ASM".to_string());
+        inp.step_proof_verifier = PredicateKey::always_accept();
         let expected = create_step_proof(2, 3);
         let result = verify_and_chain_transition(inp).unwrap();
         assert_eq!(&result, expected.transition());

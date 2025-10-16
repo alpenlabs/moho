@@ -1,6 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use moho_types::StateRefAttestation;
-use zkaleido::{Proof, ProofReceipt, PublicValues, ZkVmVerifier};
+use strata_predicate::PredicateKey;
+use zkaleido::{Proof, PublicValues};
 
 use crate::errors::{InvalidProofError, TransitionChainError};
 
@@ -110,13 +111,13 @@ impl MohoTransitionWithProof {
     }
 
     /// Verifies the transition’s proof against the given verifying key.
-    pub fn verify(&self, verifier: &impl ZkVmVerifier) -> Result<(), InvalidProofError> {
+    pub fn verify(&self, verifier: &PredicateKey) -> Result<(), InvalidProofError> {
         let public_values = PublicValues::new(
             borsh::to_vec(&self).expect("borsh serialization of moho state transition failed"),
         );
-        let receipt = ProofReceipt::new(self.proof.clone(), public_values);
-        match verifier.verify(&receipt) {
+        match verifier.verify_claim_witness(public_values.as_bytes(), self.proof.as_bytes()) {
             Ok(_) => Ok(()),
+            // TODO: Better error?
             Err(_) => Err(InvalidProofError(Box::new(self.transition.clone()))),
         }
     }
