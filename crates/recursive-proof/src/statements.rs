@@ -39,8 +39,8 @@ pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
 /// complete state transition.
 ///
 /// This function performs the following steps in order:
-/// 1. Verifies that the provided step predicate key is included in the current Moho state
-///    Merkle commitment.
+/// 1. Verifies that the provided step predicate key is included in the current Moho state Merkle
+///    commitment.
 /// 2. Verifies the incremental proof against the given predicate key.
 /// 3. If a previous recursive proof exists, verifies it and chains its state transition with the
 ///    current one.
@@ -153,7 +153,8 @@ mod tests {
         let step_proof = create_step_proof(from, to);
         let prev_proof = prev.map(|(f, t)| create_recursive_proof(f, t));
 
-        let merkle_proof = create_state(from, step_predicate.clone()).generate_next_predicate_proof();
+        let merkle_proof =
+            create_state(from, step_predicate.clone()).generate_next_predicate_proof();
 
         MohoRecursiveInput {
             moho_predicate,
@@ -238,7 +239,8 @@ mod tests {
 
         let to_attestation = create_attestation(2);
         let transition = Transition::new(from_attestation, to_attestation);
-        let step_proof = MohoTransitionWithProof::new(transition, Proof::new("ASM".as_bytes().to_vec()));
+        let step_proof =
+            MohoTransitionWithProof::new(transition, Proof::new("ASM".as_bytes().to_vec()));
 
         let merkle_proof = from_state.generate_next_predicate_proof();
 
