@@ -129,7 +129,7 @@ fn compute_wrapping_moho_state<P: MohoProgram>(
     // back to the previous one
     let next_vk = match P::extract_next_vk(step_output) {
         Some(vk) => vk,
-        None => moho_state.next_vk().clone(),
+        None => moho_state.next_predicate().clone(),
     };
 
     let new_export_state = P::compute_export_state(moho_state.into_export_state(), step_output);

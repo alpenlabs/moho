@@ -1,7 +1,7 @@
 //! Moho state container types
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use zkaleido::VerifyingKey;
+use strata_predicate::PredicateKey;
 
 use crate::{
     InnerStateCommitment, MohoStateCommitment,
@@ -17,8 +17,8 @@ pub struct MohoState {
     /// the proof.
     inner_state: InnerStateCommitment,
 
-    /// The verification key used for the next state transition.
-    next_vk: VerifyingKey,
+    /// The predicate key used for the validation of next state transition.
+    next_predicate: PredicateKey,
 
     /// Export state to be read by consumers.
     ///
@@ -29,12 +29,12 @@ pub struct MohoState {
 impl MohoState {
     pub fn new(
         inner_state: InnerStateCommitment,
-        next_vk: VerifyingKey,
+        next_predicate: PredicateKey,
         export_state: ExportState,
     ) -> Self {
         Self {
             inner_state,
-            next_vk,
+            next_predicate,
             export_state,
         }
     }
@@ -43,8 +43,8 @@ impl MohoState {
         self.inner_state
     }
 
-    pub fn next_vk(&self) -> &VerifyingKey {
-        &self.next_vk
+    pub fn next_predicate(&self) -> &PredicateKey {
+        &self.next_predicate
     }
 
     pub fn export_state(&self) -> &ExportState {
@@ -231,7 +231,7 @@ impl MohoState {
 
     /// Get the hash of the next_vk field for proof verification
     pub fn get_next_vk_hash(&self) -> [u8; 32] {
-        MerkleTree::hash_serializable(&self.next_vk)
+        MerkleTree::hash_serializable(&self.next_predicate)
     }
 
     /// Internal: Get the Merkle leaves for all fields
@@ -240,7 +240,7 @@ impl MohoState {
             // Leaf 0: inner_state
             MerkleTree::hash_serializable(&self.inner_state),
             // Leaf 1: next_vk
-            MerkleTree::hash_serializable(&self.next_vk),
+            MerkleTree::hash_serializable(&self.next_predicate),
             // Leaf 2: export_state
             MerkleTree::hash_serializable(&self.export_state),
         ]
@@ -255,7 +255,7 @@ mod tests {
     fn test_merkle_proof_next_vk() {
         // Create a mock state
         let inner_state = InnerStateCommitment::default();
-        let next_vk = VerifyingKey::default();
+        let next_vk = PredicateKey::always_accept();
         let export_state = ExportState { containers: vec![] };
 
         let state = MohoState::new(inner_state, next_vk.clone(), export_state);
@@ -279,7 +279,7 @@ mod tests {
     #[test]
     fn test_commitment_consistency() {
         let inner_state = InnerStateCommitment::default();
-        let next_vk = VerifyingKey::default();
+        let next_vk = PredicateKey::always_accept();
         let export_state = ExportState { containers: vec![] };
 
         let state1 = MohoState::new(inner_state, next_vk.clone(), export_state.clone());
