@@ -110,7 +110,7 @@ impl MohoTransitionWithProof {
         (self.transition, self.proof)
     }
 
-    /// Verifies the transition’s proof against the given verifying key.
+    /// Verifies the transition's proof against the given predicate key.
     pub fn verify(&self, verifier: &PredicateKey) -> Result<(), InvalidProofError> {
         let public_values = PublicValues::new(
             borsh::to_vec(&self).expect("borsh serialization of moho state transition failed"),

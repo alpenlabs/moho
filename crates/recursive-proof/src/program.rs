@@ -26,31 +26,31 @@ pub struct MohoRecursiveProgram;
 /// an arbitrarily long chain of state transitions while maintaining constant verification time.
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub struct MohoRecursiveInput {
-    /// Moho proof’s own vk, necessary to verify the previous proof
-    pub(crate) moho_verifier: PredicateKey,
+    /// Moho proof's own predicate key, necessary to verify the previous recursive proof
+    pub(crate) moho_predicate: PredicateKey,
     /// Previous recursive moho proof
     pub(crate) prev_recursive_proof: Option<MohoTransitionWithProof>,
     /// Incremental step proof
     pub(crate) incremental_step_proof: MohoTransitionWithProof,
-    /// Verifying Key to verify the incremenal step proof from initial_state to final_state
-    pub(crate) step_proof_verifier: PredicateKey,
-    /// Merkle proof of `step_proof_verifier` within initial_state
-    pub(crate) step_vk_merkle_proof: MerkleProof,
+    /// Predicate key to verify the incremental step proof from initial_state to final_state
+    pub(crate) step_predicate: PredicateKey,
+    /// Merkle proof of `step_predicate` within initial_state
+    pub(crate) step_predicate_merkle_proof: MerkleProof,
 }
 
 /// Output data committed by a recursive Moho proof that verifiers must check.
 ///
 /// `MohoRecursiveOutput` contains the committed information produced by a recursive proof.
-/// The verifier of this proof needs to ensure that the correct recursive verifier was used,
-/// so we commit the `moho_verifier` as public output. Since we cannot hardcode this outer
+/// The verifier of this proof needs to ensure that the correct recursive predicate was used,
+/// so we commit the `moho_predicate` as public output. Since we cannot hardcode this outer
 /// predicate key in the circuit, it must be included as a public parameter for verification.
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub struct MohoRecursiveOutput {
     /// State transition proven by this recursive proof
     pub(crate) transition: MohoStateTransition,
-    /// Verifying key used to verify this recursive proof, committed as public output
+    /// Predicate key used to verify previous recursive proof, committed as public output
     /// to ensure verifiers can confirm the correct predicate was used
-    pub(crate) moho_verifier: PredicateKey,
+    pub(crate) moho_predicate: PredicateKey,
 }
 
 impl ZkVmProgram for MohoRecursiveProgram {

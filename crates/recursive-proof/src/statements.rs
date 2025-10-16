@@ -1,5 +1,5 @@
 use moho_types::{MerkleTree, MohoState};
-use zkaleido::{VerifyingKey, ZkVmEnv};
+use zkaleido::ZkVmEnv;
 
 use crate::{MohoError, MohoRecursiveOutput, MohoStateTransition, program::MohoRecursiveInput};
 
@@ -7,7 +7,7 @@ use crate::{MohoError, MohoRecursiveOutput, MohoStateTransition, program::MohoRe
 ///
 /// This function reads a [`MohoRecursiveInput`] from the zkVM, performs verification
 /// of the proof components and chaining of the corresponding states, then commits the resulting
-/// complete state transition along with the Moho VK back to the zkVM.
+/// complete state transition along with the Moho predicate key back to the zkVM.
 ///
 /// # Arguments
 ///
@@ -26,10 +26,10 @@ use crate::{MohoError, MohoRecursiveOutput, MohoStateTransition, program::MohoRe
 /// `verify_and_chain_transition` directly for error handling.
 pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
     let input: MohoRecursiveInput = zkvm.read_borsh();
-    let moho_verifer = input.moho_verifier.clone();
+    let moho_predicate = input.moho_predicate.clone();
     let full_transition = verify_and_chain_transition(input).unwrap();
     let output = MohoRecursiveOutput {
-        moho_verifier: moho_verifer,
+        moho_predicate,
         transition: full_transition,
     };
     zkvm.commit_borsh(&output);
@@ -39,9 +39,9 @@ pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
 /// complete state transition.
 ///
 /// This function performs the following steps in order:
-/// 1. Verifies that the provided step verification key (VK) is included in the current Moho state
+/// 1. Verifies that the provided step predicate key is included in the current Moho state
 ///    Merkle commitment.
-/// 2. Verifies the incremental proof against the given VK.
+/// 2. Verifies the incremental proof against the given predicate key.
 /// 3. If a previous recursive proof exists, verifies it and chains its state transition with the
 ///    current one.
 ///
@@ -52,22 +52,16 @@ pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
 pub fn verify_and_chain_transition(
     input: MohoRecursiveInput,
 ) -> Result<MohoStateTransition, MohoError> {
-    // 1: Ensure the incremental proof VK is part of the Moho state Merkle root.
-
-    // REVIEW: Right now MohoState includes VerifyingKey and the struct itself is not generic,
-    // but we have made the MohoInput generic. We should make that consistent, but I'm not sure
-    // on the best approach
-    let wrapped_step_proof_vk =
-        VerifyingKey::new(borsh::to_vec(&input.step_proof_verifier).unwrap());
-    let next_vk_hash = MerkleTree::hash_serializable(&wrapped_step_proof_vk);
+    // 1: Ensure the incremental proof predicate key is part of the Moho state Merkle root.
+    let next_predicate_hash = MerkleTree::hash_serializable(&input.step_predicate);
     if !MohoState::verify_proof_against_commitment(
         input
             .incremental_step_proof
             .transition()
             .from()
             .commitment(),
-        &input.step_vk_merkle_proof,
-        &next_vk_hash,
+        &input.step_predicate_merkle_proof,
+        &next_predicate_hash,
     ) {
         // Fail early if the Merkle proof is invalid
         return Err(MohoError::InvalidMerkleProof);
@@ -76,7 +70,7 @@ pub fn verify_and_chain_transition(
     // 2: Verify the correctness of the incremental step proof itself.
     input
         .incremental_step_proof
-        .verify(&input.step_proof_verifier)
+        .verify(&input.step_predicate)
         .map_err(MohoError::InvalidIncrementalProof)?;
 
     // Extract the incremental step transition and proof
@@ -89,9 +83,9 @@ pub fn verify_and_chain_transition(
 
         // Previous proof exists: verify and chain with current step
         Some(prev_proof) => {
-            // Verify the previous recursive proof against the Moho VK
+            // Verify the previous recursive proof against the Moho predicate
             prev_proof
-                .verify(&input.moho_verifier)
+                .verify(&input.moho_predicate)
                 .map_err(MohoError::InvalidRecursiveProof)?;
 
             // Extract the previous state transition
@@ -153,20 +147,20 @@ mod tests {
     }
 
     fn create_input(from: u8, to: u8, prev: Option<(u8, u8)>) -> MohoRecursiveInput {
-        let moho_v = PredicateKey::always_accept();
-        let step_v = PredicateKey::always_accept();
+        let moho_predicate = PredicateKey::always_accept();
+        let step_predicate = PredicateKey::always_accept();
 
         let step_proof = create_step_proof(from, to);
         let prev_proof = prev.map(|(f, t)| create_recursive_proof(f, t));
 
-        let merkle_proof = create_state(from, step_v.clone()).generate_next_vk_proof();
+        let merkle_proof = create_state(from, step_predicate.clone()).generate_next_predicate_proof();
 
         MohoRecursiveInput {
-            moho_verifier: moho_v,
+            moho_predicate,
             prev_recursive_proof: prev_proof,
             incremental_step_proof: step_proof,
-            step_proof_verifier: step_v,
-            step_vk_merkle_proof: merkle_proof,
+            step_predicate,
+            step_predicate_merkle_proof: merkle_proof,
         }
     }
 
@@ -215,16 +209,16 @@ mod tests {
 
     #[test]
     fn test_verify_and_chain_transition_invalid_merkle_proof() {
-        // Test with wrong verifier - should fail Merkle proof check
+        // Test with wrong predicate - should fail Merkle proof check
         let mut inp = create_input(2, 3, None);
-        inp.step_proof_verifier = PredicateKey::never_accept();
+        inp.step_predicate = PredicateKey::never_accept();
 
         let result = verify_and_chain_transition(inp.clone());
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), MohoError::InvalidMerkleProof));
 
-        // Test with correct verifier - should succeed
-        inp.step_proof_verifier = PredicateKey::always_accept();
+        // Test with correct predicate - should succeed
+        inp.step_predicate = PredicateKey::always_accept();
         let expected = create_step_proof(2, 3);
         let result = verify_and_chain_transition(inp).unwrap();
         assert_eq!(&result, expected.transition());
@@ -233,9 +227,28 @@ mod tests {
     #[test]
     fn test_verify_and_chain_transition_invalid_incremental_proof() {
         // Test with invalid step proof - should fail verification
-        let mut inp = create_input(1, 2, None);
-        let (t, _) = inp.incremental_step_proof.into_parts();
-        inp.incremental_step_proof = MohoTransitionWithProof::new(t, Proof::default());
+        // Create a proper input with never_accept predicate from the start
+        let never_accept = PredicateKey::never_accept();
+
+        // Create state and attestation with never_accept predicate
+        let from_state = create_state(1, never_accept.clone());
+        let from_commitment = from_state.compute_commitment();
+        let from_ref = StateReference::new([1; 32]);
+        let from_attestation = StateRefAttestation::new(from_ref, from_commitment);
+
+        let to_attestation = create_attestation(2);
+        let transition = Transition::new(from_attestation, to_attestation);
+        let step_proof = MohoTransitionWithProof::new(transition, Proof::new("ASM".as_bytes().to_vec()));
+
+        let merkle_proof = from_state.generate_next_predicate_proof();
+
+        let inp = MohoRecursiveInput {
+            moho_predicate: PredicateKey::always_accept(),
+            prev_recursive_proof: None,
+            incremental_step_proof: step_proof,
+            step_predicate: never_accept,
+            step_predicate_merkle_proof: merkle_proof,
+        };
 
         let result = verify_and_chain_transition(inp);
 
@@ -249,9 +262,9 @@ mod tests {
     #[test]
     fn test_verify_and_chain_transition_invalid_recursive_proof() {
         // Test with invalid previous proof - should fail verification
+        // Use never_accept predicate to ensure verification fails
         let mut inp = create_input(2, 3, Some((1, 2)));
-        let (t, _) = inp.prev_recursive_proof.unwrap().into_parts();
-        inp.prev_recursive_proof = Some(MohoTransitionWithProof::new(t, Proof::default()));
+        inp.moho_predicate = PredicateKey::never_accept();
 
         let result = verify_and_chain_transition(inp);
 
