@@ -565,7 +565,7 @@ dependencies = [
 [[package]]
 name = "strata-predicate"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?branch=feat%2Fpredicate-key-serde#259e2ec7d361ba2ebad2e1af1156102de723f5bf"
+source = "git+https://github.com/alpenlabs/strata-common#aaea159b6662d87bdd44efe19dbbfa169abceb33"
 dependencies = [
  "borsh",
  "hex",
@@ -718,7 +718,7 @@ dependencies = [
 [[package]]
 name = "zkaleido"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/zkaleido?branch=feat%2Ffeature-gate-serde-borsh#b3bb9e6f61a3eb083965f642fd254c9f6f530121"
+source = "git+https://github.com/alpenlabs/zkaleido#3cd4f232d2807fa61b6545847f695a7119841adb"
 dependencies = [
  "arbitrary",
  "async-trait",
@@ -742,7 +742,7 @@ dependencies = [
 [[package]]
 name = "zkaleido-sp1-groth16-verifier"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/zkaleido?branch=feat%2Ffeature-gate-serde-borsh#b3bb9e6f61a3eb083965f642fd254c9f6f530121"
+source = "git+https://github.com/alpenlabs/zkaleido#3cd4f232d2807fa61b6545847f695a7119841adb"
 dependencies = [
  "blake3",
  "borsh",
@@ -751,5 +751,5 @@ dependencies = [
  "sha2",
  "substrate-bn",
  "thiserror 1.0.69",
- "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?branch=feat%2Ffeature-gate-serde-borsh)",
+ "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido)",
 ]
