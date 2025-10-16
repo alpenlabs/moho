@@ -5,17 +5,18 @@ use std::{
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use moho_types::{MerkleProof, MohoAttestation};
-use zkaleido::{NoopVerifier, ZkVmError, ZkVmProgram, ZkVmProgramPerf, ZkVmResult, ZkVmVerifier};
+use strata_predicate::PredicateKey;
+use zkaleido::{ZkVmError, ZkVmProgram, ZkVmProgramPerf, ZkVmResult};
 use zkaleido_native_adapter::{NativeHost, NativeMachine};
 
-use crate::{process_recursive_moho_proof, transition::MohoTransitionWithProof};
+use crate::{
+    MohoStateTransition, process_recursive_moho_proof, transition::MohoTransitionWithProof,
+};
 
 /// A host-agnostic ZkVM “program” that encapsulates the recursive proof logic
 /// for the Moho protocol.
 #[derive(Debug)]
-pub struct MohoRecursiveProgram<V> {
-    _phantom: V,
-}
+pub struct MohoRecursiveProgram;
 
 /// Input data for generating a recursive Moho proof that combines incremental and recursive proofs.
 ///
@@ -24,21 +25,36 @@ pub struct MohoRecursiveProgram<V> {
 /// This enables efficient proof composition where each new recursive proof can represent
 /// an arbitrarily long chain of state transitions while maintaining constant verification time.
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
-pub struct MohoRecursiveInput<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> {
-    /// Moho proof’s own vk, necessary to verify the previous proof
-    pub(crate) moho_verifier: V,
+pub struct MohoRecursiveInput {
+    /// Moho proof's own predicate key, necessary to verify the previous recursive proof
+    pub(crate) moho_predicate: PredicateKey,
     /// Previous recursive moho proof
     pub(crate) prev_recursive_proof: Option<MohoTransitionWithProof>,
     /// Incremental step proof
     pub(crate) incremental_step_proof: MohoTransitionWithProof,
-    /// Verifying Key to verify the incremenal step proof from initial_state to final_state
-    pub(crate) step_proof_verifier: V,
-    /// Merkle proof of `step_proof_verifier` within initial_state
-    pub(crate) step_vk_merkle_proof: MerkleProof,
+    /// Predicate key to verify the incremental step proof from initial_state to final_state
+    pub(crate) step_predicate: PredicateKey,
+    /// Merkle proof of `step_predicate` within initial_state
+    pub(crate) step_predicate_merkle_proof: MerkleProof,
 }
 
-impl<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> ZkVmProgram for MohoRecursiveProgram<V> {
-    type Input = MohoRecursiveInput<V>;
+/// Output data committed by a recursive Moho proof that verifiers must check.
+///
+/// `MohoRecursiveOutput` contains the committed information produced by a recursive proof.
+/// The verifier of this proof needs to ensure that the correct recursive predicate was used,
+/// so we commit the `moho_predicate` as public output. Since we cannot hardcode this outer
+/// predicate key in the circuit, it must be included as a public parameter for verification.
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
+pub struct MohoRecursiveOutput {
+    /// State transition proven by this recursive proof
+    pub(crate) transition: MohoStateTransition,
+    /// Predicate key used to verify previous recursive proof, committed as public output
+    /// to ensure verifiers can confirm the correct predicate was used
+    pub(crate) moho_predicate: PredicateKey,
+}
+
+impl ZkVmProgram for MohoRecursiveProgram {
+    type Input = MohoRecursiveInput;
     type Output = MohoAttestation;
 
     fn name() -> String {
@@ -68,18 +84,15 @@ impl<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> ZkVmProgram for MohoRe
     }
 }
 
-impl<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> ZkVmProgramPerf
-    for MohoRecursiveProgram<V>
-{
-}
+impl ZkVmProgramPerf for MohoRecursiveProgram {}
 
-impl<V: ZkVmVerifier + BorshSerialize + BorshDeserialize> MohoRecursiveProgram<V> {
+impl MohoRecursiveProgram {
     /// Returns the native host for the moho recursive program
     pub fn native_host() -> NativeHost {
         NativeHost {
             process_proof: Arc::new(Box::new(move |zkvm: &NativeMachine| {
                 catch_unwind(AssertUnwindSafe(|| {
-                    process_recursive_moho_proof::<NoopVerifier>(zkvm);
+                    process_recursive_moho_proof(zkvm);
                 }))
                 .map_err(|_| ZkVmError::ExecutionError(Self::name()))?;
                 Ok(())

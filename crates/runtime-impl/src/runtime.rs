@@ -117,7 +117,7 @@ fn compute_moho_state_commitment(_state: &MohoState) -> MohoStateCommitment {
 }
 
 /// Computes the exported Moho state from the inner state, also checking the
-/// verification key and export correctness.
+/// predicate key and export correctness.
 fn compute_wrapping_moho_state<P: MohoProgram>(
     moho_state: MohoState,
     step_output: &P::StepOutput,
@@ -125,16 +125,16 @@ fn compute_wrapping_moho_state<P: MohoProgram>(
     let post_inner_state = P::extract_post_state(step_output);
     let post_inner_root = P::compute_state_commitment(post_inner_state);
 
-    // Determine the next inner verification key: use the updated key if available, otherwise fall
+    // Determine the next predicate key: use the updated key if available, otherwise fall
     // back to the previous one
-    let next_vk = match P::extract_next_vk(step_output) {
-        Some(vk) => vk,
-        None => moho_state.next_vk().clone(),
+    let next_predicate = match P::extract_next_predicate(step_output) {
+        Some(predicate) => predicate,
+        None => moho_state.next_predicate().clone(),
     };
 
     let new_export_state = P::compute_export_state(moho_state.into_export_state(), step_output);
 
-    let new_moho_state = MohoState::new(post_inner_root, next_vk, new_export_state);
+    let new_moho_state = MohoState::new(post_inner_root, next_predicate, new_export_state);
 
     if !check_export_state_structure(new_moho_state.export_state()) {
         panic!("runtime: invalid export state structure");
