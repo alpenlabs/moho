@@ -7,4 +7,4 @@ edition = "2024"
 moho-types.workspace = true
 
 borsh.workspace = true
-zkaleido.workspace = true
+strata-predicate.workspace = true

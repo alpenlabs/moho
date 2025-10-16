@@ -127,7 +127,7 @@ fn compute_wrapping_moho_state<P: MohoProgram>(
 
     // Determine the next inner verification key: use the updated key if available, otherwise fall
     // back to the previous one
-    let next_vk = match P::extract_next_vk(step_output) {
+    let next_vk = match P::extract_next_predicate(step_output) {
         Some(vk) => vk,
         None => moho_state.next_predicate().clone(),
     };
