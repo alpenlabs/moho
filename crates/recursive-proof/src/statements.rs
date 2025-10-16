@@ -1,13 +1,13 @@
 use moho_types::{MerkleTree, MohoState};
 use zkaleido::{VerifyingKey, ZkVmEnv};
 
-use crate::{MohoError, MohoStateTransition, program::MohoRecursiveInput};
+use crate::{MohoError, MohoRecursiveOutput, MohoStateTransition, program::MohoRecursiveInput};
 
 /// Entry point for processing recursive Moho proofs within a zkVM environment.
 ///
 /// This function reads a [`MohoRecursiveInput`] from the zkVM, performs verification
 /// of the proof components and chaining of the corresponding states, then commits the resulting
-/// complete state transition back to the zkVM.
+/// complete state transition along with the Moho VK back to the zkVM.
 ///
 /// # Arguments
 ///
@@ -26,8 +26,13 @@ use crate::{MohoError, MohoStateTransition, program::MohoRecursiveInput};
 /// `verify_and_chain_transition` directly for error handling.
 pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
     let input: MohoRecursiveInput = zkvm.read_borsh();
+    let moho_verifer = input.moho_verifier.clone();
     let full_transition = verify_and_chain_transition(input).unwrap();
-    zkvm.commit_borsh(&full_transition);
+    let output = MohoRecursiveOutput {
+        moho_verifier: moho_verifer,
+        transition: full_transition,
+    };
+    zkvm.commit_borsh(&output);
 }
 
 /// Verifies the inductive and recursive Moho proofs and chains the corresponding states produce a

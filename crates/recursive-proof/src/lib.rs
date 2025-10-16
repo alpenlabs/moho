@@ -11,6 +11,6 @@ mod transition;
 
 pub use errors::MohoError;
 #[cfg(not(target_os = "zkvm"))]
-pub use program::{MohoRecursiveInput, MohoRecursiveProgram};
+pub use program::{MohoRecursiveInput, MohoRecursiveOutput, MohoRecursiveProgram};
 pub use statements::{process_recursive_moho_proof, verify_and_chain_transition};
 pub use transition::{MohoStateTransition, MohoTransitionWithProof};

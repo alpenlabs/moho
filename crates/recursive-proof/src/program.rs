@@ -9,7 +9,9 @@ use strata_predicate::PredicateKey;
 use zkaleido::{ZkVmError, ZkVmProgram, ZkVmProgramPerf, ZkVmResult};
 use zkaleido_native_adapter::{NativeHost, NativeMachine};
 
-use crate::{process_recursive_moho_proof, transition::MohoTransitionWithProof};
+use crate::{
+    MohoStateTransition, process_recursive_moho_proof, transition::MohoTransitionWithProof,
+};
 
 /// A host-agnostic ZkVM “program” that encapsulates the recursive proof logic
 /// for the Moho protocol.
@@ -34,6 +36,21 @@ pub struct MohoRecursiveInput {
     pub(crate) step_proof_verifier: PredicateKey,
     /// Merkle proof of `step_proof_verifier` within initial_state
     pub(crate) step_vk_merkle_proof: MerkleProof,
+}
+
+/// Output data committed by a recursive Moho proof that verifiers must check.
+///
+/// `MohoRecursiveOutput` contains the committed information produced by a recursive proof.
+/// The verifier of this proof needs to ensure that the correct recursive verifier was used,
+/// so we commit the `moho_verifier` as public output. Since we cannot hardcode this outer
+/// predicate key in the circuit, it must be included as a public parameter for verification.
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
+pub struct MohoRecursiveOutput {
+    /// State transition proven by this recursive proof
+    pub(crate) transition: MohoStateTransition,
+    /// Verifying key used to verify this recursive proof, committed as public output
+    /// to ensure verifiers can confirm the correct predicate was used
+    pub(crate) moho_verifier: PredicateKey,
 }
 
 impl ZkVmProgram for MohoRecursiveProgram {
