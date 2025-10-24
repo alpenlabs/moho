@@ -97,9 +97,6 @@ pub struct ExportContainer {
     /// In practice, this will be the bridge ID.
     container_id: u16,
 
-    /// Common shared payload data.
-    common_payload: Vec<u8>,
-
     /// List of entries in the export.
     ///
     /// This MUST be sorted by `entry_id` and MUST NOT contain entries with
@@ -108,20 +105,15 @@ pub struct ExportContainer {
 }
 
 impl ExportContainer {
-    pub fn new(container_id: u16, common_payload: Vec<u8>, entries: Vec<ExportEntry>) -> Self {
+    pub fn new(container_id: u16, entries: Vec<ExportEntry>) -> Self {
         Self {
             container_id,
-            common_payload,
             entries,
         }
     }
 
     pub fn container_id(&self) -> u16 {
         self.container_id
-    }
-
-    pub fn common_payload(&self) -> &[u8] {
-        &self.common_payload
     }
 
     pub fn entries(&self) -> &[ExportEntry] {
