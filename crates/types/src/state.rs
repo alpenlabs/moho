@@ -1,6 +1,7 @@
 //! Moho state container types
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use strata_mmr::{CompactMmr, MerkleMr64, Sha256Hasher, hasher::MerkleHasher};
 use strata_predicate::PredicateKey;
 
 use crate::{
@@ -8,6 +9,9 @@ use crate::{
     merkle::{MerkleProof, MerkleTree},
 };
 
+pub type ExportEntryMmrHash = [u8; 32];
+pub type ExportEntryMmr = MerkleMr64<Sha256Hasher>;
+pub type ExportEntryMmrCompact = CompactMmr<ExportEntryMmrHash>;
 /// The Moho outer state.
 #[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
 pub struct MohoState {
@@ -102,13 +106,17 @@ pub struct ExportContainer {
     /// This MUST be sorted by `entry_id` and MUST NOT contain entries with
     /// duplicate `entry_id`s.
     entries: Vec<ExportEntry>,
+
+    entries_mmr: ExportEntryMmrCompact,
 }
 
 impl ExportContainer {
     pub fn new(container_id: u16, entries: Vec<ExportEntry>) -> Self {
+        let entries_mmr = ExportEntryMmr::new(64).to_compact();
         Self {
             container_id,
             entries,
+            entries_mmr,
         }
     }
 
@@ -121,7 +129,9 @@ impl ExportContainer {
     }
 
     pub fn add_entry(&mut self, entry: ExportEntry) {
-        self.entries.push(entry);
+        let mut entries_mmr = ExportEntryMmr::from_compact(&self.entries_mmr);
+        entries_mmr.add_leaf(entry.to_mmr_leaf()).unwrap();
+        self.entries_mmr = entries_mmr.to_compact();
     }
 }
 
@@ -150,6 +160,10 @@ impl ExportEntry {
 
     pub fn payload(&self) -> &[u8] {
         &self.payload
+    }
+
+    pub fn to_mmr_leaf(&self) -> ExportEntryMmrHash {
+        Sha256Hasher::hash_leaf(&self.payload)
     }
 }
 
