@@ -404,6 +404,7 @@ dependencies = [
  "borsh",
  "hex",
  "sha2",
+ "strata-mmr",
  "strata-predicate",
  "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.1.0-alpha-rc16)",
 ]
@@ -560,6 +561,17 @@ checksum = "d91ed6c858b01f942cd56b37a94b3e0a1798290327d1236e4d9cf4eaca44d29d"
 dependencies = [
  "base64ct",
  "der",
+]
+
+[[package]]
+name = "strata-mmr"
+version = "0.3.0-alpha.1"
+source = "git+https://github.com/alpenlabs/alpen#10c8ea79752c114270596cd8ab818ce9a5cb4cf5"
+dependencies = [
+ "borsh",
+ "digest",
+ "sha2",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
