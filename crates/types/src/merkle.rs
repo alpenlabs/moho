@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 
 /// Merkle proof for proving membership of a field in a state structure
 #[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
-pub struct MerkleProof {
+pub struct FieldMerkleProof {
     /// The merkle path (sibling hashes) needed to reconstruct the root
     pub path: Vec<[u8; 32]>,
     /// The index of the leaf in the tree
@@ -18,9 +18,9 @@ pub struct MerkleProof {
 }
 
 /// Merkle tree builder and utilities
-pub struct MerkleTree;
+pub struct FieldMerkleTree;
 
-impl MerkleTree {
+impl FieldMerkleTree {
     /// Compute Merkle root from a list of leaf hashes
     pub fn compute_root(leaves: &[[u8; 32]]) -> [u8; 32] {
         if leaves.is_empty() {
@@ -50,17 +50,17 @@ impl MerkleTree {
     }
 
     /// Generate Merkle path for a specific leaf index
-    pub fn generate_proof(leaves: &[[u8; 32]], leaf_index: usize) -> MerkleProof {
+    pub fn generate_proof(leaves: &[[u8; 32]], leaf_index: usize) -> FieldMerkleProof {
         let path = Self::generate_merkle_path(leaves, leaf_index);
 
-        MerkleProof {
+        FieldMerkleProof {
             path,
             leaf_index: leaf_index as u8,
         }
     }
 
     /// Verify a Merkle proof
-    pub fn verify_proof(root: &[u8; 32], proof: &MerkleProof, leaf_value: &[u8; 32]) -> bool {
+    pub fn verify_proof(root: &[u8; 32], proof: &FieldMerkleProof, leaf_value: &[u8; 32]) -> bool {
         let mut current_hash = *leaf_value;
         let mut current_index = proof.leaf_index as usize;
 
@@ -147,33 +147,33 @@ mod tests {
     #[test]
     fn test_merkle_tree_single_leaf() {
         let leaves = vec![[1u8; 32]];
-        let root = MerkleTree::compute_root(&leaves);
+        let root = FieldMerkleTree::compute_root(&leaves);
 
-        let proof = MerkleTree::generate_proof(&leaves, 0);
-        assert!(MerkleTree::verify_proof(&root, &proof, &leaves[0]));
+        let proof = FieldMerkleTree::generate_proof(&leaves, 0);
+        assert!(FieldMerkleTree::verify_proof(&root, &proof, &leaves[0]));
     }
 
     #[test]
     fn test_merkle_tree_three_leaves() {
         let leaves = vec![[1u8; 32], [2u8; 32], [3u8; 32]];
-        let root = MerkleTree::compute_root(&leaves);
+        let root = FieldMerkleTree::compute_root(&leaves);
 
         // Test proof for each leaf
         for (i, leaf) in leaves.iter().enumerate() {
-            let proof = MerkleTree::generate_proof(&leaves, i);
-            assert!(MerkleTree::verify_proof(&root, &proof, leaf));
+            let proof = FieldMerkleTree::generate_proof(&leaves, i);
+            assert!(FieldMerkleTree::verify_proof(&root, &proof, leaf));
         }
     }
 
     #[test]
     fn test_merkle_tree_power_of_two() {
         let leaves = vec![[1u8; 32], [2u8; 32], [3u8; 32], [4u8; 32]];
-        let root = MerkleTree::compute_root(&leaves);
+        let root = FieldMerkleTree::compute_root(&leaves);
 
         // Test proof for each leaf
         for (i, leaf) in leaves.iter().enumerate() {
-            let proof = MerkleTree::generate_proof(&leaves, i);
-            assert!(MerkleTree::verify_proof(&root, &proof, leaf));
+            let proof = FieldMerkleTree::generate_proof(&leaves, i);
+            assert!(FieldMerkleTree::verify_proof(&root, &proof, leaf));
         }
     }
 
@@ -185,14 +185,14 @@ mod tests {
         }
 
         let test_data = TestStruct { value: 42 };
-        let hash1 = MerkleTree::hash_serializable(&test_data);
-        let hash2 = MerkleTree::hash_serializable(&test_data);
+        let hash1 = FieldMerkleTree::hash_serializable(&test_data);
+        let hash2 = FieldMerkleTree::hash_serializable(&test_data);
 
         // Same data should produce same hash
         assert_eq!(hash1, hash2);
 
         let different_data = TestStruct { value: 43 };
-        let hash3 = MerkleTree::hash_serializable(&different_data);
+        let hash3 = FieldMerkleTree::hash_serializable(&different_data);
 
         // Different data should produce different hash
         assert_ne!(hash1, hash3);

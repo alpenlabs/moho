@@ -8,6 +8,6 @@ mod state;
 
 pub use constants::*;
 pub use id::{InnerStateCommitment, MohoStateCommitment, StateReference};
-pub use merkle::{MerkleProof, MerkleTree};
+pub use merkle::{FieldMerkleProof, FieldMerkleTree};
 pub use relation::{MohoAttestation, StateRefAttestation};
 pub use state::{ExportContainer, ExportEntry, ExportState, MohoState};

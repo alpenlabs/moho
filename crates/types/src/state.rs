@@ -6,7 +6,7 @@ use strata_predicate::PredicateKey;
 
 use crate::{
     InnerStateCommitment, MohoStateCommitment,
-    merkle::{MerkleProof, MerkleTree},
+    merkle::{FieldMerkleProof, FieldMerkleTree},
 };
 
 pub type ExportEntryMmrHash = [u8; 32];
@@ -215,7 +215,7 @@ impl MohoState {
     /// Will be replaced with SSZ serialization and merkelization in the future.
     pub fn compute_commitment(&self) -> MohoStateCommitment {
         let leaves = self.get_merkle_leaves();
-        let root = MerkleTree::compute_root(&leaves);
+        let root = FieldMerkleTree::compute_root(&leaves);
         MohoStateCommitment::new(root)
     }
 
@@ -225,46 +225,46 @@ impl MohoState {
     /// by providing the necessary sibling hashes to reconstruct the root.
     ///
     /// NOTE: This implementation will be reworked with SSZ merkelization later.
-    pub fn generate_next_predicate_proof(&self) -> MerkleProof {
+    pub fn generate_next_predicate_proof(&self) -> FieldMerkleProof {
         self.generate_proof(StateField::NextPredicate)
     }
 
     /// Generate a Merkle proof for any field in the state
-    pub fn generate_proof(&self, field: StateField) -> MerkleProof {
+    pub fn generate_proof(&self, field: StateField) -> FieldMerkleProof {
         let leaves = self.get_merkle_leaves();
         let leaf_index = field.index() as usize;
-        MerkleTree::generate_proof(&leaves, leaf_index)
+        FieldMerkleTree::generate_proof(&leaves, leaf_index)
     }
 
     /// Verify a Merkle proof against a given MohoStateCommitment
     pub fn verify_proof_against_commitment(
         commitment: &MohoStateCommitment,
-        proof: &MerkleProof,
+        proof: &FieldMerkleProof,
         leaf_value: &[u8; 32],
     ) -> bool {
-        MerkleTree::verify_proof(commitment.inner(), proof, leaf_value)
+        FieldMerkleTree::verify_proof(commitment.inner(), proof, leaf_value)
     }
 
     /// Verify a Merkle proof against this state's commitment
-    pub fn verify_proof(&self, proof: &MerkleProof, leaf_value: &[u8; 32]) -> bool {
+    pub fn verify_proof(&self, proof: &FieldMerkleProof, leaf_value: &[u8; 32]) -> bool {
         let commitment = self.compute_commitment();
         Self::verify_proof_against_commitment(&commitment, proof, leaf_value)
     }
 
     /// Get the hash of the next_predicate field for proof verification
     pub fn get_next_predicate_hash(&self) -> [u8; 32] {
-        MerkleTree::hash_serializable(&self.next_predicate)
+        FieldMerkleTree::hash_serializable(&self.next_predicate)
     }
 
     /// Internal: Get the Merkle leaves for all fields
     fn get_merkle_leaves(&self) -> Vec<[u8; 32]> {
         vec![
             // Leaf 0: inner_state
-            MerkleTree::hash_serializable(&self.inner_state),
+            FieldMerkleTree::hash_serializable(&self.inner_state),
             // Leaf 1: next_predicate
-            MerkleTree::hash_serializable(&self.next_predicate),
+            FieldMerkleTree::hash_serializable(&self.next_predicate),
             // Leaf 2: export_state
-            MerkleTree::hash_serializable(&self.export_state),
+            FieldMerkleTree::hash_serializable(&self.export_state),
         ]
     }
 }
