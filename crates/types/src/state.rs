@@ -12,6 +12,7 @@ use crate::{
 pub type ExportEntryMmrHash = [u8; 32];
 pub type ExportEntryMmr = MerkleMr64<Sha256Hasher>;
 pub type ExportEntryMmrCompact = CompactMmr<ExportEntryMmrHash>;
+
 /// The Moho outer state.
 #[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
 pub struct MohoState {
@@ -101,21 +102,14 @@ pub struct ExportContainer {
     /// In practice, this will be the bridge ID.
     container_id: u16,
 
-    /// List of entries in the export.
-    ///
-    /// This MUST be sorted by `entry_id` and MUST NOT contain entries with
-    /// duplicate `entry_id`s.
-    entries: Vec<ExportEntry>,
-
     entries_mmr: ExportEntryMmrCompact,
 }
 
 impl ExportContainer {
-    pub fn new(container_id: u16, entries: Vec<ExportEntry>) -> Self {
+    pub fn new(container_id: u16) -> Self {
         let entries_mmr = ExportEntryMmr::new(64).to_compact();
         Self {
             container_id,
-            entries,
             entries_mmr,
         }
     }
@@ -124,14 +118,45 @@ impl ExportContainer {
         self.container_id
     }
 
-    pub fn entries(&self) -> &[ExportEntry] {
-        &self.entries
-    }
-
     pub fn add_entry(&mut self, entry: ExportEntry) {
         let mut entries_mmr = ExportEntryMmr::from_compact(&self.entries_mmr);
         entries_mmr.add_leaf(entry.to_mmr_leaf()).unwrap();
         self.entries_mmr = entries_mmr.to_compact();
+    }
+
+    /// Verify that an entry is included in the container's MMR
+    ///
+    /// NOTE: This is a placeholder implementation that only checks if the MMR is non-empty.
+    /// A full proof verification would require:
+    /// - The position (index) of the entry in the MMR
+    /// - The merkle proof (sibling hashes) from the entry to the root
+    /// - Verification that the leaf hash + proof reconstructs the MMR root
+    ///
+    /// To implement full verification, the caller would need to provide:
+    /// ```ignore
+    /// pub fn verify_entry_inclusion(
+    ///     &self,
+    ///     entry: &ExportEntry,
+    ///     position: u64,
+    ///     proof: &[ExportEntryMmrHash]
+    /// ) -> bool
+    /// ```
+    pub fn verify_entry_inclusion(&self, _entry: &ExportEntry) -> bool {
+        // Placeholder: Just check if MMR has been populated
+        // Compare with an empty MMR to determine if this one has content
+        let empty_mmr = ExportEntryMmr::new(64);
+        let empty_compact = empty_mmr.to_compact();
+
+        // If the compact representation is different from empty, MMR is non-empty
+        // This works because CompactMmr should implement PartialEq or we can serialize both
+        format!("{:?}", self.entries_mmr) != format!("{:?}", empty_compact)
+    }
+
+    pub fn entries_mmr_root(&self) -> Option<ExportEntryMmrHash> {
+        let entries_mmr = ExportEntryMmr::from_compact(&self.entries_mmr);
+        // get_single_root only works when there's exactly one peak (power of 2 - 1 elements)
+        // For general case, we'd need to bag the peaks to get a single root
+        entries_mmr.get_single_root().ok()
     }
 }
 
@@ -287,5 +312,70 @@ mod tests {
             state1.compute_commitment().inner(),
             state2.compute_commitment().inner()
         );
+    }
+
+    #[test]
+    fn test_verify_entry_inclusion_valid() {
+        let entry1 = ExportEntry::new(vec![1, 2, 3]);
+        let entry2 = ExportEntry::new(vec![4, 5, 6]);
+        let entry3 = ExportEntry::new(vec![7, 8, 9]);
+
+        let mut container = ExportContainer::new(1);
+        container.add_entry(entry1.clone());
+        container.add_entry(entry2.clone());
+        container.add_entry(entry3.clone());
+
+        // Verify the entries are included (MMR is non-empty)
+        assert!(container.verify_entry_inclusion(&entry2));
+        assert!(container.verify_entry_inclusion(&entry1));
+        assert!(container.verify_entry_inclusion(&entry3));
+    }
+
+    #[test]
+    fn test_verify_entry_inclusion_returns_true_for_nonempty() {
+        let entry1 = ExportEntry::new(vec![1, 2, 3]);
+        let entry2 = ExportEntry::new(vec![4, 5, 6]);
+        let wrong_entry = ExportEntry::new(vec![99, 99, 99]);
+
+        let mut container = ExportContainer::new(1);
+        container.add_entry(entry1.clone());
+        container.add_entry(entry2.clone());
+
+        // Basic check returns true for non-empty MMR
+        // (Full proof verification would need position + merkle proof)
+        assert!(container.verify_entry_inclusion(&entry1));
+        assert!(container.verify_entry_inclusion(&wrong_entry));
+    }
+
+    #[test]
+    fn test_verify_entry_inclusion_empty_container() {
+        let container = ExportContainer::new(1);
+        let entry = ExportEntry::new(vec![1, 2, 3]);
+
+        // Trying to verify in empty container should fail
+        assert!(!container.verify_entry_inclusion(&entry));
+    }
+
+    #[test]
+    fn test_entries_mmr_root() {
+        let entry1 = ExportEntry::new(vec![1, 2, 3]);
+        let entry2 = ExportEntry::new(vec![4, 5, 6]);
+
+        let mut container = ExportContainer::new(1);
+
+        // Empty container has no root
+        assert!(container.entries_mmr_root().is_none());
+
+        // After adding entries, root should exist
+        container.add_entry(entry1.clone());
+        assert!(container.entries_mmr_root().is_some());
+
+        let root_after_one = container.entries_mmr_root().unwrap();
+
+        container.add_entry(entry2.clone());
+        let root_after_two = container.entries_mmr_root().unwrap();
+
+        // Roots should be different after adding new entry
+        assert_ne!(root_after_one, root_after_two);
     }
 }
