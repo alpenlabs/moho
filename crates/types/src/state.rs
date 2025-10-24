@@ -138,11 +138,6 @@ impl ExportContainer {
 /// A specific entry payload
 #[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
 pub struct ExportEntry {
-    /// Export entry ID.
-    ///
-    /// In practice, this will be correspond to withdrawal IDs.
-    entry_id: u32,
-
     /// Application-specific payload.
     ///
     /// In practice, this will contain all the assignment data.
@@ -150,12 +145,8 @@ pub struct ExportEntry {
 }
 
 impl ExportEntry {
-    pub fn new(entry_id: u32, payload: Vec<u8>) -> Self {
-        Self { entry_id, payload }
-    }
-
-    pub fn entry_id(&self) -> u32 {
-        self.entry_id
+    pub fn new(payload: Vec<u8>) -> Self {
+        Self { payload }
     }
 
     pub fn payload(&self) -> &[u8] {

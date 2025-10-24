@@ -173,15 +173,6 @@ fn check_export_cont_structure(cont: &ExportContainer) -> bool {
         return false;
     }
 
-    for pair in cont.entries().windows(2) {
-        let a = &pair[0];
-        let b = &pair[1];
-
-        if a.entry_id() >= b.entry_id() {
-            return false;
-        }
-    }
-
     for e in cont.entries() {
         if e.payload().len() > MAX_PAYLOAD_SIZE {
             return false;
@@ -198,11 +189,11 @@ mod tests {
     use super::*;
 
     fn create_valid_export_state() -> ExportState {
-        let entry1 = ExportEntry::new(1, vec![1, 2, 3]);
-        let entry2 = ExportEntry::new(2, vec![4, 5, 6]);
+        let entry1 = ExportEntry::new(vec![1, 2, 3]);
+        let entry2 = ExportEntry::new(vec![4, 5, 6]);
         let container1 = ExportContainer::new(1, vec![entry1, entry2]);
 
-        let entry3 = ExportEntry::new(1, vec![10, 11, 12]);
+        let entry3 = ExportEntry::new(vec![10, 11, 12]);
         let container2 = ExportContainer::new(2, vec![entry3]);
 
         ExportState::new(vec![container1, container2])
@@ -218,7 +209,7 @@ mod tests {
     fn test_check_export_state_structure_too_many_containers() {
         let mut containers = Vec::new();
         for i in 0..=MAX_EXPORT_CONTAINERS {
-            let entry = ExportEntry::new(1, vec![1, 2, 3]);
+            let entry = ExportEntry::new(vec![1, 2, 3]);
             let container = ExportContainer::new(i as u16, vec![entry]);
             containers.push(container);
         }
@@ -228,10 +219,10 @@ mod tests {
 
     #[test]
     fn test_check_export_state_structure_unsorted_containers() {
-        let entry1 = ExportEntry::new(1, vec![1, 2, 3]);
+        let entry1 = ExportEntry::new(vec![1, 2, 3]);
         let container1 = ExportContainer::new(2, vec![entry1]);
 
-        let entry2 = ExportEntry::new(1, vec![4, 5, 6]);
+        let entry2 = ExportEntry::new(vec![4, 5, 6]);
         let container2 = ExportContainer::new(1, vec![entry2]); // ID 1 < 2, wrong order
 
         let export_state = ExportState::new(vec![container1, container2]);
@@ -240,10 +231,10 @@ mod tests {
 
     #[test]
     fn test_check_export_state_structure_duplicate_container_ids() {
-        let entry1 = ExportEntry::new(1, vec![1, 2, 3]);
+        let entry1 = ExportEntry::new(vec![1, 2, 3]);
         let container1 = ExportContainer::new(1, vec![entry1]);
 
-        let entry2 = ExportEntry::new(1, vec![4, 5, 6]);
+        let entry2 = ExportEntry::new(vec![4, 5, 6]);
         let container2 = ExportContainer::new(1, vec![entry2]); // Duplicate ID
 
         let export_state = ExportState::new(vec![container1, container2]);
@@ -258,8 +249,8 @@ mod tests {
 
     #[test]
     fn test_check_export_cont_structure_valid() {
-        let entry1 = ExportEntry::new(1, vec![1, 2, 3]);
-        let entry2 = ExportEntry::new(2, vec![4, 5, 6]);
+        let entry1 = ExportEntry::new(vec![1, 2, 3]);
+        let entry2 = ExportEntry::new(vec![4, 5, 6]);
         let container = ExportContainer::new(1, vec![entry1, entry2]);
         assert!(check_export_cont_structure(&container));
     }
@@ -267,8 +258,8 @@ mod tests {
     #[test]
     fn test_check_export_cont_structure_too_many_entries() {
         let mut entries = Vec::new();
-        for i in 0..=MAX_EXPORT_ENTRIES {
-            let entry = ExportEntry::new(i as u32, vec![1, 2, 3]);
+        for _i in 0..=MAX_EXPORT_ENTRIES {
+            let entry = ExportEntry::new(vec![1, 2, 3]);
             entries.push(entry);
         }
         let container = ExportContainer::new(1, entries);
@@ -276,32 +267,25 @@ mod tests {
     }
 
     #[test]
-    fn test_check_export_cont_structure_common_payload_too_large() {
-        let entry = ExportEntry::new(1, vec![1, 2, 3]);
-        let container = ExportContainer::new(1, vec![entry]);
-        assert!(!check_export_cont_structure(&container));
-    }
-
-    #[test]
     fn test_check_export_cont_structure_unsorted_entries() {
-        let entry1 = ExportEntry::new(2, vec![1, 2, 3]);
-        let entry2 = ExportEntry::new(1, vec![4, 5, 6]); // ID 1 < 2, wrong order
+        let entry1 = ExportEntry::new(vec![1, 2, 3]);
+        let entry2 = ExportEntry::new(vec![4, 5, 6]);
         let container = ExportContainer::new(1, vec![entry1, entry2]);
-        assert!(!check_export_cont_structure(&container));
+        assert!(check_export_cont_structure(&container));
     }
 
     #[test]
     fn test_check_export_cont_structure_duplicate_entry_ids() {
-        let entry1 = ExportEntry::new(1, vec![1, 2, 3]);
-        let entry2 = ExportEntry::new(1, vec![4, 5, 6]); // Duplicate ID
+        let entry1 = ExportEntry::new(vec![1, 2, 3]);
+        let entry2 = ExportEntry::new(vec![4, 5, 6]);
         let container = ExportContainer::new(1, vec![entry1, entry2]);
-        assert!(!check_export_cont_structure(&container));
+        assert!(check_export_cont_structure(&container));
     }
 
     #[test]
     fn test_check_export_cont_structure_entry_payload_too_large() {
         let large_payload = vec![0u8; MAX_PAYLOAD_SIZE + 1];
-        let entry = ExportEntry::new(1, large_payload);
+        let entry = ExportEntry::new(large_payload);
         let container = ExportContainer::new(1, vec![entry]);
         assert!(!check_export_cont_structure(&container));
     }
@@ -314,7 +298,7 @@ mod tests {
 
     #[test]
     fn test_check_export_cont_structure_max_payload_size() {
-        let entry = ExportEntry::new(1, vec![0u8; MAX_PAYLOAD_SIZE]);
+        let entry = ExportEntry::new(vec![0u8; MAX_PAYLOAD_SIZE]);
         let container = ExportContainer::new(1, vec![entry]);
         assert!(check_export_cont_structure(&container));
     }
