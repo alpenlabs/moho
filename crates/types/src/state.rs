@@ -1,7 +1,9 @@
 //! Moho state container types
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use strata_mmr::{CompactMmr, MerkleMr64, Sha256Hasher, hasher::MerkleHasher};
+use strata_mmr::{
+    hasher::MerkleHasher, CompactMmr, MerkleMr64, MerkleProof, Sha256Hasher,
+};
 use strata_predicate::PredicateKey;
 
 use crate::{
@@ -12,6 +14,8 @@ use crate::{
 pub type ExportEntryMmrHash = [u8; 32];
 pub type ExportEntryMmr = MerkleMr64<Sha256Hasher>;
 pub type ExportEntryMmrCompact = CompactMmr<ExportEntryMmrHash>;
+// Proofs are over the hash type itself, not the hasher implementation.
+pub type ExportEntryInclusionProof = MerkleProof<ExportEntryMmrHash>;
 
 /// The Moho outer state.
 #[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
@@ -141,15 +145,14 @@ impl ExportContainer {
     ///     proof: &[ExportEntryMmrHash]
     /// ) -> bool
     /// ```
-    pub fn verify_entry_inclusion(&self, _entry: &ExportEntry) -> bool {
-        // Placeholder: Just check if MMR has been populated
-        // Compare with an empty MMR to determine if this one has content
-        let empty_mmr = ExportEntryMmr::new(64);
-        let empty_compact = empty_mmr.to_compact();
-
-        // If the compact representation is different from empty, MMR is non-empty
-        // This works because CompactMmr should implement PartialEq or we can serialize both
-        format!("{:?}", self.entries_mmr) != format!("{:?}", empty_compact)
+    pub fn verify_entry_inclusion(
+        &self,
+        entry: &ExportEntry,
+        proof: &ExportEntryInclusionProof,
+    ) -> bool {
+        let entries_mmr = ExportEntryMmr::from_compact(&self.entries_mmr);
+        let leaf = entry.to_mmr_leaf();
+        entries_mmr.verify(proof, &leaf)
     }
 
     pub fn entries_mmr_root(&self) -> Option<ExportEntryMmrHash> {
@@ -157,6 +160,36 @@ impl ExportContainer {
         // get_single_root only works when there's exactly one peak (power of 2 - 1 elements)
         // For general case, we'd need to bag the peaks to get a single root
         entries_mmr.get_single_root().ok()
+    }
+}
+
+#[cfg(test)]
+impl ExportContainer {
+    /// Adds an entry and returns its inclusion proof in the updated MMR.
+    pub fn add_entry_with_proof(&mut self, entry: ExportEntry) -> ExportEntryInclusionProof {
+        let mut entries_mmr = ExportEntryMmr::from_compact(&self.entries_mmr);
+        // We don't need to update any existing proofs here, so pass an empty list.
+        let mut empty_list: Vec<ExportEntryInclusionProof> = Vec::new();
+        let proof = entries_mmr
+            .add_leaf_updating_proof_list(entry.to_mmr_leaf(), &mut empty_list)
+            .expect("types: add leaf with proof");
+        self.entries_mmr = entries_mmr.to_compact();
+        proof
+    }
+
+    /// Adds an entry, updating the provided proofs list in-place and returning a
+    /// proof for the new entry.
+    pub fn add_entry_with_proof_updating(
+        &mut self,
+        entry: ExportEntry,
+        proofs: &mut Vec<ExportEntryInclusionProof>,
+    ) -> ExportEntryInclusionProof {
+        let mut entries_mmr = ExportEntryMmr::from_compact(&self.entries_mmr);
+        let new_proof = entries_mmr
+            .add_leaf_updating_proof_list(entry.to_mmr_leaf(), proofs)
+            .expect("types: add leaf with proof (updating)");
+        self.entries_mmr = entries_mmr.to_compact();
+        new_proof
     }
 }
 
@@ -321,30 +354,38 @@ mod tests {
         let entry3 = ExportEntry::new(vec![7, 8, 9]);
 
         let mut container = ExportContainer::new(1);
-        container.add_entry(entry1.clone());
-        container.add_entry(entry2.clone());
-        container.add_entry(entry3.clone());
+        let mut proofs = Vec::new();
 
-        // Verify the entries are included (MMR is non-empty)
-        assert!(container.verify_entry_inclusion(&entry2));
-        assert!(container.verify_entry_inclusion(&entry1));
-        assert!(container.verify_entry_inclusion(&entry3));
+        let proof1 = container.add_entry_with_proof_updating(entry1.clone(), &mut proofs);
+        proofs.push(proof1.clone());
+
+        let proof2 = container.add_entry_with_proof_updating(entry2.clone(), &mut proofs);
+        proofs.push(proof2.clone());
+
+        let proof3 = container.add_entry_with_proof_updating(entry3.clone(), &mut proofs);
+        proofs.push(proof3.clone());
+
+        // Verify the entries are included with their corresponding (updated) proofs
+        assert!(container.verify_entry_inclusion(&entry1, &proofs[0]));
+        assert!(container.verify_entry_inclusion(&entry2, &proofs[1]));
+        assert!(container.verify_entry_inclusion(&entry3, &proofs[2]));
     }
 
     #[test]
-    fn test_verify_entry_inclusion_returns_true_for_nonempty() {
+    fn test_verify_entry_inclusion_mismatch() {
         let entry1 = ExportEntry::new(vec![1, 2, 3]);
         let entry2 = ExportEntry::new(vec![4, 5, 6]);
-        let wrong_entry = ExportEntry::new(vec![99, 99, 99]);
 
         let mut container = ExportContainer::new(1);
-        container.add_entry(entry1.clone());
-        container.add_entry(entry2.clone());
+        let mut proofs = Vec::new();
+        let proof1 = container.add_entry_with_proof_updating(entry1.clone(), &mut proofs);
+        proofs.push(proof1.clone());
+        let proof2 = container.add_entry_with_proof_updating(entry2.clone(), &mut proofs);
+        proofs.push(proof2.clone());
 
-        // Basic check returns true for non-empty MMR
-        // (Full proof verification would need position + merkle proof)
-        assert!(container.verify_entry_inclusion(&entry1));
-        assert!(container.verify_entry_inclusion(&wrong_entry));
+        // Mismatched entry/proof should fail
+        assert!(!container.verify_entry_inclusion(&entry1, &proof2));
+        assert!(!container.verify_entry_inclusion(&entry2, &proof1));
     }
 
     #[test]
@@ -352,8 +393,9 @@ mod tests {
         let container = ExportContainer::new(1);
         let entry = ExportEntry::new(vec![1, 2, 3]);
 
-        // Trying to verify in empty container should fail
-        assert!(!container.verify_entry_inclusion(&entry));
+        // Using an empty proof with a non-empty leaf should fail for empty MMR
+        let empty_proof = ExportEntryInclusionProof::new_zero();
+        assert!(!container.verify_entry_inclusion(&entry, &empty_proof));
     }
 
     #[test]
