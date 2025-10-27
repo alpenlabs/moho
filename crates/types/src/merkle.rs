@@ -125,7 +125,31 @@ impl MerkleTree {
 
 #[cfg(test)]
 mod tests {
+    use ssz_types::{FixedVector, VariableList};
+    use tree_hash::{Sha256Hasher, TreeHash};
+
     use super::*;
+
+    #[derive(Clone, Debug, tree_hash_derive::TreeHash)]
+    struct Simple3 {
+        a: FixedVector<u8, 32>,
+        b: FixedVector<u8, 32>,
+        c: FixedVector<u8, 32>,
+    }
+
+    #[derive(Clone, Debug, tree_hash_derive::TreeHash)]
+    struct WithList {
+        head: FixedVector<u8, 32>,
+        data: VariableList<u8, 256>,
+        tail: FixedVector<u8, 32>,
+    }
+
+    #[derive(Clone, Debug, tree_hash_derive::TreeHash)]
+    struct Nested {
+        left: Simple3,
+        payload: WithList,
+        right: FixedVector<u8, 32>,
+    }
 
     #[test]
     fn test_merkle_tree_single_leaf() {
@@ -161,4 +185,90 @@ mod tests {
     }
 
     // No direct leaf hashing tests; SSZ packing is done at callsites.
+
+    #[test]
+    fn test_ssz_simple3_container_root_and_proofs() {
+        let c = Simple3 {
+            a: FixedVector::from([0x11u8; 32]),
+            b: FixedVector::from([0x22u8; 32]),
+            c: FixedVector::from([0x33u8; 32]),
+        };
+
+        // SSZ root via TreeHash
+        let ssz_root = <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c).into_inner();
+
+        // Manual merkleization over field roots
+        let leaves = vec![
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c.a).into_inner(),
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c.b).into_inner(),
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c.c).into_inner(),
+        ];
+        let manual_root = MerkleTree::compute_root(&leaves);
+        assert_eq!(ssz_root, manual_root);
+
+        // Proofs for each field
+        for (i, leaf) in leaves.iter().enumerate() {
+            let proof = MerkleTree::generate_proof(&leaves, i);
+            assert!(MerkleTree::verify_proof(&ssz_root, &proof, leaf));
+        }
+    }
+
+    #[test]
+    fn test_ssz_withlist_container_root_and_proofs() {
+        let data_vec = vec![1u8, 3, 3, 7, 0, 9, 9];
+        let c = WithList {
+            head: FixedVector::from([0xAAu8; 32]),
+            data: VariableList::<u8, 256>::from(data_vec),
+            tail: FixedVector::from([0xBBu8; 32]),
+        };
+
+        let ssz_root = <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c).into_inner();
+        let leaves = vec![
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c.head).into_inner(),
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c.data).into_inner(),
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c.tail).into_inner(),
+        ];
+        let manual_root = MerkleTree::compute_root(&leaves);
+        assert_eq!(ssz_root, manual_root);
+
+        for (i, leaf) in leaves.iter().enumerate() {
+            let proof = MerkleTree::generate_proof(&leaves, i);
+            assert!(MerkleTree::verify_proof(&ssz_root, &proof, leaf));
+        }
+    }
+
+    #[test]
+    fn test_ssz_nested_container_root_and_proofs() {
+        let left = Simple3 {
+            a: FixedVector::from([0x01u8; 32]),
+            b: FixedVector::from([0x02u8; 32]),
+            c: FixedVector::from([0x03u8; 32]),
+        };
+        let data_vec = vec![1u8, 3, 3, 7, 0, 9, 9];
+        let payload = WithList {
+            head: FixedVector::from([0xAAu8; 32]),
+            data: VariableList::<u8, 256>::from(data_vec),
+            tail: FixedVector::from([0xBBu8; 32]),
+        };
+        let right = FixedVector::from([0xFFu8; 32]);
+        let cont = Nested {
+            left,
+            payload,
+            right,
+        };
+
+        let ssz_root = <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&cont).into_inner();
+        let leaves = vec![
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&cont.left).into_inner(),
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&cont.payload).into_inner(),
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&cont.right).into_inner(),
+        ];
+        let manual_root = MerkleTree::compute_root(&leaves);
+        assert_eq!(ssz_root, manual_root);
+
+        for (i, leaf) in leaves.iter().enumerate() {
+            let proof = MerkleTree::generate_proof(&leaves, i);
+            assert!(MerkleTree::verify_proof(&ssz_root, &proof, leaf));
+        }
+    }
 }
