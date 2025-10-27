@@ -18,5 +18,14 @@ fn main() {
         ssz_codegen::ModuleGeneration::NestedModules,
     )
     .expect("Failed to generate SSZ types");
-}
 
+    // Post-process: add common Rust derives to generated structs for ergonomics.
+    // This augments `#[derive(Encode, Decode, TreeHash)]` to also include `Clone, Debug`.
+    let mut code = std::fs::read_to_string(&output_path).expect("read generated ssz");
+    // Conservative, exact replacement to avoid unintended edits.
+    code = code.replace(
+        "#[derive(Encode, Decode, TreeHash)]",
+        "#[derive(Clone, Debug, Encode, Decode, TreeHash)]",
+    );
+    std::fs::write(&output_path, code).expect("write patched generated ssz");
+}

@@ -1,15 +1,15 @@
 //! Moho state types and SSZ-based commitment/proof helpers.
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use ssz_types::VariableList;
 use strata_predicate::PredicateKey;
+use tree_hash::{Sha256Hasher, TreeHash};
 
 use crate::{
     InnerStateCommitment, MohoStateCommitment,
     merkle::{MerkleProof, MerkleTree},
     ssz_generated,
 };
-use ssz_types::VariableList;
-use tree_hash::{Sha256Hasher, TreeHash};
 
 // Re-export SSZ-generated types as the canonical Rust types
 pub type MohoState = ssz_generated::specs::moho::MohoState;
@@ -42,10 +42,14 @@ impl MohoState {
         export_state: ExportState,
     ) -> Self {
         let inner = ssz_types::FixedVector::<u8, 32>::from(inner_state.inner());
-        let next_predicate_bytes = borsh::to_vec(&next_predicate)
-            .expect("borsh serialization of predicate key");
+        let next_predicate_bytes =
+            borsh::to_vec(&next_predicate).expect("borsh serialization of predicate key");
         let next_predicate = VariableList::<u8, 256>::from(next_predicate_bytes);
-        Self { inner_state: inner, next_predicate, export_state }
+        Self {
+            inner_state: inner,
+            next_predicate,
+            export_state,
+        }
     }
 
     pub fn inner_state(&self) -> InnerStateCommitment {
@@ -113,9 +117,12 @@ impl MohoState {
 
     /// Internal: Get the Merkle leaves for all fields (SSZ field roots)
     fn get_ssz_field_roots(&self) -> Vec<[u8; 32]> {
-        let inner_root = <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&self.inner_state).into_inner();
-        let pred_root = <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&self.next_predicate).into_inner();
-        let export_root = <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&self.export_state).into_inner();
+        let inner_root =
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&self.inner_state).into_inner();
+        let pred_root =
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&self.next_predicate).into_inner();
+        let export_root =
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&self.export_state).into_inner();
 
         vec![inner_root, pred_root, export_root]
     }
@@ -132,7 +139,9 @@ impl MohoState {
 // Compatibility constructors and accessors for SSZ-generated types
 impl ExportState {
     pub fn new(containers: Vec<ExportContainer>) -> Self {
-        Self { containers: ssz_types::VariableList::from(containers) }
+        Self {
+            containers: ssz_types::VariableList::from(containers),
+        }
     }
 
     pub fn containers(&self) -> &[ExportContainer] {
@@ -178,11 +187,18 @@ impl ExportContainer {
 
 impl ExportEntry {
     pub fn new(entry_id: u32, payload: Vec<u8>) -> Self {
-        Self { entry_id, payload: ssz_types::VariableList::from(payload) }
+        Self {
+            entry_id,
+            payload: ssz_types::VariableList::from(payload),
+        }
     }
 
-    pub fn entry_id(&self) -> u32 { self.entry_id }
-    pub fn payload(&self) -> &[u8] { &self.payload }
+    pub fn entry_id(&self) -> u32 {
+        self.entry_id
+    }
+    pub fn payload(&self) -> &[u8] {
+        &self.payload
+    }
 }
 
 // Borsh serialization for the generated SSZ MohoState
@@ -239,12 +255,22 @@ impl BorshDeserialize for MohoState {
                 entries.push(ExportEntry { entry_id, payload });
             }
 
-            containers.push(ExportContainer { container_id, common_payload, entries: ssz_types::VariableList::from(entries) });
+            containers.push(ExportContainer {
+                container_id,
+                common_payload,
+                entries: ssz_types::VariableList::from(entries),
+            });
         }
 
-        let export_state = ExportState { containers: ssz_types::VariableList::from(containers) };
+        let export_state = ExportState {
+            containers: ssz_types::VariableList::from(containers),
+        };
 
-        Ok(Self { inner_state, next_predicate, export_state })
+        Ok(Self {
+            inner_state,
+            next_predicate,
+            export_state,
+        })
     }
 }
 
