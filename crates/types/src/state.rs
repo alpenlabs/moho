@@ -1,6 +1,7 @@
 //! Moho state types and SSZ-based commitment/proof helpers.
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use ssz_generated::specs::moho::*;
 use ssz_types::VariableList;
 use strata_predicate::{PredicateKey, PredicateKeyBuf};
 use tree_hash::{Sha256Hasher, TreeHash};
@@ -9,21 +10,16 @@ use crate::{
     InnerStateCommitment, MohoStateCommitment, ssz_generated, ssz_merkle_utils::SszFieldRoots,
 };
 
-// Re-export SSZ-generated types as the canonical Rust types
-pub type MohoState = ssz_generated::specs::moho::MohoState;
-pub type ExportState = ssz_generated::specs::moho::ExportState;
-pub type ExportContainer = ssz_generated::specs::moho::ExportContainer;
-pub type ExportEntry = ssz_generated::specs::moho::ExportEntry;
-
 impl MohoState {
     pub fn new(
         inner_state: InnerStateCommitment,
         next_predicate: PredicateKey,
         export_state: ExportState,
     ) -> Self {
-        let inner = ssz_types::FixedVector::<u8, 32>::from(inner_state.inner());
+        let inner = ssz_types::FixedVector::<u8, 32>::from(*inner_state.inner());
         let next_predicate_bytes = next_predicate.as_buf_ref().to_bytes();
-        let next_predicate = VariableList::<u8, 256>::from(next_predicate_bytes);
+        let next_predicate =
+            VariableList::<u8, { MAX_PREDICATE_SIZE as usize }>::from(next_predicate_bytes);
         Self {
             inner_state: inner,
             next_predicate,
@@ -173,7 +169,8 @@ impl BorshDeserialize for MohoState {
         let inner_state = ssz_types::FixedVector::<u8, 32>::from(inner);
 
         let pred_vec: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
-        let next_predicate = VariableList::<u8, 256>::from(pred_vec);
+        let next_predicate =
+            VariableList::<u8, { MAX_PREDICATE_SIZE as usize }>::from(pred_vec);
 
         // containers
         let cont_len: u32 = BorshDeserialize::deserialize_reader(reader)?;

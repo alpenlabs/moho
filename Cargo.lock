@@ -453,11 +453,11 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "moho-types",
- "ssz_types 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
+ "ssz_types",
  "strata-predicate",
  "thiserror 2.0.12",
- "tree_hash 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
- "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.1.0-alpha-rc16)",
+ "tree_hash",
+ "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.1.0-alpha-rc17)",
  "zkaleido-native-adapter",
 ]
 
@@ -486,14 +486,14 @@ dependencies = [
  "borsh",
  "hex",
  "sha2",
- "ssz 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
+ "ssz",
  "ssz_codegen",
- "ssz_derive 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
- "ssz_types 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
+ "ssz_derive",
+ "ssz_types",
  "strata-predicate",
- "tree_hash 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
- "tree_hash_derive 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
- "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.1.0-alpha-rc16)",
+ "tree_hash",
+ "tree_hash_derive",
+ "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.1.0-alpha-rc17)",
 ]
 
 [[package]]
@@ -757,6 +757,7 @@ dependencies = [
 [[package]]
 name = "sizzle-parser"
 version = "0.2.0"
+source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
 dependencies = [
  "thiserror 2.0.12",
 ]
@@ -786,49 +787,30 @@ dependencies = [
 [[package]]
 name = "ssz"
 version = "0.2.0"
-dependencies = [
- "hex",
- "itertools",
- "serde",
- "smallvec",
- "ssz_primitives 0.2.0",
-]
-
-[[package]]
-name = "ssz"
-version = "0.2.0"
 source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
 dependencies = [
  "hex",
  "itertools",
  "serde",
  "smallvec",
- "ssz_primitives 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
+ "ssz_primitives",
 ]
 
 [[package]]
 name = "ssz_codegen"
 version = "0.2.0"
+source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
 dependencies = [
  "prettyplease",
  "proc-macro2",
  "quote",
  "sizzle-parser",
- "ssz 0.2.0",
- "ssz_derive 0.2.0",
- "ssz_types 0.2.0",
+ "ssz",
+ "ssz_derive",
+ "ssz_types",
  "syn",
- "tree_hash 0.2.0",
- "tree_hash_derive 0.2.0",
-]
-
-[[package]]
-name = "ssz_derive"
-version = "0.2.0"
-dependencies = [
- "darling",
- "quote",
- "syn",
+ "tree_hash",
+ "tree_hash_derive",
 ]
 
 [[package]]
@@ -844,15 +826,6 @@ dependencies = [
 [[package]]
 name = "ssz_primitives"
 version = "0.2.0"
-dependencies = [
- "hex",
- "rand 0.8.5",
- "ruint",
-]
-
-[[package]]
-name = "ssz_primitives"
-version = "0.2.0"
 source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
 dependencies = [
  "hex",
@@ -863,26 +836,14 @@ dependencies = [
 [[package]]
 name = "ssz_types"
 version = "0.2.0"
-dependencies = [
- "itertools",
- "serde",
- "serde_derive",
- "ssz 0.2.0",
- "ssz_primitives 0.2.0",
- "tree_hash 0.2.0",
-]
-
-[[package]]
-name = "ssz_types"
-version = "0.2.0"
 source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
 dependencies = [
  "itertools",
  "serde",
  "serde_derive",
- "ssz 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
- "ssz_primitives 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
- "tree_hash 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
+ "ssz",
+ "ssz_primitives",
+ "tree_hash",
 ]
 
 [[package]]
@@ -995,33 +956,13 @@ dependencies = [
 [[package]]
 name = "tree_hash"
 version = "0.2.0"
-dependencies = [
- "digest",
- "sha2",
- "smallvec",
- "ssz 0.2.0",
- "ssz_primitives 0.2.0",
-]
-
-[[package]]
-name = "tree_hash"
-version = "0.2.0"
 source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
 dependencies = [
  "digest",
  "sha2",
  "smallvec",
- "ssz 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
- "ssz_primitives 0.2.0 (git+https://github.com/alpenlabs/ssz-gen)",
-]
-
-[[package]]
-name = "tree_hash_derive"
-version = "0.2.0"
-dependencies = [
- "darling",
- "quote",
- "syn",
+ "ssz",
+ "ssz_primitives",
 ]
 
 [[package]]

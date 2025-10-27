@@ -8,7 +8,7 @@ mod state;
 pub use id::{InnerStateCommitment, MohoStateCommitment, StateReference};
 pub use relation::{MohoAttestation, StateRefAttestation};
 pub use ssz_merkle_utils::{SszFieldMerkle, SszFieldRoots, SszLeafInclusionProof};
-pub use state::{ExportContainer, ExportEntry, ExportState, MohoState};
+pub use ssz_generated::specs::moho::{ExportContainer, ExportEntry, ExportState, MohoState};
 
 // Generated SSZ types live here at compile time
 pub mod ssz_generated {

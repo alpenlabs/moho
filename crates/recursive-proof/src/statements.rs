@@ -1,5 +1,6 @@
 use moho_types::SszFieldMerkle;
 use ssz_types::VariableList;
+use moho_types::ssz_generated::specs::moho::MAX_PREDICATE_SIZE;
 use tree_hash::{Sha256Hasher, TreeHash};
 use zkaleido::ZkVmEnv;
 
@@ -56,7 +57,8 @@ pub fn verify_and_chain_transition(
 ) -> Result<MohoStateTransition, MohoError> {
     // 1: Ensure the incremental proof predicate key is part of the Moho state Merkle root.
     let next_predicate_bytes = input.step_predicate.as_buf_ref().to_bytes();
-    let next_predicate_list: VariableList<u8, 256> = VariableList::from(next_predicate_bytes);
+    let next_predicate_list: VariableList<u8, { MAX_PREDICATE_SIZE as usize }> =
+        VariableList::from(next_predicate_bytes);
     let next_predicate_hash =
         <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&next_predicate_list).into_inner();
     if !SszFieldMerkle::verify_proof(

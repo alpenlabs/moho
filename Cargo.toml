@@ -23,6 +23,7 @@ zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-
 zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc17" }
 
 ssz = { git = "https://github.com/alpenlabs/ssz-gen" }
+ssz_codegen = { git = "https://github.com/alpenlabs/ssz-gen" }
 ssz_derive = { git = "https://github.com/alpenlabs/ssz-gen" }
 ssz_types = { git = "https://github.com/alpenlabs/ssz-gen" }
 tree_hash = { git = "https://github.com/alpenlabs/ssz-gen" }
