@@ -1,15 +1,13 @@
 //! moho types
 
-mod constants;
 mod id;
-mod ssz_merkle_utils;
 mod relation;
+mod ssz_merkle_utils;
 mod state;
 
-pub use constants::*;
 pub use id::{InnerStateCommitment, MohoStateCommitment, StateReference};
-pub use ssz_merkle_utils::{SszLeafInclusionProof, SszFieldMerkle, SszFieldRoots};
 pub use relation::{MohoAttestation, StateRefAttestation};
+pub use ssz_merkle_utils::{SszFieldMerkle, SszFieldRoots, SszLeafInclusionProof};
 pub use state::{ExportContainer, ExportEntry, ExportState, MohoState};
 
 // Generated SSZ types live here at compile time
