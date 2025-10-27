@@ -22,6 +22,13 @@ thiserror = { version = "2" }
 zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc17" }
 zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc17" }
 
+# SSZ stack (local path deps via ssz-gen)
+ssz = { path = "/Users/prajwol/github/alpenlabs/ssz-gen/crates/ssz" }
+ssz_types = { path = "/Users/prajwol/github/alpenlabs/ssz-gen/crates/ssz_types" }
+tree_hash = { path = "/Users/prajwol/github/alpenlabs/ssz-gen/crates/tree_hash" }
+ssz_derive = { path = "/Users/prajwol/github/alpenlabs/ssz-gen/crates/ssz_derive" }
+tree_hash_derive = { path = "/Users/prajwol/github/alpenlabs/ssz-gen/crates/tree_hash_derive" }
+
 [workspace.lints]
 rust.missing_debug_implementations = "warn"
 rust.rust_2018_idioms = { level = "deny", priority = -1 }

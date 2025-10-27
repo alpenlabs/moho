@@ -1,0 +1,21 @@
+MAX_EXPORT_CONTAINERS = 256
+MAX_EXPORT_ENTRIES = 4096
+MAX_PAYLOAD_SIZE = 4096
+MAX_PREDICATE_SIZE = 256
+
+class ExportEntry(Container):
+    entry_id: uint32
+    payload: List[byte, MAX_PAYLOAD_SIZE]
+
+class ExportContainer(Container):
+    container_id: uint16
+    common_payload: List[byte, MAX_PAYLOAD_SIZE]
+    entries: List[ExportEntry, MAX_EXPORT_ENTRIES]
+
+class ExportState(Container):
+    containers: List[ExportContainer, MAX_EXPORT_CONTAINERS]
+
+class MohoState(Container):
+    inner_state: Bytes32
+    next_predicate: List[byte, MAX_PREDICATE_SIZE]
+    export_state: ExportState

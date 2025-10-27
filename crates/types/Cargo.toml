@@ -9,3 +9,11 @@ hex.workspace = true
 sha2.workspace = true
 strata-predicate.workspace = true
 zkaleido.workspace = true
+ssz.workspace = true
+ssz_types.workspace = true
+tree_hash.workspace = true
+ssz_derive.workspace = true
+tree_hash_derive.workspace = true
+
+[build-dependencies]
+ssz_codegen = { path = "/Users/prajwol/github/alpenlabs/ssz-gen/crates/ssz_codegen" }

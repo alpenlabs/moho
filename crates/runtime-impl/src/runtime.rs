@@ -111,9 +111,8 @@ pub fn compute_transition<P: MohoProgram>(
 }
 
 /// Computes the state commitment to a moho state.
-fn compute_moho_state_commitment(_state: &MohoState) -> MohoStateCommitment {
-    // TODO SSZ merkle hashing
-    unimplemented!()
+fn compute_moho_state_commitment(state: &MohoState) -> MohoStateCommitment {
+    state.compute_commitment()
 }
 
 /// Computes the exported Moho state from the inner state, also checking the
@@ -129,7 +128,7 @@ fn compute_wrapping_moho_state<P: MohoProgram>(
     // back to the previous one
     let next_predicate = match P::extract_next_predicate(step_output) {
         Some(predicate) => predicate,
-        None => moho_state.next_predicate().clone(),
+        None => moho_state.next_predicate(),
     };
 
     let new_export_state = P::compute_export_state(moho_state.into_export_state(), step_output);

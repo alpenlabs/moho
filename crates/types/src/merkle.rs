@@ -1,9 +1,7 @@
-//! Merkle tree implementation for state proofs
+//! SSZ-compatible Merkle helpers used for inclusion proofs of SSZ field roots.
 //!
-//! NOTE: This is a temporary implementation using SHA256 and Borsh serialization.
-//! This will eventually be reworked to use SSZ (Simple Serialize) serialization
-//! and merkelization for better compatibility with Ethereum consensus layer standards
-//! and more efficient proof generation/verification.
+//! This module implements a minimal Merkle tree helper using SHA-256 over 32-byte chunks
+//! and zero-chunk padding, matching SSZ merkleization of container field roots.
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use sha2::{Digest, Sha256};
@@ -78,20 +76,6 @@ impl MerkleTree {
         current_hash == *root
     }
 
-    /// Hash a leaf value with domain separation
-    pub fn hash_leaf(data: &[u8]) -> [u8; 32] {
-        let mut hasher = Sha256::new();
-        hasher.update(b"LEAF:");
-        hasher.update(data);
-        hasher.finalize().into()
-    }
-
-    /// Hash a serializable value as a leaf
-    pub fn hash_serializable<T: BorshSerialize>(value: &T) -> [u8; 32] {
-        let serialized = borsh::to_vec(value).expect("Serialization should not fail");
-        Self::hash_leaf(&serialized)
-    }
-
     /// Generate Merkle path for a specific leaf index
     fn generate_merkle_path(leaves: &[[u8; 32]], leaf_index: usize) -> Vec<[u8; 32]> {
         let mut path = Vec::new();
@@ -130,10 +114,9 @@ impl MerkleTree {
         path
     }
 
-    /// Hash two internal nodes with domain separation
+    /// Hash two internal nodes: sha256(left || right)
     fn hash_internal(left: &[u8; 32], right: &[u8; 32]) -> [u8; 32] {
         let mut hasher = Sha256::new();
-        hasher.update(b"INTERNAL:");
         hasher.update(left);
         hasher.update(right);
         hasher.finalize().into()
@@ -177,24 +160,5 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_hash_serializable() {
-        #[derive(BorshSerialize)]
-        struct TestStruct {
-            value: u32,
-        }
-
-        let test_data = TestStruct { value: 42 };
-        let hash1 = MerkleTree::hash_serializable(&test_data);
-        let hash2 = MerkleTree::hash_serializable(&test_data);
-
-        // Same data should produce same hash
-        assert_eq!(hash1, hash2);
-
-        let different_data = TestStruct { value: 43 };
-        let hash3 = MerkleTree::hash_serializable(&different_data);
-
-        // Different data should produce different hash
-        assert_ne!(hash1, hash3);
-    }
+    // No direct leaf hashing tests; SSZ packing is done at callsites.
 }

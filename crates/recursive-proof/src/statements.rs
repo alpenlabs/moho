@@ -1,4 +1,4 @@
-use moho_types::{MerkleTree, MohoState};
+use moho_types::MohoState;
 use zkaleido::ZkVmEnv;
 
 use crate::{MohoError, MohoRecursiveOutput, MohoStateTransition, program::MohoRecursiveInput};
@@ -53,7 +53,7 @@ pub fn verify_and_chain_transition(
     input: MohoRecursiveInput,
 ) -> Result<MohoStateTransition, MohoError> {
     // 1: Ensure the incremental proof predicate key is part of the Moho state Merkle root.
-    let next_predicate_hash = MerkleTree::hash_serializable(&input.step_predicate);
+    let next_predicate_hash = MohoState::compute_next_predicate_ssz_root(&input.step_predicate);
     if !MohoState::verify_proof_against_commitment(
         input
             .incremental_step_proof
