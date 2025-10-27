@@ -2,13 +2,13 @@
 
 mod constants;
 mod id;
-mod merkle;
+mod ssz_merkle_utils;
 mod relation;
 mod state;
 
 pub use constants::*;
 pub use id::{InnerStateCommitment, MohoStateCommitment, StateReference};
-pub use merkle::MerkleProof;
+pub use ssz_merkle_utils::{SszLeafInclusionProof, SszFieldMerkle, SszFieldRoots};
 pub use relation::{MohoAttestation, StateRefAttestation};
 pub use state::{ExportContainer, ExportEntry, ExportState, MohoState};
 

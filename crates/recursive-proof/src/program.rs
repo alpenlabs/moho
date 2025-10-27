@@ -4,7 +4,7 @@ use std::{
 };
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use moho_types::{MerkleProof, MohoAttestation};
+use moho_types::{SszLeafInclusionProof, MohoAttestation};
 use strata_predicate::PredicateKey;
 use zkaleido::{ZkVmError, ZkVmProgram, ZkVmProgramPerf, ZkVmResult};
 use zkaleido_native_adapter::{NativeHost, NativeMachine};
@@ -35,7 +35,7 @@ pub struct MohoRecursiveInput {
     /// Predicate key to verify the incremental step proof from initial_state to final_state
     pub(crate) step_predicate: PredicateKey,
     /// Merkle proof of `step_predicate` within initial_state
-    pub(crate) step_predicate_merkle_proof: MerkleProof,
+    pub(crate) step_predicate_merkle_proof: SszLeafInclusionProof,
 }
 
 /// Output data committed by a recursive Moho proof that verifiers must check.

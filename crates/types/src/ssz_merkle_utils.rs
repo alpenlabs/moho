@@ -1,68 +1,74 @@
-//! SSZ-compatible Merkle helpers used for inclusion proofs of SSZ field roots.
+//! SSZ container-field inclusion helpers.
 //!
-//! This module implements a minimal Merkle tree helper using SHA-256 over 32-byte chunks
-//! and zero-chunk padding, matching SSZ merkleization of container field roots.
+//! Minimal helper to generate and verify inclusion proofs for SSZ container
+//! field roots using SHA-256 over 32-byte chunks with zero-chunk padding to the
+//! next power of two. Internal nodes are computed as sha256(left || right).
+//!
+//! What this is:
+//! - Proving inclusion of a field root within a container's SSZ tree-hash root.
+//!
+//! What this is NOT:
+//! - A generalized-index (gindex) proof. We use a simple 0-based leaf index.
+//! - A proof for list element membership. For lists, the leaf must be the SSZ field root of the
+//!   entire list (including any mix-in length), not an element.
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use sha2::{Digest, Sha256};
 
-/// Merkle proof for proving membership of a field in a state structure
+/// Inclusion proof for an SSZ-merkelized leaf (field root) under a container root.
 #[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
-pub struct MerkleProof {
-    /// The merkle path (sibling hashes) needed to reconstruct the root
-    pub path: Vec<[u8; 32]>,
-    /// The index of the leaf in the tree
+pub struct SszLeafInclusionProof {
+    /// Bottom-up list of sibling hashes required to reconstruct the root.
+    /// The first entry is adjacent to the leaf level.
+    pub branch: Vec<[u8; 32]>,
+    /// 0-based index of the leaf in the bottom layer. Not a generalized index.
     pub leaf_index: u8,
 }
 
-/// Merkle tree builder and utilities
-pub struct MerkleTree;
+/// SSZ field-merkleization utilities (stateless; no persistent tree structure).
+pub struct SszFieldMerkle;
 
-impl MerkleTree {
-    /// Compute Merkle root from a list of leaf hashes
-    pub fn compute_root(leaves: &[[u8; 32]]) -> [u8; 32] {
-        if leaves.is_empty() {
-            return [0u8; 32];
-        }
+/// Trait exposing per-field SSZ roots for a container.
+///
+/// This is a lightweight, local convenience so callers can generate inclusion
+/// proofs without manually assembling the field-root slice. If you control the
+/// SSZ codegen (recommended), prefer emitting an inherent `ssz_field_roots()`
+/// method from the generator instead of implementing this trait by hand.
+pub trait SszFieldRoots {
+    /// Return SSZ field roots in container field order.
+    fn ssz_field_roots(&self) -> Vec<[u8; 32]>;
+}
 
-        let mut current_level = leaves.to_vec();
-
-        // Pad to next power of 2
-        let next_pow2 = current_level.len().next_power_of_two();
-        current_level.resize(next_pow2, [0u8; 32]);
-
-        // Build tree bottom-up
-        while current_level.len() > 1 {
-            let mut next_level = Vec::new();
-
-            for i in (0..current_level.len()).step_by(2) {
-                let left = current_level[i];
-                let right = current_level.get(i + 1).copied().unwrap_or([0u8; 32]);
-                next_level.push(Self::hash_internal(&left, &right));
-            }
-
-            current_level = next_level;
-        }
-
-        current_level[0]
-    }
-
+impl SszFieldMerkle {
     /// Generate Merkle path for a specific leaf index
-    pub fn generate_proof(leaves: &[[u8; 32]], leaf_index: usize) -> MerkleProof {
-        let path = Self::generate_merkle_path(leaves, leaf_index);
+    pub fn generate_proof(leaves: &[[u8; 32]], leaf_index: usize) -> SszLeafInclusionProof {
+        let branch = Self::build_branch(leaves, leaf_index);
 
-        MerkleProof {
-            path,
+        SszLeafInclusionProof {
+            branch,
             leaf_index: leaf_index as u8,
         }
     }
 
+    /// Generate a proof from a container by computing its field roots.
+    pub fn generate_proof_for_container<C: SszFieldRoots>(
+        container: &C,
+        field_index: usize,
+    ) -> SszLeafInclusionProof {
+        let leaves = container.ssz_field_roots();
+        Self::generate_proof(&leaves, field_index)
+    }
+
     /// Verify a Merkle proof
-    pub fn verify_proof(root: &[u8; 32], proof: &MerkleProof, leaf_value: &[u8; 32]) -> bool {
+    pub fn verify_proof(
+        root: &[u8; 32],
+        proof: &SszLeafInclusionProof,
+        leaf_value: &[u8; 32],
+    ) -> bool {
         let mut current_hash = *leaf_value;
         let mut current_index = proof.leaf_index as usize;
 
-        for sibling in &proof.path {
+        for sibling in &proof.branch {
             if current_index.is_multiple_of(2) {
                 // Current node is left child
                 current_hash = Self::hash_internal(&current_hash, sibling);
@@ -76,9 +82,9 @@ impl MerkleTree {
         current_hash == *root
     }
 
-    /// Generate Merkle path for a specific leaf index
-    fn generate_merkle_path(leaves: &[[u8; 32]], leaf_index: usize) -> Vec<[u8; 32]> {
-        let mut path = Vec::new();
+    /// Build the bottom-up sibling branch for a given leaf index.
+    fn build_branch(leaves: &[[u8; 32]], leaf_index: usize) -> Vec<[u8; 32]> {
+        let mut branch = Vec::new();
         let mut current_level = leaves.to_vec();
         let mut current_index = leaf_index;
 
@@ -95,9 +101,9 @@ impl MerkleTree {
             };
 
             if sibling_index < current_level.len() {
-                path.push(current_level[sibling_index]);
+                branch.push(current_level[sibling_index]);
             } else {
-                path.push([0u8; 32]);
+                branch.push([0u8; 32]);
             }
 
             let mut next_level = Vec::new();
@@ -111,7 +117,7 @@ impl MerkleTree {
             current_index /= 2;
         }
 
-        path
+        branch
     }
 
     /// Hash two internal nodes: sha256(left || right)
@@ -151,39 +157,6 @@ mod tests {
         right: FixedVector<u8, 32>,
     }
 
-    #[test]
-    fn test_merkle_tree_single_leaf() {
-        let leaves = vec![[1u8; 32]];
-        let root = MerkleTree::compute_root(&leaves);
-
-        let proof = MerkleTree::generate_proof(&leaves, 0);
-        assert!(MerkleTree::verify_proof(&root, &proof, &leaves[0]));
-    }
-
-    #[test]
-    fn test_merkle_tree_three_leaves() {
-        let leaves = vec![[1u8; 32], [2u8; 32], [3u8; 32]];
-        let root = MerkleTree::compute_root(&leaves);
-
-        // Test proof for each leaf
-        for (i, leaf) in leaves.iter().enumerate() {
-            let proof = MerkleTree::generate_proof(&leaves, i);
-            assert!(MerkleTree::verify_proof(&root, &proof, leaf));
-        }
-    }
-
-    #[test]
-    fn test_merkle_tree_power_of_two() {
-        let leaves = vec![[1u8; 32], [2u8; 32], [3u8; 32], [4u8; 32]];
-        let root = MerkleTree::compute_root(&leaves);
-
-        // Test proof for each leaf
-        for (i, leaf) in leaves.iter().enumerate() {
-            let proof = MerkleTree::generate_proof(&leaves, i);
-            assert!(MerkleTree::verify_proof(&root, &proof, leaf));
-        }
-    }
-
     // No direct leaf hashing tests; SSZ packing is done at callsites.
 
     #[test]
@@ -197,19 +170,16 @@ mod tests {
         // SSZ root via TreeHash
         let ssz_root = <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c).into_inner();
 
-        // Manual merkleization over field roots
+        // Build proofs against the SSZ root using field roots as leaves
         let leaves = vec![
             <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c.a).into_inner(),
             <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c.b).into_inner(),
             <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c.c).into_inner(),
         ];
-        let manual_root = MerkleTree::compute_root(&leaves);
-        assert_eq!(ssz_root, manual_root);
-
-        // Proofs for each field
+        // Proofs for each field against SSZ root
         for (i, leaf) in leaves.iter().enumerate() {
-            let proof = MerkleTree::generate_proof(&leaves, i);
-            assert!(MerkleTree::verify_proof(&ssz_root, &proof, leaf));
+            let proof = SszFieldMerkle::generate_proof(&leaves, i);
+            assert!(SszFieldMerkle::verify_proof(&ssz_root, &proof, leaf));
         }
     }
 
@@ -228,12 +198,9 @@ mod tests {
             <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c.data).into_inner(),
             <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&c.tail).into_inner(),
         ];
-        let manual_root = MerkleTree::compute_root(&leaves);
-        assert_eq!(ssz_root, manual_root);
-
         for (i, leaf) in leaves.iter().enumerate() {
-            let proof = MerkleTree::generate_proof(&leaves, i);
-            assert!(MerkleTree::verify_proof(&ssz_root, &proof, leaf));
+            let proof = SszFieldMerkle::generate_proof(&leaves, i);
+            assert!(SszFieldMerkle::verify_proof(&ssz_root, &proof, leaf));
         }
     }
 
@@ -263,12 +230,9 @@ mod tests {
             <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&cont.payload).into_inner(),
             <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&cont.right).into_inner(),
         ];
-        let manual_root = MerkleTree::compute_root(&leaves);
-        assert_eq!(ssz_root, manual_root);
-
         for (i, leaf) in leaves.iter().enumerate() {
-            let proof = MerkleTree::generate_proof(&leaves, i);
-            assert!(MerkleTree::verify_proof(&ssz_root, &proof, leaf));
+            let proof = SszFieldMerkle::generate_proof(&leaves, i);
+            assert!(SszFieldMerkle::verify_proof(&ssz_root, &proof, leaf));
         }
     }
 }

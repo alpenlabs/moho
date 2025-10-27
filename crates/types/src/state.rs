@@ -2,13 +2,11 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use ssz_types::VariableList;
-use strata_predicate::PredicateKey;
+use strata_predicate::{PredicateKey, PredicateKeyBuf};
 use tree_hash::{Sha256Hasher, TreeHash};
 
 use crate::{
-    InnerStateCommitment, MohoStateCommitment,
-    merkle::{MerkleProof, MerkleTree},
-    ssz_generated,
+    InnerStateCommitment, MohoStateCommitment, ssz_generated, ssz_merkle_utils::SszFieldRoots,
 };
 
 // Re-export SSZ-generated types as the canonical Rust types
@@ -17,24 +15,6 @@ pub type ExportState = ssz_generated::specs::moho::ExportState;
 pub type ExportContainer = ssz_generated::specs::moho::ExportContainer;
 pub type ExportEntry = ssz_generated::specs::moho::ExportEntry;
 
-/// Enum representing the different fields that can be proven
-#[derive(Clone, Debug)]
-pub enum StateField {
-    InnerState,
-    NextPredicate,
-    ExportState,
-}
-
-impl StateField {
-    fn index(&self) -> u8 {
-        match self {
-            StateField::InnerState => 0,
-            StateField::NextPredicate => 1,
-            StateField::ExportState => 2,
-        }
-    }
-}
-
 impl MohoState {
     pub fn new(
         inner_state: InnerStateCommitment,
@@ -42,8 +22,7 @@ impl MohoState {
         export_state: ExportState,
     ) -> Self {
         let inner = ssz_types::FixedVector::<u8, 32>::from(inner_state.inner());
-        let next_predicate_bytes =
-            borsh::to_vec(&next_predicate).expect("borsh serialization of predicate key");
+        let next_predicate_bytes = next_predicate.as_buf_ref().to_bytes();
         let next_predicate = VariableList::<u8, 256>::from(next_predicate_bytes);
         Self {
             inner_state: inner,
@@ -59,9 +38,9 @@ impl MohoState {
     }
 
     pub fn next_predicate(&self) -> PredicateKey {
-        // Interpret stored bytes as borsh-encoded PredicateKey
-        borsh::from_slice(self.next_predicate.as_ref())
-            .expect("stored predicate bytes must be valid borsh")
+        PredicateKeyBuf::try_from(&self.next_predicate[..])
+            .unwrap()
+            .to_owned()
     }
 
     pub fn export_state(&self) -> &ExportState {
@@ -77,46 +56,10 @@ impl MohoState {
         let root = <_ as TreeHash<Sha256Hasher>>::tree_hash_root(self);
         MohoStateCommitment::new(root.into_inner())
     }
+}
 
-    /// Generate a Merkle proof for the next_predicate field
-    ///
-    /// This proves that the predicate key is part of the MohoState
-    /// by providing the necessary sibling hashes to reconstruct the root.
-    ///
-    /// NOTE: This implementation will be reworked with SSZ merkelization later.
-    pub fn generate_next_predicate_proof(&self) -> MerkleProof {
-        self.generate_proof(StateField::NextPredicate)
-    }
-
-    /// Generate a Merkle proof for any field in the state
-    pub fn generate_proof(&self, field: StateField) -> MerkleProof {
-        let leaves = self.get_ssz_field_roots();
-        let leaf_index = field.index() as usize;
-        MerkleTree::generate_proof(&leaves, leaf_index)
-    }
-
-    /// Verify a Merkle proof against a given MohoStateCommitment
-    pub fn verify_proof_against_commitment(
-        commitment: &MohoStateCommitment,
-        proof: &MerkleProof,
-        leaf_value: &[u8; 32],
-    ) -> bool {
-        MerkleTree::verify_proof(commitment.inner(), proof, leaf_value)
-    }
-
-    /// Verify a Merkle proof against this state's commitment
-    pub fn verify_proof(&self, proof: &MerkleProof, leaf_value: &[u8; 32]) -> bool {
-        let commitment = self.compute_commitment();
-        Self::verify_proof_against_commitment(&commitment, proof, leaf_value)
-    }
-
-    /// Get the hash of the next_predicate field for proof verification
-    pub fn get_next_predicate_hash(&self) -> [u8; 32] {
-        <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&self.next_predicate).into_inner()
-    }
-
-    /// Internal: Get the Merkle leaves for all fields (SSZ field roots)
-    fn get_ssz_field_roots(&self) -> Vec<[u8; 32]> {
+impl SszFieldRoots for MohoState {
+    fn ssz_field_roots(&self) -> Vec<[u8; 32]> {
         let inner_root =
             <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&self.inner_state).into_inner();
         let pred_root =
@@ -126,15 +69,9 @@ impl MohoState {
 
         vec![inner_root, pred_root, export_root]
     }
-
-    /// Compute the SSZ field root for a predicate key.
-    pub fn compute_next_predicate_ssz_root(key: &PredicateKey) -> [u8; 32] {
-        let bytes = borsh::to_vec(key).expect("borsh serialization of predicate key");
-        // Use VariableList<u8,256> to compute root with mix-in length
-        let list: VariableList<u8, 256> = VariableList::from(bytes);
-        <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&list).into_inner()
-    }
 }
+
+// Additional container types could implement a similar method via SSZ codegen.
 
 // Compatibility constructors and accessors for SSZ-generated types
 impl ExportState {
@@ -154,7 +91,7 @@ impl ExportState {
             .iter_mut()
             .find(|c| c.container_id == container_id)
         {
-            container.entries.push(entry);
+            container.entries.push(entry).expect("entry out of bound")
         }
     }
 }
@@ -181,7 +118,7 @@ impl ExportContainer {
     }
 
     pub fn add_entry(&mut self, entry: ExportEntry) {
-        self.entries.push(entry);
+        self.entries.push(entry).expect("entry out of bound");
     }
 }
 
@@ -277,6 +214,7 @@ impl BorshDeserialize for MohoState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ssz_merkle_utils::SszFieldMerkle;
 
     #[test]
     fn test_merkle_proof_next_predicate() {
@@ -287,17 +225,22 @@ mod tests {
 
         let state = MohoState::new(inner_state, next_predicate.clone(), export_state);
 
-        // Generate proof for next_predicate
-        let proof = state.generate_next_predicate_proof();
-        let next_predicate_hash = state.get_next_predicate_hash();
+        // Generate proof for next_predicate (field index 1)
+        let proof = SszFieldMerkle::generate_proof_for_container(&state, 1);
+        let next_predicate_hash = state.ssz_field_roots()[1];
 
         // Verify the proof against the state
-        assert!(state.verify_proof(&proof, &next_predicate_hash));
+        let commitment = state.compute_commitment();
+        assert!(SszFieldMerkle::verify_proof(
+            commitment.inner(),
+            &proof,
+            &next_predicate_hash
+        ));
 
         // Verify against computed commitment
         let commitment = state.compute_commitment();
-        assert!(MohoState::verify_proof_against_commitment(
-            &commitment,
+        assert!(SszFieldMerkle::verify_proof(
+            commitment.inner(),
             &proof,
             &next_predicate_hash
         ));

@@ -1,4 +1,6 @@
-use moho_types::MohoState;
+use moho_types::SszFieldMerkle;
+use ssz_types::VariableList;
+use tree_hash::{Sha256Hasher, TreeHash};
 use zkaleido::ZkVmEnv;
 
 use crate::{MohoError, MohoRecursiveOutput, MohoStateTransition, program::MohoRecursiveInput};
@@ -53,13 +55,17 @@ pub fn verify_and_chain_transition(
     input: MohoRecursiveInput,
 ) -> Result<MohoStateTransition, MohoError> {
     // 1: Ensure the incremental proof predicate key is part of the Moho state Merkle root.
-    let next_predicate_hash = MohoState::compute_next_predicate_ssz_root(&input.step_predicate);
-    if !MohoState::verify_proof_against_commitment(
+    let next_predicate_bytes = input.step_predicate.as_buf_ref().to_bytes();
+    let next_predicate_list: VariableList<u8, 256> = VariableList::from(next_predicate_bytes);
+    let next_predicate_hash =
+        <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&next_predicate_list).into_inner();
+    if !SszFieldMerkle::verify_proof(
         input
             .incremental_step_proof
             .transition()
             .from()
-            .commitment(),
+            .commitment()
+            .inner(),
         &input.step_predicate_merkle_proof,
         &next_predicate_hash,
     ) {
@@ -153,8 +159,11 @@ mod tests {
         let step_proof = create_step_proof(from, to);
         let prev_proof = prev.map(|(f, t)| create_recursive_proof(f, t));
 
-        let merkle_proof =
-            create_state(from, step_predicate.clone()).generate_next_predicate_proof();
+        let merkle_proof = {
+            let state = create_state(from, step_predicate.clone());
+            // next_predicate field index is 1
+            SszFieldMerkle::generate_proof_for_container(&state, 1)
+        };
 
         MohoRecursiveInput {
             moho_predicate,
@@ -242,7 +251,7 @@ mod tests {
         let step_proof =
             MohoTransitionWithProof::new(transition, Proof::new("ASM".as_bytes().to_vec()));
 
-        let merkle_proof = from_state.generate_next_predicate_proof();
+        let merkle_proof = SszFieldMerkle::generate_proof_for_container(&from_state, 1);
 
         let inp = MohoRecursiveInput {
             moho_predicate: PredicateKey::always_accept(),
