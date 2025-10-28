@@ -2,12 +2,10 @@
 
 mod id;
 mod relation;
-mod ssz_merkle_utils;
 mod state;
 
 pub use id::{InnerStateCommitment, MohoStateCommitment, StateReference};
 pub use relation::{MohoAttestation, StateRefAttestation};
-pub use ssz_merkle_utils::{SszFieldMerkle, SszFieldRoots, SszLeafInclusionProof};
 
 // Generated SSZ types live here at compile time (kept private)
 mod ssz_generated {

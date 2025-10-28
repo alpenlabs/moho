@@ -6,9 +6,7 @@ use ssz_types::VariableList;
 use strata_predicate::{PredicateKey, PredicateKeyBuf};
 use tree_hash::{Sha256Hasher, TreeHash};
 
-use crate::{
-    InnerStateCommitment, MohoStateCommitment, ssz_generated, ssz_merkle_utils::SszFieldRoots,
-};
+use crate::{InnerStateCommitment, MohoStateCommitment, ssz_generated};
 
 impl MohoState {
     pub fn new(
@@ -53,21 +51,6 @@ impl MohoState {
         MohoStateCommitment::new(root.into_inner())
     }
 }
-
-impl SszFieldRoots for MohoState {
-    fn ssz_field_roots(&self) -> Vec<[u8; 32]> {
-        let inner_root =
-            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&self.inner_state).into_inner();
-        let pred_root =
-            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&self.next_predicate).into_inner();
-        let export_root =
-            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&self.export_state).into_inner();
-
-        vec![inner_root, pred_root, export_root]
-    }
-}
-
-// Additional container types could implement a similar method via SSZ codegen.
 
 // Compatibility constructors and accessors for SSZ-generated types
 impl ExportState {
@@ -169,8 +152,7 @@ impl BorshDeserialize for MohoState {
         let inner_state = ssz_types::FixedVector::<u8, 32>::from(inner);
 
         let pred_vec: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
-        let next_predicate =
-            VariableList::<u8, { MAX_PREDICATE_SIZE as usize }>::from(pred_vec);
+        let next_predicate = VariableList::<u8, { MAX_PREDICATE_SIZE as usize }>::from(pred_vec);
 
         // containers
         let cont_len: u32 = BorshDeserialize::deserialize_reader(reader)?;
@@ -205,58 +187,5 @@ impl BorshDeserialize for MohoState {
             next_predicate,
             export_state,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ssz_merkle_utils::SszFieldMerkle;
-
-    #[test]
-    fn test_merkle_proof_next_predicate() {
-        // Create a mock state
-        let inner_state = InnerStateCommitment::default();
-        let next_predicate = PredicateKey::always_accept();
-        let export_state = ExportState::new(vec![]);
-
-        let state = MohoState::new(inner_state, next_predicate.clone(), export_state);
-
-        // Generate proof for next_predicate (field index 1)
-        let proof = SszFieldMerkle::generate_proof_for_container(&state, 1);
-        let next_predicate_hash = state.ssz_field_roots()[1];
-
-        // Verify the proof against the state
-        let commitment = state.compute_commitment();
-        assert!(SszFieldMerkle::verify_proof(
-            commitment.inner(),
-            &proof,
-            &next_predicate_hash
-        ));
-
-        // Verify against computed commitment
-        let commitment = state.compute_commitment();
-        assert!(SszFieldMerkle::verify_proof(
-            commitment.inner(),
-            &proof,
-            &next_predicate_hash
-        ));
-    }
-
-    #[test]
-    fn test_commitment_consistency() {
-        let inner_state = InnerStateCommitment::default();
-        let next_predicate = PredicateKey::always_accept();
-        let export_state1 = ExportState::new(vec![]);
-        let export_state2 = ExportState::new(vec![]);
-
-        let state1 = MohoState::new(inner_state, next_predicate.clone(), export_state1);
-        let state2 = MohoState::new(inner_state, next_predicate, export_state2);
-
-        // Same states should have same commitment
-        assert_eq!(
-            state1.compute_commitment().inner(),
-            state2.compute_commitment().inner()
-        );
     }
 }
