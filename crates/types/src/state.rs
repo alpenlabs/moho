@@ -1,7 +1,7 @@
 //! Moho state types and SSZ-based commitment/proof helpers.
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use ssz_generated::specs::moho::*;
+use ssz_generated::ssz::moho::*;
 use ssz_types::VariableList;
 use strata_predicate::{PredicateKey, PredicateKeyBuf};
 use tree_hash::{Sha256Hasher, TreeHash};
