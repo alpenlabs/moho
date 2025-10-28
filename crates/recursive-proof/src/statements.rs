@@ -1,6 +1,5 @@
-use moho_types::SszFieldMerkle;
-use ssz_types::VariableList;
 use moho_types::MAX_PREDICATE_SIZE;
+use ssz_types::VariableList;
 use tree_hash::{Sha256Hasher, TreeHash};
 use zkaleido::ZkVmEnv;
 

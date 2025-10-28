@@ -454,6 +454,7 @@ dependencies = [
  "borsh",
  "moho-types",
  "ssz_types",
+ "strata-merkle",
  "strata-predicate",
  "thiserror 2.0.12",
  "tree_hash",
@@ -844,6 +845,17 @@ dependencies = [
  "ssz",
  "ssz_primitives",
  "tree_hash",
+]
+
+[[package]]
+name = "strata-merkle"
+version = "0.1.0"
+source = "git+https://github.com/alpenlabs/strata-common?branch=feat%2Fgeneric-merkle#c49f147ccb6d3fb07766460d5ea3aa63135b9ff8"
+dependencies = [
+ "borsh",
+ "digest",
+ "sha2",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
