@@ -162,11 +162,11 @@ mod tests {
             <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&state.export_state).into_inner(),
             [0u8; 32],
         ];
-        let merkle_proof =
-            BinaryMerkleTree::<Sha256NoPrefixHasher>::from_leaves(&ssz_container_leaves)
-                .gen_proof(1)
-                .unwrap();
-        merkle_proof
+
+        BinaryMerkleTree::from_leaves::<Sha256NoPrefixHasher>(&ssz_container_leaves)
+            .unwrap()
+            .gen_proof(1)
+            .unwrap()
     }
 
     fn create_input(from: u8, to: u8, prev: Option<(u8, u8)>) -> MohoRecursiveInput {

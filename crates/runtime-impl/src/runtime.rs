@@ -132,7 +132,5 @@ fn compute_wrapping_moho_state<P: MohoProgram>(
 
     let new_export_state = P::compute_export_state(moho_state.into_export_state(), step_output);
 
-    let new_moho_state = MohoState::new(post_inner_root, next_predicate, new_export_state);
-
-    new_moho_state
+    MohoState::new(post_inner_root, next_predicate, new_export_state)
 }

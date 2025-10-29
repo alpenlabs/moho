@@ -848,13 +848,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "strata-codec"
+version = "0.1.0"
+source = "git+https://github.com/alpenlabs/strata-common?branch=feat%2Fgeneric-merkle#cb5c1c5d89e4bb624c2fb7717518f188d6a5f18c"
+dependencies = [
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "strata-merkle"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?branch=feat%2Fgeneric-merkle#c49f147ccb6d3fb07766460d5ea3aa63135b9ff8"
+source = "git+https://github.com/alpenlabs/strata-common?branch=feat%2Fgeneric-merkle#cb5c1c5d89e4bb624c2fb7717518f188d6a5f18c"
 dependencies = [
  "borsh",
  "digest",
+ "serde",
  "sha2",
+ "strata-codec",
  "thiserror 2.0.12",
 ]
 
