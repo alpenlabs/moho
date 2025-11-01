@@ -729,6 +729,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_spanned"
+version = "0.6.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf41e0cfaf7226dca15e8197172c295a782857fcb97fad1808a166870dee75a3"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "sha2"
 version = "0.10.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -757,8 +766,8 @@ dependencies = [
 
 [[package]]
 name = "sizzle-parser"
-version = "0.2.0"
-source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
+version = "0.5.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=STR-1810-docstring-support#69c6813ed1891e214a22fc9bdadd4d784fa1bedd"
 dependencies = [
  "thiserror 2.0.12",
 ]
@@ -787,37 +796,37 @@ dependencies = [
 
 [[package]]
 name = "ssz"
-version = "0.2.0"
-source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
+version = "0.5.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=STR-1810-docstring-support#69c6813ed1891e214a22fc9bdadd4d784fa1bedd"
 dependencies = [
- "hex",
  "itertools",
- "serde",
  "smallvec",
  "ssz_primitives",
 ]
 
 [[package]]
 name = "ssz_codegen"
-version = "0.2.0"
-source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
+version = "0.5.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=STR-1810-docstring-support#69c6813ed1891e214a22fc9bdadd4d784fa1bedd"
 dependencies = [
  "prettyplease",
  "proc-macro2",
  "quote",
+ "serde",
  "sizzle-parser",
  "ssz",
  "ssz_derive",
  "ssz_types",
  "syn",
+ "toml",
  "tree_hash",
  "tree_hash_derive",
 ]
 
 [[package]]
 name = "ssz_derive"
-version = "0.2.0"
-source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
+version = "0.5.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=STR-1810-docstring-support#69c6813ed1891e214a22fc9bdadd4d784fa1bedd"
 dependencies = [
  "darling",
  "quote",
@@ -826,8 +835,8 @@ dependencies = [
 
 [[package]]
 name = "ssz_primitives"
-version = "0.2.0"
-source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
+version = "0.5.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=STR-1810-docstring-support#69c6813ed1891e214a22fc9bdadd4d784fa1bedd"
 dependencies = [
  "hex",
  "rand 0.8.5",
@@ -836,12 +845,9 @@ dependencies = [
 
 [[package]]
 name = "ssz_types"
-version = "0.2.0"
-source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
+version = "0.5.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=STR-1810-docstring-support#69c6813ed1891e214a22fc9bdadd4d784fa1bedd"
 dependencies = [
- "itertools",
- "serde",
- "serde_derive",
  "ssz",
  "ssz_primitives",
  "tree_hash",
@@ -959,10 +965,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "toml"
+version = "0.8.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd87a5cdd6ffab733b2f74bc4fd7ee5fff6634124999ac278c35fc78c6120148"
+dependencies = [
+ "serde",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_edit",
+]
+
+[[package]]
 name = "toml_datetime"
 version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0dd7358ecb8fc2f8d014bf86f6f638ce72ba252a2c3a2572f2a795f1d23efb41"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "toml_edit"
@@ -971,14 +992,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17b4795ff5edd201c7cd6dca065ae59972ce77d1b80fa0a84d94950ece7d1474"
 dependencies = [
  "indexmap",
+ "serde",
+ "serde_spanned",
  "toml_datetime",
  "winnow",
 ]
 
 [[package]]
 name = "tree_hash"
-version = "0.2.0"
-source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
+version = "0.5.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=STR-1810-docstring-support#69c6813ed1891e214a22fc9bdadd4d784fa1bedd"
 dependencies = [
  "digest",
  "sha2",
@@ -989,8 +1012,8 @@ dependencies = [
 
 [[package]]
 name = "tree_hash_derive"
-version = "0.2.0"
-source = "git+https://github.com/alpenlabs/ssz-gen#2e6d0ba5033c42eb960436914ccc75170f11a22a"
+version = "0.5.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=STR-1810-docstring-support#69c6813ed1891e214a22fc9bdadd4d784fa1bedd"
 dependencies = [
  "darling",
  "quote",
