@@ -13,6 +13,9 @@ moho-runtime-impl = { path = "crates/runtime-impl" }
 moho-runtime-interface = { path = "crates/runtime-interface" }
 moho-types = { path = "crates/types" }
 
+strata-merkle = { git = "https://github.com/alpenlabs/strata-common", branch = "feat/generic-merkle", features = [
+  "borsh",
+] }
 strata-predicate = { git = "https://github.com/alpenlabs/strata-common" }
 
 borsh = { version = "1.5.7", features = ["derive"] }
@@ -21,6 +24,13 @@ sha2 = { version = "0.10.9" }
 thiserror = { version = "2" }
 zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc17" }
 zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc17" }
+
+ssz = { git = "https://github.com/alpenlabs/ssz-gen", branch = "STR-1810-docstring-support" }
+ssz_codegen = { git = "https://github.com/alpenlabs/ssz-gen", branch = "STR-1810-docstring-support" }
+ssz_derive = { git = "https://github.com/alpenlabs/ssz-gen", branch = "STR-1810-docstring-support" }
+ssz_types = { git = "https://github.com/alpenlabs/ssz-gen", branch = "STR-1810-docstring-support" }
+tree_hash = { git = "https://github.com/alpenlabs/ssz-gen", branch = "STR-1810-docstring-support" }
+tree_hash_derive = { git = "https://github.com/alpenlabs/ssz-gen", branch = "STR-1810-docstring-support" }
 
 [workspace.lints]
 rust.missing_debug_implementations = "warn"

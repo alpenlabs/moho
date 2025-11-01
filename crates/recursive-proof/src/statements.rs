@@ -1,4 +1,7 @@
-use moho_types::{MerkleTree, MohoState};
+use moho_types::MAX_PREDICATE_SIZE;
+use ssz_types::VariableList;
+use strata_merkle::Sha256NoPrefixHasher;
+use tree_hash::{Sha256Hasher, TreeHash};
 use zkaleido::ZkVmEnv;
 
 use crate::{MohoError, MohoRecursiveOutput, MohoStateTransition, program::MohoRecursiveInput};
@@ -53,16 +56,21 @@ pub fn verify_and_chain_transition(
     input: MohoRecursiveInput,
 ) -> Result<MohoStateTransition, MohoError> {
     // 1: Ensure the incremental proof predicate key is part of the Moho state Merkle root.
-    let next_predicate_hash = MerkleTree::hash_serializable(&input.step_predicate);
-    if !MohoState::verify_proof_against_commitment(
-        input
-            .incremental_step_proof
-            .transition()
-            .from()
-            .commitment(),
-        &input.step_predicate_merkle_proof,
-        &next_predicate_hash,
-    ) {
+    let next_predicate_bytes = input.step_predicate.as_buf_ref().to_bytes();
+    let next_predicate_list: VariableList<u8, { MAX_PREDICATE_SIZE as usize }> =
+        VariableList::from(next_predicate_bytes);
+    let next_predicate_hash =
+        <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&next_predicate_list).into_inner();
+    let expected_root = input
+        .incremental_step_proof
+        .transition()
+        .from()
+        .commitment()
+        .inner();
+    if !input
+        .step_predicate_merkle_proof
+        .verify_with_root::<Sha256NoPrefixHasher>(expected_root, &next_predicate_hash)
+    {
         // Fail early if the Merkle proof is invalid
         return Err(MohoError::InvalidMerkleProof);
     }
@@ -105,6 +113,7 @@ mod tests {
         ExportState, InnerStateCommitment, MohoState, MohoStateCommitment, StateRefAttestation,
         StateReference,
     };
+    use strata_merkle::{BinaryMerkleTree, MerkleProof};
     use strata_predicate::PredicateKey;
     use zkaleido::Proof;
 
@@ -146,6 +155,20 @@ mod tests {
         MohoTransitionWithProof::new(t, proof)
     }
 
+    fn create_step_predicate_inclusion_proof(state: &MohoState) -> MerkleProof<[u8; 32]> {
+        let ssz_container_leaves = vec![
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&state.inner_state).into_inner(),
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&state.next_predicate).into_inner(),
+            <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&state.export_state).into_inner(),
+            [0u8; 32],
+        ];
+
+        BinaryMerkleTree::from_leaves::<Sha256NoPrefixHasher>(&ssz_container_leaves)
+            .unwrap()
+            .gen_proof(1)
+            .unwrap()
+    }
+
     fn create_input(from: u8, to: u8, prev: Option<(u8, u8)>) -> MohoRecursiveInput {
         let moho_predicate = PredicateKey::always_accept();
         let step_predicate = PredicateKey::always_accept();
@@ -153,8 +176,8 @@ mod tests {
         let step_proof = create_step_proof(from, to);
         let prev_proof = prev.map(|(f, t)| create_recursive_proof(f, t));
 
-        let merkle_proof =
-            create_state(from, step_predicate.clone()).generate_next_predicate_proof();
+        let state = create_state(from, step_predicate.clone());
+        let merkle_proof = create_step_predicate_inclusion_proof(&state);
 
         MohoRecursiveInput {
             moho_predicate,
@@ -242,7 +265,7 @@ mod tests {
         let step_proof =
             MohoTransitionWithProof::new(transition, Proof::new("ASM".as_bytes().to_vec()));
 
-        let merkle_proof = from_state.generate_next_predicate_proof();
+        let merkle_proof = create_step_predicate_inclusion_proof(&from_state);
 
         let inp = MohoRecursiveInput {
             moho_predicate: PredicateKey::always_accept(),
