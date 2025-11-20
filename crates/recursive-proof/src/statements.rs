@@ -163,7 +163,7 @@ mod tests {
             [0u8; 32],
         ];
 
-        BinaryMerkleTree::from_leaves::<Sha256NoPrefixHasher>(&ssz_container_leaves)
+        BinaryMerkleTree::from_leaves::<Sha256NoPrefixHasher>(ssz_container_leaves)
             .unwrap()
             .gen_proof(1)
             .unwrap()
