@@ -62,6 +62,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "bit-set"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08807e080ed7f9d5433fa9b275196cfc35414f66a0c79d864dc51a0d825231a3"
+dependencies = [
+ "bit-vec",
+]
+
+[[package]]
+name = "bit-vec"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e764a1d40d510daf35e07be9eb06e75770908c27d411ee6c92109c9840eaaf7"
+
+[[package]]
 name = "bitflags"
 version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -303,6 +318,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
+name = "errno"
+version = "0.3.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
+dependencies = [
+ "libc",
+ "windows-sys",
+]
+
+[[package]]
+name = "fastrand"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
+
+[[package]]
 name = "ff"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -344,6 +375,18 @@ dependencies = [
  "cfg-if",
  "libc",
  "wasi",
+]
+
+[[package]]
+name = "getrandom"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "r-efi",
+ "wasip2",
 ]
 
 [[package]]
@@ -442,6 +485,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9fbbcab51052fe104eb5e5d351cf728d30a5be1fe14d9be8a3b097481fb97de"
 
 [[package]]
+name = "linux-raw-sys"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df1d3c3b53da64cf5760482273a98e575c651a67eec7f77df96b5b642de8f039"
+
+[[package]]
 name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -486,6 +535,7 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "hex",
+ "proptest",
  "sha2",
  "ssz",
  "ssz_codegen",
@@ -566,13 +616,24 @@ version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bee689443a2bd0a16ab0348b52ee43e3b2d1b1f931c8aa5c9f8de4c86fbe8c40"
 dependencies = [
+ "bit-set",
+ "bit-vec",
  "bitflags",
  "num-traits",
  "rand 0.9.2",
  "rand_chacha 0.9.0",
  "rand_xorshift",
+ "regex-syntax",
+ "rusty-fork",
+ "tempfile",
  "unarray",
 ]
+
+[[package]]
+name = "quick-error"
+version = "1.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
 
 [[package]]
 name = "quote"
@@ -582,6 +643,12 @@ checksum = "1885c039570dc00dcb4ff087a89e185fd56bae234ddc7f056a945bf36467248d"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "r-efi"
+version = "5.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
 name = "rand"
@@ -600,6 +667,7 @@ version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6db2770f06117d490610c7488547d543617b21bfa07796d7a12f6f1bd53850d1"
 dependencies = [
+ "rand_chacha 0.9.0",
  "rand_core 0.9.3",
 ]
 
@@ -629,7 +697,7 @@ version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
- "getrandom",
+ "getrandom 0.2.16",
 ]
 
 [[package]]
@@ -637,6 +705,9 @@ name = "rand_core"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
+dependencies = [
+ "getrandom 0.3.4",
+]
 
 [[package]]
 name = "rand_xorshift"
@@ -646,6 +717,12 @@ checksum = "513962919efc330f829edb2535844d1b912b0fbe2ca165d613e4e8788bb05a5a"
 dependencies = [
  "rand_core 0.9.3",
 ]
+
+[[package]]
+name = "regex-syntax"
+version = "0.8.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 
 [[package]]
 name = "rfc6979"
@@ -683,6 +760,31 @@ name = "rustc-hex"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3e75f6a532d0fd9f7f13144f392b6ad56a32696bfcd9c78f797f16bbb6f072d6"
+
+[[package]]
+name = "rustix"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd15f8a2c5551a84d56efdc1cd049089e409ac19a3072d5037a17fd70719ff3e"
+dependencies = [
+ "bitflags",
+ "errno",
+ "libc",
+ "linux-raw-sys",
+ "windows-sys",
+]
+
+[[package]]
+name = "rusty-fork"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc6bf79ff24e648f6da1f8d1f011e9cac26491b619e6b9280f2b47f1774e6ee2"
+dependencies = [
+ "fnv",
+ "quick-error",
+ "tempfile",
+ "wait-timeout",
+]
 
 [[package]]
 name = "sec1"
@@ -766,8 +868,8 @@ dependencies = [
 
 [[package]]
 name = "sizzle-parser"
-version = "0.6.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.6.0#70b1cbc79b1ea7d50bc1c5d12810f976361b961b"
+version = "0.7.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.7.1#06dbc48413f46cf7137619a4d4c65196f3d190e7"
 dependencies = [
  "thiserror 2.0.12",
 ]
@@ -796,8 +898,8 @@ dependencies = [
 
 [[package]]
 name = "ssz"
-version = "0.6.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.6.0#70b1cbc79b1ea7d50bc1c5d12810f976361b961b"
+version = "0.7.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.7.1#06dbc48413f46cf7137619a4d4c65196f3d190e7"
 dependencies = [
  "itertools",
  "smallvec",
@@ -806,8 +908,8 @@ dependencies = [
 
 [[package]]
 name = "ssz_codegen"
-version = "0.6.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.6.0#70b1cbc79b1ea7d50bc1c5d12810f976361b961b"
+version = "0.7.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.7.1#06dbc48413f46cf7137619a4d4c65196f3d190e7"
 dependencies = [
  "prettyplease",
  "proc-macro2",
@@ -825,8 +927,8 @@ dependencies = [
 
 [[package]]
 name = "ssz_derive"
-version = "0.6.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.6.0#70b1cbc79b1ea7d50bc1c5d12810f976361b961b"
+version = "0.7.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.7.1#06dbc48413f46cf7137619a4d4c65196f3d190e7"
 dependencies = [
  "darling",
  "quote",
@@ -835,8 +937,8 @@ dependencies = [
 
 [[package]]
 name = "ssz_primitives"
-version = "0.6.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.6.0#70b1cbc79b1ea7d50bc1c5d12810f976361b961b"
+version = "0.7.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.7.1#06dbc48413f46cf7137619a4d4c65196f3d190e7"
 dependencies = [
  "hex",
  "rand 0.8.5",
@@ -845,8 +947,8 @@ dependencies = [
 
 [[package]]
 name = "ssz_types"
-version = "0.6.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.6.0#70b1cbc79b1ea7d50bc1c5d12810f976361b961b"
+version = "0.7.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.7.1#06dbc48413f46cf7137619a4d4c65196f3d190e7"
 dependencies = [
  "ssz",
  "ssz_primitives",
@@ -856,7 +958,7 @@ dependencies = [
 [[package]]
 name = "strata-codec"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?branch=feat%2Fgeneric-merkle#cb5c1c5d89e4bb624c2fb7717518f188d6a5f18c"
+source = "git+https://github.com/alpenlabs/strata-common#930d2608a79077ab2144cfd1ecd71fc37e9b8887"
 dependencies = [
  "thiserror 2.0.12",
 ]
@@ -864,7 +966,7 @@ dependencies = [
 [[package]]
 name = "strata-merkle"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?branch=feat%2Fgeneric-merkle#cb5c1c5d89e4bb624c2fb7717518f188d6a5f18c"
+source = "git+https://github.com/alpenlabs/strata-common#930d2608a79077ab2144cfd1ecd71fc37e9b8887"
 dependencies = [
  "borsh",
  "digest",
@@ -922,6 +1024,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "tempfile"
+version = "3.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d31c77bdf42a745371d260a26ca7163f1e0924b64afa0b688e61b5a9fa02f16"
+dependencies = [
+ "fastrand",
+ "getrandom 0.3.4",
+ "once_cell",
+ "rustix",
+ "windows-sys",
 ]
 
 [[package]]
@@ -1000,8 +1115,8 @@ dependencies = [
 
 [[package]]
 name = "tree_hash"
-version = "0.6.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.6.0#70b1cbc79b1ea7d50bc1c5d12810f976361b961b"
+version = "0.7.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.7.1#06dbc48413f46cf7137619a4d4c65196f3d190e7"
 dependencies = [
  "digest",
  "sha2",
@@ -1012,8 +1127,8 @@ dependencies = [
 
 [[package]]
 name = "tree_hash_derive"
-version = "0.6.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.6.0#70b1cbc79b1ea7d50bc1c5d12810f976361b961b"
+version = "0.7.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.7.1#06dbc48413f46cf7137619a4d4c65196f3d190e7"
 dependencies = [
  "darling",
  "quote",
@@ -1051,10 +1166,43 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
+name = "wait-timeout"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09ac3b126d3914f9849036f826e054cbabdc8519970b8998ddaf3b5bd3c65f11"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "wasi"
 version = "0.11.1+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
+
+[[package]]
+name = "wasip2"
+version = "1.0.1+wasi-0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0562428422c63773dad2c345a1882263bbf4d65cf3f42e90921f787ef5ad58e7"
+dependencies = [
+ "wit-bindgen",
+]
+
+[[package]]
+name = "windows-link"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
+
+[[package]]
+name = "windows-sys"
+version = "0.61.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc"
+dependencies = [
+ "windows-link",
+]
 
 [[package]]
 name = "winnow"
@@ -1064,6 +1212,12 @@ checksum = "63d3fcd9bba44b03821e7d699eeee959f3126dcc4aa8e4ae18ec617c2a5cea10"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "wit-bindgen"
+version = "0.46.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 
 [[package]]
 name = "zerocopy"

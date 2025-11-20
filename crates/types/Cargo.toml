@@ -17,3 +17,6 @@ zkaleido.workspace = true
 
 [build-dependencies]
 ssz_codegen.workspace = true
+
+[dev-dependencies]
+proptest = "1.5"
