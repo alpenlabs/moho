@@ -117,6 +117,75 @@ impl ExportEntry {
     }
 }
 
+// Borsh serialization for ExportEntry
+impl BorshSerialize for ExportEntry {
+    fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
+        BorshSerialize::serialize(&self.entry_id, writer)?;
+        let payload: Vec<u8> = self.payload.as_ref().to_vec();
+        BorshSerialize::serialize(&payload, writer)?;
+        Ok(())
+    }
+}
+
+impl BorshDeserialize for ExportEntry {
+    fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
+        let entry_id: u32 = BorshDeserialize::deserialize_reader(reader)?;
+        let payload: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
+        Ok(Self::new(entry_id, payload))
+    }
+}
+
+// Borsh serialization for ExportContainer
+impl BorshSerialize for ExportContainer {
+    fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
+        BorshSerialize::serialize(&self.container_id, writer)?;
+        let cp: Vec<u8> = self.common_payload.as_ref().to_vec();
+        BorshSerialize::serialize(&cp, writer)?;
+        let entries: Vec<&ExportEntry> = self.entries.iter().collect();
+        BorshSerialize::serialize(&(entries.len() as u32), writer)?;
+        for e in entries {
+            BorshSerialize::serialize(e, writer)?;
+        }
+        Ok(())
+    }
+}
+
+impl BorshDeserialize for ExportContainer {
+    fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
+        let container_id: u16 = BorshDeserialize::deserialize_reader(reader)?;
+        let common_payload_vec: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
+        let entries_len: u32 = BorshDeserialize::deserialize_reader(reader)?;
+        let mut entries: Vec<ExportEntry> = Vec::with_capacity(entries_len as usize);
+        for _ in 0..entries_len {
+            entries.push(BorshDeserialize::deserialize_reader(reader)?);
+        }
+        Ok(Self::new(container_id, common_payload_vec, entries))
+    }
+}
+
+// Borsh serialization for ExportState
+impl BorshSerialize for ExportState {
+    fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
+        let containers: Vec<&ExportContainer> = self.containers.iter().collect();
+        BorshSerialize::serialize(&(containers.len() as u32), writer)?;
+        for c in containers {
+            BorshSerialize::serialize(c, writer)?;
+        }
+        Ok(())
+    }
+}
+
+impl BorshDeserialize for ExportState {
+    fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
+        let cont_len: u32 = BorshDeserialize::deserialize_reader(reader)?;
+        let mut containers: Vec<ExportContainer> = Vec::with_capacity(cont_len as usize);
+        for _ in 0..cont_len {
+            containers.push(BorshDeserialize::deserialize_reader(reader)?);
+        }
+        Ok(Self::new(containers))
+    }
+}
+
 // Borsh serialization for the generated SSZ MohoState
 impl BorshSerialize for MohoState {
     fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
