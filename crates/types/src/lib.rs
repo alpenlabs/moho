@@ -7,7 +7,13 @@ mod state;
 pub use id::{InnerStateCommitment, MohoStateCommitment, StateReference};
 pub use relation::{MohoAttestation, StateRefAttestation};
 
-// Generated SSZ types live here at compile time (kept private)
+// Include generated SSZ types from build.rs output
+#[allow(
+    clippy::all,
+    unreachable_pub,
+    clippy::allow_attributes,
+    reason = "generated code"
+)]
 mod ssz_generated {
     include!(concat!(env!("OUT_DIR"), "/generated_ssz.rs"));
 }

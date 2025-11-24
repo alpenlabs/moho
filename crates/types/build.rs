@@ -10,7 +10,8 @@ fn main() {
     // Use local ssz-gen codegen
     let entry_points = ["moho.ssz"]; // ssz/moho.ssz
     let base_dir = "ssz/"; // relative to this crate root
-    let crates: [&str; 0] = [];
+    // External crates whose SSZ modules are imported by `moho.ssz`
+    let crates = ["strata_merkle"];
 
     build_ssz_files(
         &entry_points,

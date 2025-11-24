@@ -3,6 +3,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use ssz_generated::ssz::moho::*;
 use ssz_types::{FixedBytes, VariableList};
+use strata_merkle::{MerkleMr64B32, MAX_MMR_PEAKS};
 use strata_predicate::{PredicateKey, PredicateKeyBuf};
 use tree_hash::{Sha256Hasher, TreeHash};
 
@@ -70,17 +71,19 @@ impl ExportState {
             .iter_mut()
             .find(|c| c.container_id == container_id)
         {
-            container.entries.push(entry).expect("entry out of bound")
+            container.add_entry(entry);
         }
     }
 }
 
 impl ExportContainer {
     pub fn new(container_id: u16, common_payload: Vec<u8>, entries: Vec<ExportEntry>) -> Self {
+        let entries_mmr = compute_entries_mmr(&entries);
         Self {
             container_id,
             common_payload: ssz_types::VariableList::from(common_payload),
             entries: ssz_types::VariableList::from(entries),
+            entries_mmr,
         }
     }
 
@@ -98,7 +101,19 @@ impl ExportContainer {
 
     pub fn add_entry(&mut self, entry: ExportEntry) {
         self.entries.push(entry).expect("entry out of bound");
+        self.entries_mmr = compute_entries_mmr(&self.entries);
     }
+}
+
+fn compute_entries_mmr(entries: &[ExportEntry]) -> MerkleMr64B32 {
+    let mut entries_mmr = MerkleMr64B32::new(MAX_MMR_PEAKS as usize);
+    for entry in entries {
+        let leaf = <ExportEntry as TreeHash<Sha256Hasher>>::tree_hash_root(entry);
+        entries_mmr
+            .add_leaf(leaf.0)
+            .expect("entries exceed Merkle MMR capacity");
+    }
+    entries_mmr
 }
 
 impl ExportEntry {
@@ -229,7 +244,6 @@ impl BorshDeserialize for MohoState {
         for _ in 0..cont_len {
             let container_id: u16 = BorshDeserialize::deserialize_reader(reader)?;
             let common_payload_vec: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
-            let common_payload = ssz_types::VariableList::from(common_payload_vec);
 
             let entries_len: u32 = BorshDeserialize::deserialize_reader(reader)?;
             let mut entries: Vec<ExportEntry> = Vec::with_capacity(entries_len as usize);
@@ -240,11 +254,7 @@ impl BorshDeserialize for MohoState {
                 entries.push(ExportEntry { entry_id, payload });
             }
 
-            containers.push(ExportContainer {
-                container_id,
-                common_payload,
-                entries: ssz_types::VariableList::from(entries),
-            });
+            containers.push(ExportContainer::new(container_id, common_payload_vec, entries));
         }
 
         let export_state = ExportState {
