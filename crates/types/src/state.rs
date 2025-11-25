@@ -61,7 +61,7 @@ impl ExportState {
         &self.containers
     }
 
-    pub fn add_entry(&mut self, container_id: u16, entry: [u8; 32]) {
+    pub fn add_entry(&mut self, container_id: u8, entry: [u8; 32]) {
         if let Some(container) = self
             .containers
             .iter_mut()
@@ -73,7 +73,7 @@ impl ExportState {
 }
 
 impl ExportContainer {
-    pub fn new(container_id: u16, entries: Vec<[u8; 32]>) -> Self {
+    pub fn new(container_id: u8, entries: Vec<[u8; 32]>) -> Self {
         let mut entries_mmr = MerkleMr64B32::new(MAX_MMR_PEAKS as usize);
         for entry in entries {
             entries_mmr
@@ -86,7 +86,7 @@ impl ExportContainer {
         }
     }
 
-    pub fn container_id(&self) -> u16 {
+    pub fn container_id(&self) -> u8 {
         self.container_id
     }
 
@@ -114,7 +114,7 @@ impl BorshSerialize for ExportContainer {
 
 impl BorshDeserialize for ExportContainer {
     fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
-        let container_id: u16 = BorshDeserialize::deserialize_reader(reader)?;
+        let container_id: u8 = BorshDeserialize::deserialize_reader(reader)?;
         let mmr_bytes: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
         let entries_mmr = ssz::Decode::from_ssz_bytes(&mmr_bytes).map_err(|e| {
             borsh::io::Error::new(borsh::io::ErrorKind::InvalidData, format!("{:?}", e))
@@ -193,10 +193,7 @@ mod tests {
 
     // Strategy for generating arbitrary ExportContainer
     fn export_container_strategy() -> impl Strategy<Value = ExportContainer> {
-        (
-            any::<u16>(),
-            prop::collection::vec(any::<[u8; 32]>(), 0..10),
-        )
+        (any::<u8>(), prop::collection::vec(any::<[u8; 32]>(), 0..10))
             .prop_map(|(container_id, entries)| ExportContainer::new(container_id, entries))
     }
 

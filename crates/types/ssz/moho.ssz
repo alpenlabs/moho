@@ -12,6 +12,6 @@ class ExportState(Container):
     containers: List[ExportContainer, MAX_EXPORT_CONTAINERS]
 
 class ExportContainer(Container):
-    container_id: uint16
+    container_id: uint8
     #~# external_kind: container
     entries_mmr: strata_merkle.MerkleMr64B32
