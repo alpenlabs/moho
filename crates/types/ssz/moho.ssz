@@ -1,9 +1,7 @@
 import strata_merkle
 
 MAX_EXPORT_CONTAINERS = 256
-MAX_PAYLOAD_SIZE = 4096
 MAX_PREDICATE_SIZE = 4096
-MAX_EXPORT_ENTRIES = 4096
 
 class MohoState(Container):
     inner_state: Bytes32
@@ -17,7 +15,3 @@ class ExportContainer(Container):
     container_id: uint16
     #~# external_kind: container
     entries_mmr: strata_merkle.MerkleMr64B32
-
-class ExportEntry(Container):
-    entry_id: uint32
-    payload: List[byte, MAX_PAYLOAD_SIZE]
