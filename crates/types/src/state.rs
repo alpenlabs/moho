@@ -15,21 +15,18 @@ impl MohoState {
         next_predicate: PredicateKey,
         export_state: ExportState,
     ) -> Self {
-        let inner = FixedBytes::<32>::from(*inner_state.inner());
         let next_predicate_bytes = next_predicate.as_buf_ref().to_bytes();
         let next_predicate =
             VariableList::<u8, { MAX_PREDICATE_SIZE as usize }>::from(next_predicate_bytes);
         Self {
-            inner_state: inner,
+            inner_state: inner_state.into_inner(),
             next_predicate,
             export_state,
         }
     }
 
     pub fn inner_state(&self) -> InnerStateCommitment {
-        let mut arr = [0u8; 32];
-        arr.copy_from_slice(self.inner_state.as_ref());
-        InnerStateCommitment::new(arr)
+        InnerStateCommitment::from(self.inner_state.0)
     }
 
     pub fn next_predicate(&self) -> PredicateKey {
@@ -46,7 +43,6 @@ impl MohoState {
         self.export_state
     }
 
-    /// Compute the MohoStateCommitment (Merkle root) of the MohoState
     pub fn compute_commitment(&self) -> MohoStateCommitment {
         let root = <_ as TreeHash<Sha256Hasher>>::tree_hash_root(self);
         MohoStateCommitment::new(root.into_inner())
@@ -156,7 +152,7 @@ impl BorshDeserialize for ExportState {
 // Borsh serialization for the generated SSZ MohoState
 impl BorshSerialize for MohoState {
     fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
-        // inner_state [u8;32]
+        // inner_state is already FixedBytes<32>
         writer.write_all(self.inner_state.as_ref())?;
         // next_predicate bytes as Vec<u8>
         let bytes = self.next_predicate.as_ref();
@@ -437,7 +433,7 @@ mod tests {
             let export = ExportState::new(vec![]);
             let state = MohoState::new(inner, predicate.clone(), export);
 
-            assert_eq!(state.inner_state().inner(), &[0xCD; 32]);
+            assert_eq!(state.inner_state().as_array(), &[0xCD; 32]);
             assert_eq!(
                 state.next_predicate().as_buf_ref().to_bytes(),
                 predicate.as_buf_ref().to_bytes()
