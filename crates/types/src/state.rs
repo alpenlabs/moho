@@ -3,7 +3,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use ssz_generated::ssz::moho::*;
 use ssz_types::{FixedBytes, VariableList};
-use strata_merkle::{MerkleMr64B32, MAX_MMR_PEAKS};
+use strata_merkle::{MAX_MMR_PEAKS, MerkleMr64B32};
 use strata_predicate::{PredicateKey, PredicateKeyBuf};
 use tree_hash::{Sha256Hasher, TreeHash};
 
@@ -77,11 +77,10 @@ impl ExportState {
 }
 
 impl ExportContainer {
-    pub fn new(container_id: u16, common_payload: Vec<u8>, entries: Vec<ExportEntry>) -> Self {
+    pub fn new(container_id: u16, entries: Vec<ExportEntry>) -> Self {
         let entries_mmr = compute_entries_mmr(&entries);
         Self {
             container_id,
-            common_payload: ssz_types::VariableList::from(common_payload),
             entries: ssz_types::VariableList::from(entries),
             entries_mmr,
         }
@@ -89,10 +88,6 @@ impl ExportContainer {
 
     pub fn container_id(&self) -> u16 {
         self.container_id
-    }
-
-    pub fn common_payload(&self) -> &[u8] {
-        &self.common_payload
     }
 
     pub fn entries(&self) -> &[ExportEntry] {
@@ -154,8 +149,6 @@ impl BorshDeserialize for ExportEntry {
 impl BorshSerialize for ExportContainer {
     fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
         BorshSerialize::serialize(&self.container_id, writer)?;
-        let cp: Vec<u8> = self.common_payload.as_ref().to_vec();
-        BorshSerialize::serialize(&cp, writer)?;
         let entries: Vec<&ExportEntry> = self.entries.iter().collect();
         BorshSerialize::serialize(&(entries.len() as u32), writer)?;
         for e in entries {
@@ -168,13 +161,12 @@ impl BorshSerialize for ExportContainer {
 impl BorshDeserialize for ExportContainer {
     fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
         let container_id: u16 = BorshDeserialize::deserialize_reader(reader)?;
-        let common_payload_vec: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
         let entries_len: u32 = BorshDeserialize::deserialize_reader(reader)?;
         let mut entries: Vec<ExportEntry> = Vec::with_capacity(entries_len as usize);
         for _ in 0..entries_len {
             entries.push(BorshDeserialize::deserialize_reader(reader)?);
         }
-        Ok(Self::new(container_id, common_payload_vec, entries))
+        Ok(Self::new(container_id, entries))
     }
 }
 
@@ -215,8 +207,6 @@ impl BorshSerialize for MohoState {
         BorshSerialize::serialize(&(containers.len() as u32), writer)?;
         for c in containers {
             BorshSerialize::serialize(&c.container_id, writer)?;
-            let cp: Vec<u8> = c.common_payload.as_ref().to_vec();
-            BorshSerialize::serialize(&cp, writer)?;
             let entries: Vec<&ExportEntry> = c.entries.iter().collect();
             BorshSerialize::serialize(&(entries.len() as u32), writer)?;
             for e in entries {
@@ -243,7 +233,6 @@ impl BorshDeserialize for MohoState {
         let mut containers: Vec<ExportContainer> = Vec::with_capacity(cont_len as usize);
         for _ in 0..cont_len {
             let container_id: u16 = BorshDeserialize::deserialize_reader(reader)?;
-            let common_payload_vec: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
 
             let entries_len: u32 = BorshDeserialize::deserialize_reader(reader)?;
             let mut entries: Vec<ExportEntry> = Vec::with_capacity(entries_len as usize);
@@ -254,7 +243,7 @@ impl BorshDeserialize for MohoState {
                 entries.push(ExportEntry { entry_id, payload });
             }
 
-            containers.push(ExportContainer::new(container_id, common_payload_vec, entries));
+            containers.push(ExportContainer::new(container_id, entries));
         }
 
         let export_state = ExportState {
@@ -287,12 +276,9 @@ mod tests {
     fn export_container_strategy() -> impl Strategy<Value = ExportContainer> {
         (
             any::<u16>(),
-            prop::collection::vec(any::<u8>(), 0..100),
             prop::collection::vec(export_entry_strategy(), 0..10),
         )
-            .prop_map(|(container_id, common_payload, entries)| {
-                ExportContainer::new(container_id, common_payload, entries)
-            })
+            .prop_map(|(container_id, entries)| ExportContainer::new(container_id, entries))
     }
 
     // Strategy for generating arbitrary ExportState
@@ -367,7 +353,6 @@ mod tests {
                 let encoded = container.as_ssz_bytes();
                 let decoded = ExportContainer::from_ssz_bytes(&encoded).unwrap();
                 prop_assert_eq!(container.container_id(), decoded.container_id());
-                prop_assert_eq!(container.common_payload(), decoded.common_payload());
                 prop_assert_eq!(container.entries().len(), decoded.entries().len());
             }
 
@@ -381,17 +366,16 @@ mod tests {
 
         #[test]
         fn test_zero_ssz() {
-            let container = ExportContainer::new(0, vec![], vec![]);
+            let container = ExportContainer::new(0, vec![]);
             let encoded = container.as_ssz_bytes();
             let decoded = ExportContainer::from_ssz_bytes(&encoded).unwrap();
             assert_eq!(container.container_id(), decoded.container_id());
-            assert_eq!(container.common_payload(), decoded.common_payload());
             assert_eq!(container.entries().len(), 0);
         }
 
         #[test]
         fn test_add_entry() {
-            let mut container = ExportContainer::new(1, vec![0x01, 0x02], vec![]);
+            let mut container = ExportContainer::new(1, vec![]);
             assert_eq!(container.entries().len(), 0);
 
             let entry = ExportEntry::new(100, vec![0xAA, 0xBB]);
@@ -431,8 +415,8 @@ mod tests {
 
         #[test]
         fn test_add_entry() {
-            let container1 = ExportContainer::new(1, vec![0x01], vec![]);
-            let container2 = ExportContainer::new(2, vec![0x02], vec![]);
+            let container1 = ExportContainer::new(1, vec![]);
+            let container2 = ExportContainer::new(2, vec![]);
             let mut state = ExportState::new(vec![container1, container2]);
 
             let entry = ExportEntry::new(999, vec![0xFF]);
@@ -522,10 +506,10 @@ mod tests {
 
             let entry1 = ExportEntry::new(1, vec![0x01, 0x02, 0x03]);
             let entry2 = ExportEntry::new(2, vec![0x04, 0x05]);
-            let container1 = ExportContainer::new(10, vec![0xAA], vec![entry1, entry2]);
+            let container1 = ExportContainer::new(10, vec![entry1, entry2]);
 
             let entry3 = ExportEntry::new(3, vec![0x06]);
-            let container2 = ExportContainer::new(20, vec![0xBB, 0xCC], vec![entry3]);
+            let container2 = ExportContainer::new(20, vec![entry3]);
 
             let export = ExportState::new(vec![container1, container2]);
             let state = MohoState::new(inner, predicate, export);
@@ -576,7 +560,7 @@ mod tests {
             let inner = InnerStateCommitment::new([0x00; 32]);
             let pred_bytes: &[u8] = &[0x01u8];
             let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
-            let container = ExportContainer::new(1, vec![0xAA], vec![]);
+            let container = ExportContainer::new(1, vec![]);
             let export = ExportState::new(vec![container]);
             let state = MohoState::new(inner, predicate, export);
 
