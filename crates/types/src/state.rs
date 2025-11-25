@@ -81,7 +81,6 @@ impl ExportContainer {
         let entries_mmr = compute_entries_mmr(&entries);
         Self {
             container_id,
-            entries: ssz_types::VariableList::from(entries),
             entries_mmr,
         }
     }
@@ -90,13 +89,15 @@ impl ExportContainer {
         self.container_id
     }
 
-    pub fn entries(&self) -> &[ExportEntry] {
-        &self.entries
+    pub fn entries_mmr(&self) -> &MerkleMr64B32 {
+        &self.entries_mmr
     }
 
     pub fn add_entry(&mut self, entry: ExportEntry) {
-        self.entries.push(entry).expect("entry out of bound");
-        self.entries_mmr = compute_entries_mmr(&self.entries);
+        let leaf = <ExportEntry as TreeHash<Sha256Hasher>>::tree_hash_root(&entry);
+        self.entries_mmr
+            .add_leaf(leaf.0)
+            .expect("entries exceed Merkle MMR capacity");
     }
 }
 
@@ -149,11 +150,9 @@ impl BorshDeserialize for ExportEntry {
 impl BorshSerialize for ExportContainer {
     fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
         BorshSerialize::serialize(&self.container_id, writer)?;
-        let entries: Vec<&ExportEntry> = self.entries.iter().collect();
-        BorshSerialize::serialize(&(entries.len() as u32), writer)?;
-        for e in entries {
-            BorshSerialize::serialize(e, writer)?;
-        }
+        // Serialize entries_mmr using SSZ encoding
+        let mmr_bytes = ssz::Encode::as_ssz_bytes(&self.entries_mmr);
+        BorshSerialize::serialize(&mmr_bytes, writer)?;
         Ok(())
     }
 }
@@ -161,12 +160,14 @@ impl BorshSerialize for ExportContainer {
 impl BorshDeserialize for ExportContainer {
     fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
         let container_id: u16 = BorshDeserialize::deserialize_reader(reader)?;
-        let entries_len: u32 = BorshDeserialize::deserialize_reader(reader)?;
-        let mut entries: Vec<ExportEntry> = Vec::with_capacity(entries_len as usize);
-        for _ in 0..entries_len {
-            entries.push(BorshDeserialize::deserialize_reader(reader)?);
-        }
-        Ok(Self::new(container_id, entries))
+        let mmr_bytes: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
+        let entries_mmr = ssz::Decode::from_ssz_bytes(&mmr_bytes).map_err(|e| {
+            borsh::io::Error::new(borsh::io::ErrorKind::InvalidData, format!("{:?}", e))
+        })?;
+        Ok(Self {
+            container_id,
+            entries_mmr,
+        })
     }
 }
 
@@ -202,19 +203,7 @@ impl BorshSerialize for MohoState {
         let bytes = self.next_predicate.as_ref();
         BorshSerialize::serialize(&bytes.to_vec(), writer)?;
         // export_state
-        // containers: Vec<ExportContainer>
-        let containers: Vec<&ExportContainer> = self.export_state.containers.iter().collect();
-        BorshSerialize::serialize(&(containers.len() as u32), writer)?;
-        for c in containers {
-            BorshSerialize::serialize(&c.container_id, writer)?;
-            let entries: Vec<&ExportEntry> = c.entries.iter().collect();
-            BorshSerialize::serialize(&(entries.len() as u32), writer)?;
-            for e in entries {
-                BorshSerialize::serialize(&e.entry_id, writer)?;
-                let pl: Vec<u8> = e.payload.as_ref().to_vec();
-                BorshSerialize::serialize(&pl, writer)?;
-            }
-        }
+        BorshSerialize::serialize(&self.export_state, writer)?;
         Ok(())
     }
 }
@@ -228,27 +217,8 @@ impl BorshDeserialize for MohoState {
         let pred_vec: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
         let next_predicate = VariableList::<u8, { MAX_PREDICATE_SIZE as usize }>::from(pred_vec);
 
-        // containers
-        let cont_len: u32 = BorshDeserialize::deserialize_reader(reader)?;
-        let mut containers: Vec<ExportContainer> = Vec::with_capacity(cont_len as usize);
-        for _ in 0..cont_len {
-            let container_id: u16 = BorshDeserialize::deserialize_reader(reader)?;
-
-            let entries_len: u32 = BorshDeserialize::deserialize_reader(reader)?;
-            let mut entries: Vec<ExportEntry> = Vec::with_capacity(entries_len as usize);
-            for _ in 0..entries_len {
-                let entry_id: u32 = BorshDeserialize::deserialize_reader(reader)?;
-                let payload_vec: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
-                let payload = ssz_types::VariableList::from(payload_vec);
-                entries.push(ExportEntry { entry_id, payload });
-            }
-
-            containers.push(ExportContainer::new(container_id, entries));
-        }
-
-        let export_state = ExportState {
-            containers: ssz_types::VariableList::from(containers),
-        };
+        // export_state
+        let export_state: ExportState = BorshDeserialize::deserialize_reader(reader)?;
 
         Ok(Self {
             inner_state,
@@ -353,7 +323,7 @@ mod tests {
                 let encoded = container.as_ssz_bytes();
                 let decoded = ExportContainer::from_ssz_bytes(&encoded).unwrap();
                 prop_assert_eq!(container.container_id(), decoded.container_id());
-                prop_assert_eq!(container.entries().len(), decoded.entries().len());
+                prop_assert_eq!(container.entries_mmr(), decoded.entries_mmr());
             }
 
             #[test]
@@ -370,18 +340,18 @@ mod tests {
             let encoded = container.as_ssz_bytes();
             let decoded = ExportContainer::from_ssz_bytes(&encoded).unwrap();
             assert_eq!(container.container_id(), decoded.container_id());
-            assert_eq!(container.entries().len(), 0);
+            assert_eq!(container.entries_mmr(), decoded.entries_mmr());
         }
 
         #[test]
         fn test_add_entry() {
             let mut container = ExportContainer::new(1, vec![]);
-            assert_eq!(container.entries().len(), 0);
+            let empty_mmr = container.entries_mmr().clone();
 
             let entry = ExportEntry::new(100, vec![0xAA, 0xBB]);
             container.add_entry(entry);
-            assert_eq!(container.entries().len(), 1);
-            assert_eq!(container.entries()[0].entry_id(), 100);
+            // MMR should have changed after adding entry
+            assert_ne!(container.entries_mmr(), &empty_mmr);
         }
     }
 
@@ -419,12 +389,13 @@ mod tests {
             let container2 = ExportContainer::new(2, vec![]);
             let mut state = ExportState::new(vec![container1, container2]);
 
+            let initial_mmr = state.containers()[0].entries_mmr().clone();
             let entry = ExportEntry::new(999, vec![0xFF]);
             state.add_entry(1, entry);
 
             let containers = state.containers();
-            assert_eq!(containers[0].entries().len(), 1);
-            assert_eq!(containers[0].entries()[0].entry_id(), 999);
+            // MMR should have changed after adding entry
+            assert_ne!(containers[0].entries_mmr(), &initial_mmr);
         }
     }
 
@@ -519,8 +490,15 @@ mod tests {
 
             assert_eq!(state.inner_state().inner(), decoded.inner_state().inner());
             assert_eq!(decoded.export_state().containers().len(), 2);
-            assert_eq!(decoded.export_state().containers()[0].entries().len(), 2);
-            assert_eq!(decoded.export_state().containers()[1].entries().len(), 1);
+            // Verify the MMRs match
+            assert_eq!(
+                state.export_state().containers()[0].entries_mmr(),
+                decoded.export_state().containers()[0].entries_mmr()
+            );
+            assert_eq!(
+                state.export_state().containers()[1].entries_mmr(),
+                decoded.export_state().containers()[1].entries_mmr()
+            );
         }
 
         #[test]
