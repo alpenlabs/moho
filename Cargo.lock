@@ -543,6 +543,7 @@ dependencies = [
  "ssz_types",
  "strata-merkle",
  "strata-predicate",
+ "thiserror 2.0.17",
  "tree_hash",
  "tree_hash_derive",
  "zkaleido",

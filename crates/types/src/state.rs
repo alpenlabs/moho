@@ -7,7 +7,7 @@ use strata_merkle::{MAX_MMR_PEAKS, MerkleMr64B32};
 use strata_predicate::{PredicateKey, PredicateKeyBuf};
 use tree_hash::{Sha256Hasher, TreeHash};
 
-use crate::{InnerStateCommitment, MohoStateCommitment, ssz_generated};
+use crate::{errors::ExportStateError, InnerStateCommitment, MohoStateCommitment, ssz_generated};
 
 impl MohoState {
     pub fn new(
@@ -61,13 +61,16 @@ impl ExportState {
         &self.containers
     }
 
-    pub fn add_entry(&mut self, container_id: u8, entry: [u8; 32]) {
+    pub fn add_entry(&mut self, container_id: u8, entry: [u8; 32]) -> Result<(), ExportStateError> {
         if let Some(container) = self
             .containers
             .iter_mut()
             .find(|c| c.container_id == container_id)
         {
-            container.add_entry(entry);
+            container.add_entry(entry)?;
+            Ok(())
+        } else {
+            Err(ExportStateError::ContainerNotFound(container_id))
         }
     }
 }
@@ -94,10 +97,9 @@ impl ExportContainer {
         &self.entries_mmr
     }
 
-    pub fn add_entry(&mut self, entry: [u8; 32]) {
-        self.entries_mmr
-            .add_leaf(entry)
-            .expect("entries exceed Merkle MMR capacity");
+    pub fn add_entry(&mut self, entry: [u8; 32]) -> Result<(), ExportStateError> {
+        self.entries_mmr.add_leaf(entry)?;
+        Ok(())
     }
 }
 
