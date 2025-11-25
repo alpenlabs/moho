@@ -7,9 +7,10 @@ use strata_merkle::{MAX_MMR_PEAKS, MerkleMr64B32};
 use strata_predicate::{PredicateKey, PredicateKeyBuf};
 use tree_hash::{Sha256Hasher, TreeHash};
 
-use crate::{errors::ExportStateError, InnerStateCommitment, MohoStateCommitment, ssz_generated};
+use crate::{InnerStateCommitment, MohoStateCommitment, errors::ExportStateError, ssz_generated};
 
 impl MohoState {
+    /// Creates a new Moho state.
     pub fn new(
         inner_state: InnerStateCommitment,
         next_predicate: PredicateKey,
@@ -25,24 +26,29 @@ impl MohoState {
         }
     }
 
+    /// Returns the inner state commitment.
     pub fn inner_state(&self) -> InnerStateCommitment {
         InnerStateCommitment::from(self.inner_state.0)
     }
 
+    /// Returns the predicate key for verifying the next incremental proof.
     pub fn next_predicate(&self) -> PredicateKey {
         PredicateKeyBuf::try_from(&self.next_predicate[..])
             .unwrap()
             .to_owned()
     }
 
+    /// Returns a reference to the export state.
     pub fn export_state(&self) -> &ExportState {
         &self.export_state
     }
 
+    /// Consumes self and returns the export state.
     pub fn into_export_state(self) -> ExportState {
         self.export_state
     }
 
+    /// Computes the commitment to this Moho state via tree hash.
     pub fn compute_commitment(&self) -> MohoStateCommitment {
         let root = <_ as TreeHash<Sha256Hasher>>::tree_hash_root(self);
         MohoStateCommitment::new(root.into_inner())
@@ -51,16 +57,32 @@ impl MohoState {
 
 // Compatibility constructors and accessors for SSZ-generated types
 impl ExportState {
+    /// Creates a new export state with the given containers.
     pub fn new(containers: Vec<ExportContainer>) -> Self {
         Self {
             containers: ssz_types::VariableList::from(containers),
         }
     }
 
+    /// Returns a slice of all containers.
     pub fn containers(&self) -> &[ExportContainer] {
         &self.containers
     }
 
+    /// Adds an entry to the container with the specified ID.
+    ///
+    /// If a container with the given `container_id` exists, the entry is appended to its MMR.
+    /// If no container exists with that ID, a new container is created and the entry is added.
+    ///
+    /// # Errors
+    ///
+    /// Returns `ExportStateError::AddEntryFailed` if the MMR capacity is exceeded.
+    ///
+    /// # Panics
+    ///
+    /// This method will never panic in practice because `MAX_EXPORT_CONTAINERS = 256` exactly
+    /// matches the full range of `u8` container IDs (0-255). Since each container_id is unique,
+    /// we can never exceed the container list capacity.
     pub fn add_entry(&mut self, container_id: u8, entry: [u8; 32]) -> Result<(), ExportStateError> {
         if let Some(container) = self
             .containers
@@ -68,35 +90,44 @@ impl ExportState {
             .find(|c| c.container_id == container_id)
         {
             container.add_entry(entry)?;
-            Ok(())
         } else {
-            Err(ExportStateError::ContainerNotFound(container_id))
+            let mut new_container = ExportContainer::new(container_id);
+            new_container.add_entry(entry)?;
+            // SAFETY: MAX_EXPORT_CONTAINERS = 256 matches the full range of u8 (0-255),
+            // so we can never exceed capacity with unique container_ids
+            self.containers
+                .push(new_container)
+                .expect("container capacity should never be exceeded with u8 container_id");
         }
+        Ok(())
     }
 }
 
 impl ExportContainer {
-    pub fn new(container_id: u8, entries: Vec<[u8; 32]>) -> Self {
-        let mut entries_mmr = MerkleMr64B32::new(MAX_MMR_PEAKS as usize);
-        for entry in entries {
-            entries_mmr
-                .add_leaf(entry)
-                .expect("entries exceed Merkle MMR capacity");
-        }
+    /// Creates a new export container with an empty MMR.
+    pub fn new(container_id: u8) -> Self {
+        let entries_mmr = MerkleMr64B32::new(MAX_MMR_PEAKS as usize);
         Self {
             container_id,
             entries_mmr,
         }
     }
 
+    /// Returns the container ID.
     pub fn container_id(&self) -> u8 {
         self.container_id
     }
 
+    /// Returns a reference to the entries MMR.
     pub fn entries_mmr(&self) -> &MerkleMr64B32 {
         &self.entries_mmr
     }
 
+    /// Adds an entry to the container's MMR.
+    ///
+    /// # Errors
+    ///
+    /// Returns `ExportStateError::AddEntryFailed` if the MMR capacity is exceeded.
     pub fn add_entry(&mut self, entry: [u8; 32]) -> Result<(), ExportStateError> {
         self.entries_mmr.add_leaf(entry)?;
         Ok(())
@@ -195,8 +226,15 @@ mod tests {
 
     // Strategy for generating arbitrary ExportContainer
     fn export_container_strategy() -> impl Strategy<Value = ExportContainer> {
-        (any::<u8>(), prop::collection::vec(any::<[u8; 32]>(), 0..10))
-            .prop_map(|(container_id, entries)| ExportContainer::new(container_id, entries))
+        (any::<u8>(), prop::collection::vec(any::<[u8; 32]>(), 0..10)).prop_map(
+            |(container_id, entries)| {
+                let mut container = ExportContainer::new(container_id);
+                for entry in entries {
+                    container.add_entry(entry).expect("failed to add entry");
+                }
+                container
+            },
+        )
     }
 
     // Strategy for generating arbitrary ExportState
@@ -243,7 +281,7 @@ mod tests {
 
         #[test]
         fn test_zero_ssz() {
-            let container = ExportContainer::new(0, vec![]);
+            let container = ExportContainer::new(0);
             let encoded = container.as_ssz_bytes();
             let decoded = ExportContainer::from_ssz_bytes(&encoded).unwrap();
             assert_eq!(container.container_id(), decoded.container_id());
@@ -252,11 +290,11 @@ mod tests {
 
         #[test]
         fn test_add_entry() {
-            let mut container = ExportContainer::new(1, vec![]);
+            let mut container = ExportContainer::new(1);
             let empty_mmr = container.entries_mmr().clone();
 
             let entry = [0xAA; 32];
-            container.add_entry(entry);
+            container.add_entry(entry).unwrap();
             // MMR should have changed after adding entry
             assert_ne!(container.entries_mmr(), &empty_mmr);
         }
@@ -292,13 +330,13 @@ mod tests {
 
         #[test]
         fn test_add_entry() {
-            let container1 = ExportContainer::new(1, vec![]);
-            let container2 = ExportContainer::new(2, vec![]);
+            let container1 = ExportContainer::new(1);
+            let container2 = ExportContainer::new(2);
             let mut state = ExportState::new(vec![container1, container2]);
 
             let initial_mmr = state.containers()[0].entries_mmr().clone();
             let entry = [0xFF; 32];
-            state.add_entry(1, entry);
+            state.add_entry(1, entry).unwrap();
 
             let containers = state.containers();
             // MMR should have changed after adding entry
@@ -384,10 +422,13 @@ mod tests {
 
             let entry1 = [0x01; 32];
             let entry2 = [0x02; 32];
-            let container1 = ExportContainer::new(10, vec![entry1, entry2]);
+            let mut container1 = ExportContainer::new(10);
+            container1.add_entry(entry1).unwrap();
+            container1.add_entry(entry2).unwrap();
 
             let entry3 = [0x03; 32];
-            let container2 = ExportContainer::new(20, vec![entry3]);
+            let mut container2 = ExportContainer::new(20);
+            container2.add_entry(entry3).unwrap();
 
             let export = ExportState::new(vec![container1, container2]);
             let state = MohoState::new(inner, predicate, export);
@@ -445,7 +486,7 @@ mod tests {
             let inner = InnerStateCommitment::new([0x00; 32]);
             let pred_bytes: &[u8] = &[0x01u8];
             let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
-            let container = ExportContainer::new(1, vec![]);
+            let container = ExportContainer::new(1);
             let export = ExportState::new(vec![container]);
             let state = MohoState::new(inner, predicate, export);
 
