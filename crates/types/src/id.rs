@@ -50,9 +50,7 @@ macro_rules! inst_id {
         }
 
         impl BorshDeserialize for $name {
-            fn deserialize_reader<R: borsh::io::Read>(
-                reader: &mut R,
-            ) -> borsh::io::Result<Self> {
+            fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
                 let mut bytes = [0u8; 32];
                 reader.read_exact(&mut bytes)?;
                 Ok(Self(FixedBytes::from(bytes)))
