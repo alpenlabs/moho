@@ -20,7 +20,7 @@ impl MohoState {
         let next_predicate =
             VariableList::<u8, { MAX_PREDICATE_SIZE as usize }>::from(next_predicate_bytes);
         Self {
-            inner_state: inner_state.into_inner(),
+            inner_state: inner_state.into_inner().into(),
             next_predicate,
             export_state,
         }
@@ -473,7 +473,7 @@ mod tests {
             let export = ExportState::new(vec![]);
             let state = MohoState::new(inner, predicate.clone(), export);
 
-            assert_eq!(state.inner_state().as_array(), &[0xCD; 32]);
+            assert_eq!(state.inner_state().as_bytes(), &[0xCD; 32]);
             assert_eq!(
                 state.next_predicate().as_buf_ref().to_bytes(),
                 predicate.as_buf_ref().to_bytes()

@@ -13,21 +13,17 @@ macro_rules! inst_id {
                 Self(FixedBytes::from(inner))
             }
 
-            pub fn inner(&self) -> &FixedBytes<32> {
-                &self.0
+            pub fn inner(&self) -> &[u8; 32] {
+                // FixedBytes<32> internally stores [u8; 32]
+                unsafe { &*(self.0.as_ref().as_ptr() as *const [u8; 32]) }
             }
 
-            pub fn into_inner(self) -> FixedBytes<32> {
-                self.0
+            pub fn into_inner(self) -> [u8; 32] {
+                self.0.into_inner()
             }
 
             pub fn as_bytes(&self) -> &[u8] {
                 self.0.as_ref()
-            }
-
-            pub fn as_array(&self) -> &[u8; 32] {
-                // FixedBytes<32> internally stores [u8; 32]
-                unsafe { &*(self.0.as_ref().as_ptr() as *const [u8; 32]) }
             }
         }
 
