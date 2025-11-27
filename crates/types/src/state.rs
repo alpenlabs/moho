@@ -43,8 +43,7 @@ impl MohoState {
 
     /// Computes the commitment to this Moho state via tree hash.
     pub fn compute_commitment(&self) -> MohoStateCommitment {
-        let root = <_ as TreeHash<Sha256Hasher>>::tree_hash_root(self);
-        root
+        <_ as TreeHash<Sha256Hasher>>::tree_hash_root(self)
     }
 }
 
@@ -127,284 +126,330 @@ impl ExportContainer {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use proptest::prelude::*;
-//     use ssz::{Decode, Encode};
-//     use tree_hash::Sha256Hasher;
+#[cfg(test)]
+mod tests {
+    use proptest::prelude::*;
+    use ssz::{Decode, Encode};
+    use strata_predicate::{PredicateKeyBuf, PredicateTypeId};
+    use tree_hash::Sha256Hasher;
 
-//     use super::*;
+    use super::*;
 
-//     // Strategy for generating arbitrary ExportContainer
-//     fn export_container_strategy() -> impl Strategy<Value = ExportContainer> {
-//         (any::<u8>(), prop::collection::vec(any::<[u8; 32]>(), 0..10)).prop_map(
-//             |(container_id, entries)| {
-//                 let mut container = ExportContainer::new(container_id);
-//                 for entry in entries {
-//                     container.add_entry(entry).expect("failed to add entry");
-//                 }
-//                 container
-//             },
-//         )
-//     }
+    fn predicate_bytes_strategy() -> impl Strategy<Value = Vec<u8>> {
+        let valid_ids = vec![
+            PredicateTypeId::NeverAccept.as_u8(),
+            PredicateTypeId::AlwaysAccept.as_u8(),
+            PredicateTypeId::Bip340Schnorr.as_u8(),
+            PredicateTypeId::Sp1Groth16.as_u8(),
+        ];
 
-//     // Strategy for generating arbitrary ExportState
-//     fn export_state_strategy() -> impl Strategy<Value = ExportState> {
-//         prop::collection::vec(export_container_strategy(), 0..5).prop_map(ExportState::new)
-//     }
+        (
+            prop::sample::select(valid_ids),
+            prop::collection::vec(any::<u8>(), 0..8),
+        )
+            .prop_map(|(id, mut condition)| {
+                let mut bytes = Vec::with_capacity(1 + condition.len());
+                bytes.push(id);
+                bytes.append(&mut condition);
+                bytes
+            })
+    }
 
-//     // Strategy for generating arbitrary MohoState
-//     fn moho_state_strategy() -> impl Strategy<Value = MohoState> {
-//         (
-//             any::<[u8; 32]>(),
-//             prop::collection::vec(any::<u8>(), 1..1 as usize),
-//             export_state_strategy(),
-//         )
-//             .prop_map(|(inner_bytes, pred_bytes, export_state)| {
-//                 let inner_state = InnerStateCommitment::new(inner_bytes);
-//                 let fallback: &[u8] = &[0x01u8];
-//                 // FIXME: PG This will fail
-//                 let predicate = PredicateKeyBuf::try_from(&pred_bytes[..])
-//                     .unwrap_or_else(|_| PredicateKeyBuf::try_from(fallback).unwrap())
-//                     .to_owned();
-//                 MohoState::new(inner_state, predicate, export_state)
-//             })
-//     }
+    fn predicate_strategy() -> impl Strategy<Value = PredicateKey> {
+        predicate_bytes_strategy().prop_map(|bytes| {
+            PredicateKeyBuf::try_from(bytes.as_slice())
+                .expect("generated predicate bytes should be valid")
+                .to_owned()
+        })
+    }
 
-//     mod export_container_tests {
-//         use super::*;
+    fn export_container_strategy() -> impl Strategy<Value = ExportContainer> {
+        (any::<u8>(), prop::collection::vec(any::<[u8; 32]>(), 0..10)).prop_map(
+            |(container_id, entries)| {
+                let mut container = ExportContainer::new(container_id);
+                for entry in entries {
+                    container.add_entry(entry).expect("failed to add entry");
+                }
+                container
+            },
+        )
+    }
 
-//         proptest! {
-//             #[test]
-//             fn ssz_roundtrip(container in export_container_strategy()) {
-//                 let encoded = container.as_ssz_bytes();
-//                 let decoded = ExportContainer::from_ssz_bytes(&encoded).unwrap();
-//                 prop_assert_eq!(container.container_id(), decoded.container_id());
-//                 prop_assert_eq!(container.entries_mmr(), decoded.entries_mmr());
-//             }
+    fn export_state_strategy() -> impl Strategy<Value = ExportState> {
+        prop::collection::vec(export_container_strategy(), 0..5).prop_map(ExportState::new)
+    }
 
-//             #[test]
-//             fn tree_hash_deterministic(container in export_container_strategy()) {
-//                 let hash1 = <ExportContainer as
-// TreeHash<Sha256Hasher>>::tree_hash_root(&container);                 let hash2 = <ExportContainer
-// as TreeHash<Sha256Hasher>>::tree_hash_root(&container);                 prop_assert_eq!(hash1,
-// hash2);             }
-//         }
+    fn moho_state_strategy() -> impl Strategy<Value = MohoState> {
+        (
+            any::<[u8; 32]>(),
+            predicate_strategy(),
+            export_state_strategy(),
+        )
+            .prop_map(|(inner_bytes, predicate, export_state)| {
+                let inner_state = InnerStateCommitment::from(inner_bytes);
+                MohoState::new(inner_state, predicate, export_state)
+            })
+    }
 
-//         #[test]
-//         fn test_zero_ssz() {
-//             let container = ExportContainer::new(0);
-//             let encoded = container.as_ssz_bytes();
-//             let decoded = ExportContainer::from_ssz_bytes(&encoded).unwrap();
-//             assert_eq!(container.container_id(), decoded.container_id());
-//             assert_eq!(container.entries_mmr(), decoded.entries_mmr());
-//         }
+    mod export_container_tests {
+        use super::*;
 
-//         #[test]
-//         fn test_add_entry() {
-//             let mut container = ExportContainer::new(1);
-//             let empty_mmr = container.entries_mmr().clone();
+        proptest! {
+            #[test]
+            fn ssz_roundtrip(container in export_container_strategy()) {
+                let encoded = container.as_ssz_bytes();
+                let decoded = ExportContainer::from_ssz_bytes(&encoded).unwrap();
+                prop_assert_eq!(container.container_id(), decoded.container_id());
+                prop_assert_eq!(container.entries_mmr(), decoded.entries_mmr());
+            }
 
-//             let entry = [0xAA; 32];
-//             container.add_entry(entry).unwrap();
-//             // MMR should have changed after adding entry
-//             assert_ne!(container.entries_mmr(), &empty_mmr);
-//         }
-//     }
+            #[test]
+            fn tree_hash_deterministic(container in export_container_strategy()) {
+                let hash1 = <ExportContainer as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&container);
+                let hash2 = <ExportContainer as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&container);
+                prop_assert_eq!(hash1, hash2);
+            }
+        }
 
-//     mod export_state_tests {
-//         use super::*;
+        #[test]
+        fn test_zero_ssz() {
+            let container = ExportContainer::new(0);
+            let encoded = container.as_ssz_bytes();
+            let decoded = ExportContainer::from_ssz_bytes(&encoded).unwrap();
+            assert_eq!(container.container_id(), decoded.container_id());
+            assert_eq!(container.entries_mmr(), decoded.entries_mmr());
+        }
 
-//         proptest! {
-//             #[test]
-//             fn ssz_roundtrip(state in export_state_strategy()) {
-//                 let encoded = state.as_ssz_bytes();
-//                 let decoded = ExportState::from_ssz_bytes(&encoded).unwrap();
-//                 prop_assert_eq!(state.containers().len(), decoded.containers().len());
-//             }
+        #[test]
+        fn test_add_entry() {
+            let mut container = ExportContainer::new(1);
+            let empty_mmr = container.entries_mmr().clone();
 
-//             #[test]
-//             fn tree_hash_deterministic(state in export_state_strategy()) {
-//                 let hash1 = <ExportState as TreeHash<Sha256Hasher>>::tree_hash_root(&state);
-//                 let hash2 = <ExportState as TreeHash<Sha256Hasher>>::tree_hash_root(&state);
-//                 prop_assert_eq!(hash1, hash2);
-//             }
-//         }
+            let entry = [0xAA; 32];
+            container.add_entry(entry).unwrap();
+            // MMR should have changed after adding entry
+            assert_ne!(container.entries_mmr(), &empty_mmr);
+        }
+    }
 
-//         #[test]
-//         fn test_empty_state_ssz() {
-//             let state = ExportState::new(vec![]);
-//             let encoded = state.as_ssz_bytes();
-//             let decoded = ExportState::from_ssz_bytes(&encoded).unwrap();
-//             assert_eq!(state.containers().len(), 0);
-//             assert_eq!(decoded.containers().len(), 0);
-//         }
+    mod export_state_tests {
+        use super::*;
 
-//         #[test]
-//         fn test_add_entry() {
-//             let container1 = ExportContainer::new(1);
-//             let container2 = ExportContainer::new(2);
-//             let mut state = ExportState::new(vec![container1, container2]);
+        proptest! {
+            #[test]
+            fn ssz_roundtrip(state in export_state_strategy()) {
+                let encoded = state.as_ssz_bytes();
+                let decoded = ExportState::from_ssz_bytes(&encoded).unwrap();
+                prop_assert_eq!(state.containers().len(), decoded.containers().len());
+            }
 
-//             let initial_mmr = state.containers()[0].entries_mmr().clone();
-//             let entry = [0xFF; 32];
-//             state.add_entry(1, entry).unwrap();
+            #[test]
+            fn tree_hash_deterministic(state in export_state_strategy()) {
+                let hash1 = <ExportState as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&state);
+                let hash2 = <ExportState as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&state);
+                prop_assert_eq!(hash1, hash2);
+            }
+        }
 
-//             let containers = state.containers();
-//             // MMR should have changed after adding entry
-//             assert_ne!(containers[0].entries_mmr(), &initial_mmr);
-//         }
-//     }
+        #[test]
+        fn test_empty_state_ssz() {
+            let state = ExportState::new(vec![]);
+            let encoded = state.as_ssz_bytes();
+            let decoded = ExportState::from_ssz_bytes(&encoded).unwrap();
+            assert_eq!(state.containers().len(), 0);
+            assert_eq!(decoded.containers().len(), 0);
+        }
 
-//     mod moho_state_tests {
-//         use super::*;
+        #[test]
+        fn test_add_entry() {
+            let container1 = ExportContainer::new(1);
+            let container2 = ExportContainer::new(2);
+            let mut state = ExportState::new(vec![container1, container2]);
 
-//         proptest! {
-//             #[test]
-//             fn ssz_roundtrip(state in moho_state_strategy()) {
-//                 let encoded = state.as_ssz_bytes();
-//                 let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
+            let initial_mmr = state.containers()[0].entries_mmr().clone();
+            let entry = [0xFF; 32];
+            state.add_entry(1, entry).unwrap();
 
-//                 let state_inner = *state.inner_state().inner();
-//                 let decoded_inner = *decoded.inner_state().inner();
-//                 prop_assert_eq!(state_inner, decoded_inner);
-//                 prop_assert_eq!(state.next_predicate().as_buf_ref().to_bytes(),
-//                                decoded.next_predicate().as_buf_ref().to_bytes());
-//                 prop_assert_eq!(state.export_state().containers().len(),
-//                                decoded.export_state().containers().len());
-//             }
+            let containers = state.containers();
+            // MMR should have changed after adding entry
+            assert_ne!(containers[0].entries_mmr(), &initial_mmr);
+        }
 
-//             #[test]
-//             fn tree_hash_deterministic(state in moho_state_strategy()) {
-//                 let hash1 = <MohoState as TreeHash<Sha256Hasher>>::tree_hash_root(&state);
-//                 let hash2 = <MohoState as TreeHash<Sha256Hasher>>::tree_hash_root(&state);
-//                 prop_assert_eq!(hash1, hash2);
-//             }
+        #[test]
+        fn test_add_entry_creates_container() {
+            let mut state = ExportState::new(vec![]);
+            let entry = [0x11; 32];
 
-//             #[test]
-//             fn commitment_deterministic(state in moho_state_strategy()) {
-//                 let commitment1 = state.compute_commitment();
-//                 let commitment2 = state.compute_commitment();
-//                 let inner1 = commitment1.inner();
-//                 let inner2 = commitment2.inner();
-//                 prop_assert_eq!(inner1, inner2);
-//             }
-//         }
+            state.add_entry(42, entry).unwrap();
 
-//         #[test]
-//         fn test_minimal_state_ssz() {
-//             let inner = InnerStateCommitment::new([0u8; 32]);
-//             let pred_bytes: &[u8] = &[0x01u8];
-//             let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
-//             let export = ExportState::new(vec![]);
-//             let state = MohoState::new(inner, predicate, export);
+            let containers = state.containers();
+            assert_eq!(containers.len(), 1);
+            assert_eq!(containers[0].container_id(), 42);
+            assert_eq!(containers[0].entries_mmr().num_entries(), 1);
+        }
+    }
 
-//             let encoded = state.as_ssz_bytes();
-//             let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
+    mod moho_state_tests {
+        use super::*;
 
-//             assert_eq!(state.inner_state().inner(), decoded.inner_state().inner());
-//             assert_eq!(
-//                 state.next_predicate().as_buf_ref().to_bytes(),
-//                 decoded.next_predicate().as_buf_ref().to_bytes()
-//             );
-//         }
+        proptest! {
+            #[test]
+            fn ssz_roundtrip(state in moho_state_strategy()) {
+                let encoded = state.as_ssz_bytes();
+                let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
 
-//         #[test]
-//         fn test_state_with_max_predicate_size() {
-//             let inner = InnerStateCommitment::new([0xAB; 32]);
-//             // Use PredicateKey::always_accept() which creates a valid predicate
-//             let predicate = PredicateKey::always_accept();
-//             let export = ExportState::new(vec![]);
-//             let state = MohoState::new(inner, predicate, export);
+                let state_inner = state.inner_state().into_inner();
+                let decoded_inner = decoded.inner_state().into_inner();
+                prop_assert_eq!(state_inner, decoded_inner);
+                prop_assert_eq!(
+                    state.next_predicate().as_buf_ref().to_bytes(),
+                    decoded.next_predicate().as_buf_ref().to_bytes()
+                );
+                prop_assert_eq!(
+                    state.export_state().containers().len(),
+                    decoded.export_state().containers().len()
+                );
+            }
 
-//             let encoded = state.as_ssz_bytes();
-//             let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
+            #[test]
+            fn tree_hash_deterministic(state in moho_state_strategy()) {
+                let hash1 = <MohoState as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&state);
+                let hash2 = <MohoState as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&state);
+                prop_assert_eq!(hash1, hash2);
+            }
 
-//             assert_eq!(state.inner_state().inner(), decoded.inner_state().inner());
-//             assert_eq!(
-//                 state.next_predicate().as_buf_ref().to_bytes(),
-//                 decoded.next_predicate().as_buf_ref().to_bytes()
-//             );
-//         }
+            #[test]
+            fn commitment_deterministic(state in moho_state_strategy()) {
+                let commitment1 = state.compute_commitment();
+                let commitment2 = state.compute_commitment();
+                let inner1 = commitment1.into_inner();
+                let inner2 = commitment2.into_inner();
+                prop_assert_eq!(inner1, inner2);
+            }
+        }
 
-//         #[test]
-//         fn test_state_with_complex_export() {
-//             let inner = InnerStateCommitment::new([0x12; 32]);
-//             let predicate = PredicateKey::always_accept();
+        #[test]
+        fn test_minimal_state_ssz() {
+            let inner = InnerStateCommitment::from([0u8; 32]);
+            let pred_bytes: &[u8] = &[PredicateTypeId::AlwaysAccept.as_u8()];
+            let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
+            let export = ExportState::new(vec![]);
+            let state = MohoState::new(inner, predicate, export);
 
-//             let entry1 = [0x01; 32];
-//             let entry2 = [0x02; 32];
-//             let mut container1 = ExportContainer::new(10);
-//             container1.add_entry(entry1).unwrap();
-//             container1.add_entry(entry2).unwrap();
+            let encoded = state.as_ssz_bytes();
+            let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
 
-//             let entry3 = [0x03; 32];
-//             let mut container2 = ExportContainer::new(20);
-//             container2.add_entry(entry3).unwrap();
+            assert_eq!(
+                state.inner_state().into_inner(),
+                decoded.inner_state().into_inner()
+            );
+            assert_eq!(
+                state.next_predicate().as_buf_ref().to_bytes(),
+                decoded.next_predicate().as_buf_ref().to_bytes()
+            );
+        }
 
-//             let export = ExportState::new(vec![container1, container2]);
-//             let state = MohoState::new(inner, predicate, export);
+        #[test]
+        fn test_state_with_valid_predicate() {
+            let inner = InnerStateCommitment::from([0xAB; 32]);
+            let predicate = PredicateKey::always_accept();
+            let export = ExportState::new(vec![]);
+            let state = MohoState::new(inner, predicate, export);
 
-//             let encoded = state.as_ssz_bytes();
-//             let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
+            let encoded = state.as_ssz_bytes();
+            let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
 
-//             assert_eq!(state.inner_state().inner(), decoded.inner_state().inner());
-//             assert_eq!(decoded.export_state().containers().len(), 2);
-//             // Verify the MMRs match
-//             assert_eq!(
-//                 state.export_state().containers()[0].entries_mmr(),
-//                 decoded.export_state().containers()[0].entries_mmr()
-//             );
-//             assert_eq!(
-//                 state.export_state().containers()[1].entries_mmr(),
-//                 decoded.export_state().containers()[1].entries_mmr()
-//             );
-//         }
+            assert_eq!(
+                state.inner_state().into_inner(),
+                decoded.inner_state().into_inner()
+            );
+            assert_eq!(
+                state.next_predicate().as_buf_ref().to_bytes(),
+                decoded.next_predicate().as_buf_ref().to_bytes()
+            );
+        }
 
-//         #[test]
-//         fn test_commitment_uniqueness() {
-//             let inner1 = InnerStateCommitment::new([0x01; 32]);
-//             let inner2 = InnerStateCommitment::new([0x02; 32]);
-//             let pred_bytes: &[u8] = &[0x01u8];
-//             let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
-//             let export = ExportState::new(vec![]);
+        #[test]
+        fn test_state_with_complex_export() {
+            let inner = InnerStateCommitment::from([0x12; 32]);
+            let predicate = PredicateKey::always_accept();
 
-//             let state1 = MohoState::new(inner1, predicate.clone(), export.clone());
-//             let state2 = MohoState::new(inner2, predicate, export);
+            let entry1 = [0x01; 32];
+            let entry2 = [0x02; 32];
+            let mut container1 = ExportContainer::new(10);
+            container1.add_entry(entry1).unwrap();
+            container1.add_entry(entry2).unwrap();
 
-//             let commitment1 = state1.compute_commitment();
-//             let commitment2 = state2.compute_commitment();
+            let entry3 = [0x03; 32];
+            let mut container2 = ExportContainer::new(20);
+            container2.add_entry(entry3).unwrap();
 
-//             assert_ne!(commitment1.inner(), commitment2.inner());
-//         }
+            let export = ExportState::new(vec![container1, container2]);
+            let state = MohoState::new(inner, predicate, export);
 
-//         #[test]
-//         fn test_accessors() {
-//             let inner = InnerStateCommitment::new([0xCD; 32]);
-//             let predicate = PredicateKey::always_accept();
-//             let export = ExportState::new(vec![]);
-//             let state = MohoState::new(inner, predicate.clone(), export);
+            let encoded = state.as_ssz_bytes();
+            let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
 
-//             assert_eq!(state.inner_state().as_bytes(), &[0xCD; 32]);
-//             assert_eq!(
-//                 state.next_predicate().as_buf_ref().to_bytes(),
-//                 predicate.as_buf_ref().to_bytes()
-//             );
-//             assert_eq!(state.export_state().containers().len(), 0);
-//         }
+            assert_eq!(
+                state.inner_state().into_inner(),
+                decoded.inner_state().into_inner()
+            );
+            assert_eq!(decoded.export_state().containers().len(), 2);
+            // Verify the MMRs match
+            assert_eq!(
+                state.export_state().containers()[0].entries_mmr(),
+                decoded.export_state().containers()[0].entries_mmr()
+            );
+            assert_eq!(
+                state.export_state().containers()[1].entries_mmr(),
+                decoded.export_state().containers()[1].entries_mmr()
+            );
+        }
 
-//         #[test]
-//         fn test_into_export_state() {
-//             let inner = InnerStateCommitment::new([0x00; 32]);
-//             let pred_bytes: &[u8] = &[0x01u8];
-//             let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
-//             let container = ExportContainer::new(1);
-//             let export = ExportState::new(vec![container]);
-//             let state = MohoState::new(inner, predicate, export);
+        #[test]
+        fn test_commitment_uniqueness() {
+            let inner1 = InnerStateCommitment::from([0x01; 32]);
+            let inner2 = InnerStateCommitment::from([0x02; 32]);
+            let pred_bytes: &[u8] = &[PredicateTypeId::AlwaysAccept.as_u8()];
+            let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
+            let export = ExportState::new(vec![]);
 
-//             let extracted_export = state.into_export_state();
-//             assert_eq!(extracted_export.containers().len(), 1);
-//             assert_eq!(extracted_export.containers()[0].container_id(), 1);
-//         }
-//     }
-// }
+            let state1 = MohoState::new(inner1, predicate.clone(), export.clone());
+            let state2 = MohoState::new(inner2, predicate, export);
+
+            let commitment1 = state1.compute_commitment();
+            let commitment2 = state2.compute_commitment();
+
+            assert_ne!(commitment1.into_inner(), commitment2.into_inner());
+        }
+
+        #[test]
+        fn test_accessors() {
+            let inner = InnerStateCommitment::from([0xCD; 32]);
+            let predicate = PredicateKey::always_accept();
+            let export = ExportState::new(vec![]);
+            let state = MohoState::new(inner, predicate.clone(), export);
+
+            assert_eq!(state.inner_state().as_ref(), &[0xCD; 32]);
+            assert_eq!(
+                state.next_predicate().as_buf_ref().to_bytes(),
+                predicate.as_buf_ref().to_bytes()
+            );
+            assert_eq!(state.export_state().containers().len(), 0);
+        }
+
+        #[test]
+        fn test_into_export_state() {
+            let inner = InnerStateCommitment::from([0x00; 32]);
+            let pred_bytes: &[u8] = &[PredicateTypeId::AlwaysAccept.as_u8()];
+            let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
+            let container = ExportContainer::new(1);
+            let export = ExportState::new(vec![container]);
+            let state = MohoState::new(inner, predicate, export);
+
+            let extracted_export = state.into_export_state();
+            assert_eq!(extracted_export.containers().len(), 1);
+            assert_eq!(extracted_export.containers()[0].container_id(), 1);
+        }
+    }
+}
