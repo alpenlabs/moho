@@ -121,26 +121,26 @@ impl MohoTransitionWithProof {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::transition::Transition;
+#[cfg(test)]
+mod tests {
+    use crate::transition::Transition;
 
-//     #[test]
-//     fn test_valid_transition_chain() {
-//         let first = Transition::new("a", "b");
-//         let second = Transition::new("b", "c");
+    #[test]
+    fn test_valid_transition_chain() {
+        let first = Transition::new(1u8, 2u8);
+        let second = Transition::new(2u8, 3u8);
 
-//         let res = first.chain(second).unwrap();
-//         assert_eq!(*res.from(), "a");
-//         assert_eq!(*res.to(), "c");
-//     }
+        let res = first.chain(second).unwrap();
+        assert_eq!(*res.from(), 1);
+        assert_eq!(*res.to(), 3);
+    }
 
-//     #[test]
-//     fn test_invalid_transition_chain() {
-//         let first = Transition::new("a", "b");
-//         let second = Transition::new("b", "c");
+    #[test]
+    fn test_invalid_transition_chain() {
+        let first = Transition::new(1u8, 2u8);
+        let second = Transition::new(2u8, 3u8);
 
-//         let res = second.chain(first);
-//         assert!(res.is_err());
-//     }
-// }
+        let res = second.chain(first);
+        assert!(res.is_err());
+    }
+}
