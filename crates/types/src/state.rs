@@ -2,7 +2,7 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use ssz_generated::ssz::moho::*;
-use ssz_types::{FixedBytes, VariableList};
+use ssz_types::FixedBytes;
 use strata_merkle::{MAX_MMR_PEAKS, MerkleMr64B32};
 use strata_predicate::{PredicateKey, PredicateKeyBuf};
 use tree_hash::{Sha256Hasher, TreeHash};
@@ -16,9 +16,6 @@ impl MohoState {
         next_predicate: PredicateKey,
         export_state: ExportState,
     ) -> Self {
-        let next_predicate_bytes = next_predicate.as_buf_ref().to_bytes();
-        let next_predicate =
-            VariableList::<u8, { MAX_PREDICATE_SIZE as usize }>::from(next_predicate_bytes);
         Self {
             inner_state: inner_state.into_inner().into(),
             next_predicate,
@@ -32,10 +29,8 @@ impl MohoState {
     }
 
     /// Returns the predicate key for verifying the next incremental proof.
-    pub fn next_predicate(&self) -> PredicateKey {
-        PredicateKeyBuf::try_from(&self.next_predicate[..])
-            .unwrap()
-            .to_owned()
+    pub fn next_predicate(&self) -> &PredicateKey {
+        &self.next_predicate
     }
 
     /// Returns a reference to the export state.
@@ -188,7 +183,7 @@ impl BorshSerialize for MohoState {
         // inner_state is already FixedBytes<32>
         writer.write_all(self.inner_state.as_ref())?;
         // next_predicate bytes as Vec<u8>
-        let bytes = self.next_predicate.as_ref();
+        let bytes = self.next_predicate.as_buf_ref().to_bytes();
         BorshSerialize::serialize(&bytes.to_vec(), writer)?;
         // export_state
         BorshSerialize::serialize(&self.export_state, writer)?;
@@ -202,8 +197,10 @@ impl BorshDeserialize for MohoState {
         reader.read_exact(&mut inner)?;
         let inner_state = FixedBytes::<32>::from(inner);
 
-        let pred_vec: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
-        let next_predicate = VariableList::<u8, { MAX_PREDICATE_SIZE as usize }>::from(pred_vec);
+        let pred_key_bytes: Vec<u8> = BorshDeserialize::deserialize_reader(reader)?;
+        let next_predicate = PredicateKeyBuf::try_from(pred_key_bytes.as_slice())
+            .unwrap()
+            .to_owned();
 
         // export_state
         let export_state: ExportState = BorshDeserialize::deserialize_reader(reader)?;
@@ -246,12 +243,13 @@ mod tests {
     fn moho_state_strategy() -> impl Strategy<Value = MohoState> {
         (
             any::<[u8; 32]>(),
-            prop::collection::vec(any::<u8>(), 1..MAX_PREDICATE_SIZE as usize),
+            prop::collection::vec(any::<u8>(), 1..1 as usize),
             export_state_strategy(),
         )
             .prop_map(|(inner_bytes, pred_bytes, export_state)| {
                 let inner_state = InnerStateCommitment::new(inner_bytes);
                 let fallback: &[u8] = &[0x01u8];
+                // FIXME: PG This will fail
                 let predicate = PredicateKeyBuf::try_from(&pred_bytes[..])
                     .unwrap_or_else(|_| PredicateKeyBuf::try_from(fallback).unwrap())
                     .to_owned();

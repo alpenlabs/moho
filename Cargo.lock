@@ -502,7 +502,6 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "moho-types",
- "ssz_types",
  "strata-merkle",
  "strata-predicate",
  "thiserror 2.0.17",
@@ -987,7 +986,7 @@ dependencies = [
 [[package]]
 name = "strata-predicate"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common#c8936fab1aa32459a69c5208f0674f68cdd979dd"
+source = "git+https://github.com/alpenlabs/strata-common?branch=feat%2Fpredicate-key-ssz#ba498bb325990cf8235e02f336d5b1a23ae77a6b"
 dependencies = [
  "borsh",
  "hex",

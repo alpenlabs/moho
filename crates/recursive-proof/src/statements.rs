@@ -1,5 +1,3 @@
-use moho_types::MAX_PREDICATE_SIZE;
-use ssz_types::VariableList;
 use strata_merkle::Sha256NoPrefixHasher;
 use tree_hash::{Sha256Hasher, TreeHash};
 use zkaleido::ZkVmEnv;
@@ -56,11 +54,8 @@ pub fn verify_and_chain_transition(
     input: MohoRecursiveInput,
 ) -> Result<MohoStateTransition, MohoError> {
     // 1: Ensure the incremental proof predicate key is part of the Moho state Merkle root.
-    let next_predicate_bytes = input.step_predicate.as_buf_ref().to_bytes();
-    let next_predicate_list: VariableList<u8, { MAX_PREDICATE_SIZE as usize }> =
-        VariableList::from(next_predicate_bytes);
     let next_predicate_hash =
-        <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&next_predicate_list).into_inner();
+        <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&input.step_predicate).into_inner();
     let expected_root = input
         .incremental_step_proof
         .transition()

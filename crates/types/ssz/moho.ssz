@@ -1,7 +1,7 @@
 import strata_merkle
+import strata_predicate
 
 MAX_EXPORT_CONTAINERS = 256
-MAX_PREDICATE_SIZE = 4096
 
 ### The Moho state serves as the interface between the upgradable inner state
 ### transition function proof, the surrounding Moho proof mechanism, and consumer proofs.
@@ -10,7 +10,8 @@ class MohoState(Container):
     inner_state: Bytes32
 
     ### Predicate key used to verify the next incremental proof step.
-    next_predicate: List[byte, MAX_PREDICATE_SIZE]
+    #~# external_kind: container
+    next_predicate: strata_predicate.PredicateKey
 
     ### Export state containing containers for bridge proof verification.
     export_state: ExportState
