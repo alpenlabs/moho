@@ -6,5 +6,7 @@ edition = "2024"
 [dependencies]
 moho-runtime-interface.workspace = true
 moho-types.workspace = true
+ssz.workspace = true
+ssz_derive.workspace = true
 
 borsh.workspace = true

@@ -1,12 +1,11 @@
 //! moho types
 
 pub mod errors;
-mod id;
+// mod id;
 mod relation;
 mod state;
 
 pub use errors::ExportStateError;
-pub use id::{InnerStateCommitment, MohoStateCommitment, StateReference};
 pub use relation::{MohoAttestation, StateRefAttestation};
 
 // Include generated SSZ types from build.rs output
@@ -21,4 +20,7 @@ mod ssz_generated {
 }
 
 // Publicly re-export only the SSZ items this crate's API intends to expose
-pub use ssz_generated::ssz::moho::{ExportContainer, ExportState, MohoState};
+pub use ssz_generated::ssz::moho::{
+    ExportContainer, ExportState, InnerStateCommitment, MohoState, MohoStateCommitment,
+    StateReference,
+};

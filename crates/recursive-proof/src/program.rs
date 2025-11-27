@@ -3,9 +3,10 @@ use std::{
     sync::Arc,
 };
 
-use borsh::{BorshDeserialize, BorshSerialize};
 use moho_types::MohoAttestation;
-use strata_merkle::MerkleProof;
+use ssz::{Decode, Encode};
+use ssz_derive::{Decode, Encode};
+use strata_merkle::MerkleProofB32;
 use strata_predicate::PredicateKey;
 use zkaleido::{ZkVmError, ZkVmProgram, ZkVmResult};
 use zkaleido_native_adapter::{NativeHost, NativeMachine};
@@ -25,7 +26,7 @@ pub struct MohoRecursiveProgram;
 /// by combining a previous recursive proof (if it exists) with a new incremental step proof.
 /// This enables efficient proof composition where each new recursive proof can represent
 /// an arbitrarily long chain of state transitions while maintaining constant verification time.
-#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Clone, Encode, Decode)]
 pub struct MohoRecursiveInput {
     /// Moho proof's own predicate key, necessary to verify the previous recursive proof
     pub(crate) moho_predicate: PredicateKey,
@@ -36,7 +37,7 @@ pub struct MohoRecursiveInput {
     /// Predicate key to verify the incremental step proof from initial_state to final_state
     pub(crate) step_predicate: PredicateKey,
     /// Merkle proof of `step_predicate` within initial_state
-    pub(crate) step_predicate_merkle_proof: MerkleProof<[u8; 32]>,
+    pub(crate) step_predicate_merkle_proof: MerkleProofB32,
 }
 
 /// Output data committed by a recursive Moho proof that verifiers must check.
@@ -45,7 +46,7 @@ pub struct MohoRecursiveInput {
 /// The verifier of this proof needs to ensure that the correct recursive predicate was used,
 /// so we commit the `moho_predicate` as public output. Since we cannot hardcode this outer
 /// predicate key in the circuit, it must be included as a public parameter for verification.
-#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Clone, Encode, Decode)]
 pub struct MohoRecursiveOutput {
     /// State transition proven by this recursive proof
     pub(crate) transition: MohoStateTransition,
@@ -71,7 +72,7 @@ impl ZkVmProgram for MohoRecursiveProgram {
         B: zkaleido::ZkVmInputBuilder<'a>,
     {
         let mut zkvm_input = B::new();
-        zkvm_input.write_borsh(&input)?;
+        zkvm_input.write_buf(&input.as_ssz_bytes())?;
         zkvm_input.build()
     }
 
@@ -81,7 +82,8 @@ impl ZkVmProgram for MohoRecursiveProgram {
     where
         H: zkaleido::ZkVmHost,
     {
-        H::extract_borsh_public_output(public_values)
+        MohoAttestation::from_ssz_bytes(public_values.as_bytes())
+            .map_err(|_| ZkVmError::Other("invalid SSZ".to_string())) // TODO:PG
     }
 }
 

@@ -7,7 +7,6 @@ edition = "2024"
 strata-merkle = { workspace = true, features = ["ssz"] }
 strata-predicate.workspace = true
 
-borsh.workspace = true
 hex.workspace = true
 sha2.workspace = true
 ssz.workspace = true
