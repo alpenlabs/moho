@@ -500,9 +500,9 @@ checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 name = "moho-recursive-proof"
 version = "0.1.0"
 dependencies = [
- "borsh",
  "moho-types",
- "ssz_types",
+ "ssz",
+ "ssz_derive",
  "strata-merkle",
  "strata-predicate",
  "thiserror 2.0.17",
@@ -518,6 +518,8 @@ dependencies = [
  "borsh",
  "moho-runtime-interface",
  "moho-types",
+ "ssz",
+ "ssz_derive",
 ]
 
 [[package]]
@@ -533,7 +535,6 @@ dependencies = [
 name = "moho-types"
 version = "0.1.0"
 dependencies = [
- "borsh",
  "hex",
  "proptest",
  "sha2",
@@ -987,14 +988,20 @@ dependencies = [
 [[package]]
 name = "strata-predicate"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common#da1b6773039296e52a74fdacad520fa2ef01bdb9"
+source = "git+https://github.com/alpenlabs/strata-common?branch=feat%2Fpredicate-key-ssz#ba498bb325990cf8235e02f336d5b1a23ae77a6b"
 dependencies = [
  "borsh",
  "hex",
  "k256",
  "serde",
  "signature",
+ "ssz",
+ "ssz_codegen",
+ "ssz_derive",
+ "ssz_types",
  "thiserror 2.0.17",
+ "tree_hash",
+ "tree_hash_derive",
  "zkaleido-sp1-groth16-verifier",
 ]
 

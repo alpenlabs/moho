@@ -127,7 +127,7 @@ fn compute_wrapping_moho_state<P: MohoProgram>(
     // back to the previous one
     let next_predicate = match P::extract_next_predicate(step_output) {
         Some(predicate) => predicate,
-        None => moho_state.next_predicate(),
+        None => moho_state.next_predicate().clone(),
     };
 
     let new_export_state = P::compute_export_state(moho_state.into_export_state(), step_output);
