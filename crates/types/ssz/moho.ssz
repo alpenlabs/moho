@@ -3,6 +3,10 @@ import strata_predicate
 
 MAX_EXPORT_CONTAINERS = 256
 
+StateReference = Bytes32
+InnerStateCommitment = Bytes32
+MohoStateCommitment = Bytes32
+
 ### The Moho state serves as the interface between the upgradable inner state
 ### transition function proof, the surrounding Moho proof mechanism, and consumer proofs.
 class MohoState(Container):
