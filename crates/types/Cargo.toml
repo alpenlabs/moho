@@ -4,13 +4,16 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+strata-merkle = { workspace = true, features = ["ssz"] }
+strata-predicate.workspace = true
+
 borsh.workspace = true
 hex.workspace = true
 sha2.workspace = true
 ssz.workspace = true
 ssz_derive.workspace = true
 ssz_types.workspace = true
-strata-predicate.workspace = true
+thiserror.workspace = true
 tree_hash.workspace = true
 tree_hash_derive.workspace = true
 zkaleido.workspace = true

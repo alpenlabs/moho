@@ -65,11 +65,10 @@ pub fn verify_and_chain_transition(
         .incremental_step_proof
         .transition()
         .from()
-        .commitment()
-        .inner();
+        .commitment();
     if !input
         .step_predicate_merkle_proof
-        .verify_with_root::<Sha256NoPrefixHasher>(expected_root, &next_predicate_hash)
+        .verify_with_root::<Sha256NoPrefixHasher>(expected_root.inner(), &next_predicate_hash)
     {
         // Fail early if the Merkle proof is invalid
         return Err(MohoError::InvalidMerkleProof);
