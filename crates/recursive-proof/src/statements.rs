@@ -1,5 +1,5 @@
 use ssz::{Decode, Encode};
-use strata_merkle::MerkleProofB32;
+use strata_merkle::Sha256NoPrefixHasher;
 use tree_hash::{Sha256Hasher, TreeHash};
 use zkaleido::ZkVmEnv;
 
@@ -56,26 +56,6 @@ pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
 pub fn verify_and_chain_transition(
     input: MohoRecursiveInput,
 ) -> Result<MohoStateTransition, MohoError> {
-    fn compute_root_no_prefix(proof: &MerkleProofB32, leaf: &[u8; 32]) -> [u8; 32] {
-        use k256::sha2::{Digest, Sha256};
-
-        let mut cur = *leaf;
-        let mut flags = proof.index();
-        for co in proof.cohashes() {
-            let mut hasher = Sha256::new();
-            if flags & 1 == 1 {
-                hasher.update(co);
-                hasher.update(cur);
-            } else {
-                hasher.update(cur);
-                hasher.update(co);
-            }
-            cur = hasher.finalize().into();
-            flags >>= 1;
-        }
-        cur
-    }
-
     // 1: Ensure the incremental proof predicate key is part of the Moho state Merkle root.
     let next_predicate_hash =
         <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&input.step_predicate).into_inner();
@@ -84,9 +64,10 @@ pub fn verify_and_chain_transition(
         .transition()
         .from()
         .commitment();
-    let computed_root =
-        compute_root_no_prefix(&input.step_predicate_merkle_proof, &next_predicate_hash);
-    if computed_root != expected_root.0 {
+    if !input
+        .step_predicate_merkle_proof
+        .verify_with_root::<Sha256NoPrefixHasher>(expected_root.inner(), &next_predicate_hash)
+    {
         // Fail early if the Merkle proof is invalid
         return Err(MohoError::InvalidMerkleProof);
     }
@@ -125,28 +106,25 @@ pub fn verify_and_chain_transition(
 
 #[cfg(test)]
 mod tests {
-    use k256::{
-        schnorr::{SigningKey, signature::Signer},
-        sha2::{Digest, Sha256},
-    };
+    use k256::schnorr::{SigningKey, signature::Signer};
     use moho_types::{MohoState, StateRefAttestation, StateReference};
     use rand_core::OsRng;
+    use ssz::ssz_encode;
     use strata_merkle::{BinaryMerkleTree, MerkleProofB32, Sha256NoPrefixHasher};
     use strata_predicate::{PredicateKey, PredicateTypeId};
-    use ssz::ssz_encode;
     use tree_hash::{Sha256Hasher as TreeSha256Hasher, TreeHash};
 
     use super::*;
     use crate::transition::{MohoTransitionWithProof, Transition};
 
     #[derive(Clone)]
-    struct PredicateWithKey {
+    struct SchnorrPredicate {
         signing_key: SigningKey,
         predicate: PredicateKey,
     }
 
-    impl PredicateWithKey {
-        fn new_schnorr() -> Self {
+    impl SchnorrPredicate {
+        fn new() -> Self {
             let signing_key = SigningKey::random(&mut OsRng);
             let predicate = PredicateKey::new(
                 PredicateTypeId::Bip340Schnorr,
@@ -157,10 +135,6 @@ mod tests {
                 predicate,
             }
         }
-    }
-
-    fn predicate_hash(predicate: &PredicateKey) -> [u8; 32] {
-        <_ as TreeHash<TreeSha256Hasher>>::tree_hash_root(predicate).into_inner()
     }
 
     fn create_state(id: u8, predicate: &PredicateKey) -> MohoState {
@@ -187,30 +161,7 @@ mod tests {
             .expect("valid tree")
             .gen_proof(1)
             .expect("proof exists");
-        let proof = MerkleProofB32::from_generic(&generic_proof);
-
-        let predicate_leaf = predicate_hash(&state.next_predicate);
-        let commitment = state.compute_commitment();
-        let mut computed = predicate_leaf;
-        let mut flags = proof.index();
-        for co in proof.cohashes() {
-            let mut hasher = Sha256::new();
-            if flags & 1 == 1 {
-                hasher.update(co);
-                hasher.update(computed);
-            } else {
-                hasher.update(computed);
-                hasher.update(co);
-            }
-            computed = hasher.finalize().into();
-            flags >>= 1;
-        }
-        assert_eq!(
-            computed, commitment.0,
-            "merkle proof should validate against the state commitment"
-        );
-
-        proof
+        MerkleProofB32::from_generic(&generic_proof)
     }
 
     fn transition_with_predicate(
@@ -219,10 +170,7 @@ mod tests {
         from_state: &MohoState,
         to_state: &MohoState,
     ) -> MohoStateTransition {
-        Transition::new(
-            attestation(from, from_state),
-            attestation(to, to_state),
-        )
+        Transition::new(attestation(from, from_state), attestation(to, to_state))
     }
 
     fn sign_transition(transition: &MohoStateTransition, signing_key: &SigningKey) -> Vec<u8> {
@@ -250,8 +198,8 @@ mod tests {
         from: u8,
         to: u8,
         prev: Option<(u8, u8)>,
-        moho: &PredicateWithKey,
-        step: &PredicateWithKey,
+        moho: &SchnorrPredicate,
+        step: &SchnorrPredicate,
     ) -> MohoRecursiveInput {
         let from_state = create_state(from, &step.predicate);
         let to_state = create_state(to, &step.predicate);
@@ -283,23 +231,22 @@ mod tests {
 
     #[test]
     fn test_verify_and_chain_transition_success() {
-        let moho = PredicateWithKey::new_schnorr();
-        let step = PredicateWithKey::new_schnorr();
+        let moho = SchnorrPredicate::new();
+        let step = SchnorrPredicate::new();
 
         let expected = expected_transition(1, 2, &step.predicate);
         let result = verify_and_chain_transition(create_input(1, 2, None, &moho, &step)).unwrap();
         assert_eq!(result, expected);
 
         let expected = expected_transition(10, 20, &step.predicate);
-        let result =
-            verify_and_chain_transition(create_input(10, 20, None, &moho, &step)).unwrap();
+        let result = verify_and_chain_transition(create_input(10, 20, None, &moho, &step)).unwrap();
         assert_eq!(result, expected);
     }
 
     #[test]
     fn test_verify_and_chain_transition_with_previous_proof_success() {
-        let moho = PredicateWithKey::new_schnorr();
-        let step = PredicateWithKey::new_schnorr();
+        let moho = SchnorrPredicate::new();
+        let step = SchnorrPredicate::new();
 
         let expected = expected_transition(1, 3, &step.predicate);
         let result =
@@ -314,18 +261,18 @@ mod tests {
 
     #[test]
     fn test_verify_and_chain_transition_invalid_chain() {
-        let moho = PredicateWithKey::new_schnorr();
-        let step = PredicateWithKey::new_schnorr();
+        let moho = SchnorrPredicate::new();
+        let step = SchnorrPredicate::new();
         let result = verify_and_chain_transition(create_input(3, 5, Some((1, 2)), &moho, &step));
         assert!(matches!(result, Err(MohoError::InvalidMohoChain(_))));
     }
 
     #[test]
     fn test_verify_and_chain_transition_invalid_merkle_proof() {
-        let moho = PredicateWithKey::new_schnorr();
-        let step = PredicateWithKey::new_schnorr();
+        let moho = SchnorrPredicate::new();
+        let step = SchnorrPredicate::new();
         let mut input = create_input(2, 3, None, &moho, &step);
-        input.step_predicate = PredicateWithKey::new_schnorr().predicate;
+        input.step_predicate = SchnorrPredicate::new().predicate;
 
         let result = verify_and_chain_transition(input.clone());
         assert!(matches!(result, Err(MohoError::InvalidMerkleProof)));
@@ -338,9 +285,9 @@ mod tests {
 
     #[test]
     fn test_verify_and_chain_transition_invalid_incremental_proof() {
-        let moho = PredicateWithKey::new_schnorr();
-        let step = PredicateWithKey::new_schnorr();
-        let bad_step_key = PredicateWithKey::new_schnorr();
+        let moho = SchnorrPredicate::new();
+        let step = SchnorrPredicate::new();
+        let bad_step_key = SchnorrPredicate::new();
 
         let from_state = create_state(1, &step.predicate);
         let to_state = create_state(2, &step.predicate);
@@ -364,30 +311,24 @@ mod tests {
         };
 
         let result = verify_and_chain_transition(input);
-        assert!(matches!(
-            result,
-            Err(MohoError::InvalidIncrementalProof(_))
-        ));
+        assert!(matches!(result, Err(MohoError::InvalidIncrementalProof(_))));
     }
 
     #[test]
     fn test_verify_and_chain_transition_invalid_recursive_proof() {
-        let moho = PredicateWithKey::new_schnorr();
-        let step = PredicateWithKey::new_schnorr();
+        let moho = SchnorrPredicate::new();
+        let step = SchnorrPredicate::new();
         let mut input = create_input(2, 3, Some((1, 2)), &moho, &step);
-        input.moho_predicate = PredicateWithKey::new_schnorr().predicate;
+        input.moho_predicate = SchnorrPredicate::new().predicate;
 
         let result = verify_and_chain_transition(input);
-        assert!(matches!(
-            result,
-            Err(MohoError::InvalidRecursiveProof(_))
-        ));
+        assert!(matches!(result, Err(MohoError::InvalidRecursiveProof(_))));
     }
 
     #[test]
     fn test_verify_and_chain_transition_edge_case_same_state() {
-        let moho = PredicateWithKey::new_schnorr();
-        let step = PredicateWithKey::new_schnorr();
+        let moho = SchnorrPredicate::new();
+        let step = SchnorrPredicate::new();
         let input = create_input(5, 5, None, &moho, &step);
         assert!(verify_and_chain_transition(input).is_ok());
     }
