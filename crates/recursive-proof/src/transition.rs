@@ -112,7 +112,8 @@ impl MohoTransitionWithProof {
 
     /// Verifies the transition's proof against the given predicate key.
     pub fn verify(&self, verifier: &PredicateKey) -> Result<(), InvalidProofError> {
-        let public_values = ssz_encode(&self);
+        // The proof attests to the validity of the transition itself.
+        let public_values = ssz_encode(&self.transition);
         match verifier.verify_claim_witness(&public_values, self.proof()) {
             Ok(_) => Ok(()),
             // TODO: Better error?

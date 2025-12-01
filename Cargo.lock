@@ -500,7 +500,9 @@ checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 name = "moho-recursive-proof"
 version = "0.1.0"
 dependencies = [
+ "k256",
  "moho-types",
+ "rand_core 0.6.4",
  "ssz",
  "ssz_derive",
  "strata-merkle",

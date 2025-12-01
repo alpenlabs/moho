@@ -17,5 +17,9 @@ zkaleido.workspace = true
 [target.'cfg(not(target_os = "zkvm"))'.dependencies]
 zkaleido-native-adapter.workspace = true
 
+[dev-dependencies]
+k256 = { version = "0.13.4", features = ["schnorr"] }
+rand_core = "0.6"
+
 [lints]
 workspace = true
