@@ -43,7 +43,7 @@ impl MohoState {
 
     /// Computes the commitment to this Moho state via tree hash.
     pub fn compute_commitment(&self) -> MohoStateCommitment {
-        <_ as TreeHash<Sha256Hasher>>::tree_hash_root(self)
+        MohoStateCommitment::from(<_ as TreeHash<Sha256Hasher>>::tree_hash_root(self))
     }
 }
 
@@ -430,7 +430,7 @@ mod tests {
             let export = ExportState::new(vec![]);
             let state = MohoState::new(inner, predicate.clone(), export);
 
-            assert_eq!(state.inner_state().as_ref(), &[0xCD; 32]);
+            assert_eq!(state.inner_state().inner(), &[0xCD; 32]);
             assert_eq!(
                 state.next_predicate().as_buf_ref().to_bytes(),
                 predicate.as_buf_ref().to_bytes()
