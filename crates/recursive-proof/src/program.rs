@@ -7,7 +7,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use moho_types::MohoAttestation;
 use strata_merkle::MerkleProof;
 use strata_predicate::PredicateKey;
-use zkaleido::{ZkVmError, ZkVmProgram, ZkVmProgramPerf, ZkVmResult};
+use zkaleido::{ZkVmError, ZkVmProgram, ZkVmResult};
 use zkaleido_native_adapter::{NativeHost, NativeMachine};
 
 use crate::{
@@ -84,8 +84,6 @@ impl ZkVmProgram for MohoRecursiveProgram {
         H::extract_borsh_public_output(public_values)
     }
 }
-
-impl ZkVmProgramPerf for MohoRecursiveProgram {}
 
 impl MohoRecursiveProgram {
     /// Returns the native host for the moho recursive program
