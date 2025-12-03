@@ -8,5 +8,6 @@ moho-runtime-interface.workspace = true
 moho-types.workspace = true
 ssz.workspace = true
 ssz_derive.workspace = true
+ssz_primitives.workspace = true
 
 borsh.workspace = true

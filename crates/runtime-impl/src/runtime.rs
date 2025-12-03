@@ -7,6 +7,7 @@ use moho_runtime_interface::MohoProgram;
 use moho_types::{
     MohoAttestation, MohoState, MohoStateCommitment, StateRefAttestation, StateReference,
 };
+use ssz_primitives::U256;
 
 use crate::RuntimeInput;
 
@@ -132,5 +133,10 @@ fn compute_wrapping_moho_state<P: MohoProgram>(
 
     let new_export_state = P::compute_export_state(moho_state.into_export_state(), step_output);
 
-    MohoState::new(post_inner_root, next_predicate, new_export_state)
+    MohoState::new(
+        post_inner_root,
+        next_predicate,
+        new_export_state,
+        U256::from(0),
+    )
 }

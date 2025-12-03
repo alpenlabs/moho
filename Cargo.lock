@@ -503,12 +503,13 @@ dependencies = [
  "k256",
  "moho-types",
  "rand_core 0.6.4",
- "ssz",
- "ssz_derive",
+ "ssz 0.8.3",
+ "ssz_derive 0.8.3",
+ "ssz_primitives 0.8.3",
  "strata-merkle",
  "strata-predicate",
  "thiserror 2.0.17",
- "tree_hash",
+ "tree_hash 0.8.3",
  "zkaleido",
  "zkaleido-native-adapter",
 ]
@@ -520,8 +521,9 @@ dependencies = [
  "borsh",
  "moho-runtime-interface",
  "moho-types",
- "ssz",
- "ssz_derive",
+ "ssz 0.8.3",
+ "ssz_derive 0.8.3",
+ "ssz_primitives 0.8.3",
 ]
 
 [[package]]
@@ -540,15 +542,16 @@ dependencies = [
  "hex",
  "proptest",
  "sha2",
- "ssz",
- "ssz_codegen",
- "ssz_derive",
- "ssz_types",
+ "ssz 0.8.3",
+ "ssz_codegen 0.8.4",
+ "ssz_derive 0.8.3",
+ "ssz_primitives 0.8.3",
+ "ssz_types 0.8.3",
  "strata-merkle",
  "strata-predicate",
  "thiserror 2.0.17",
- "tree_hash",
- "tree_hash_derive",
+ "tree_hash 0.8.3",
+ "tree_hash_derive 0.8.3",
  "zkaleido",
 ]
 
@@ -880,6 +883,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sizzle-parser"
+version = "0.8.4"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fu256-type-parsing#aafb3036dc4e09a0dfe1fda6d95956b6001009f8"
+dependencies = [
+ "thiserror 2.0.17",
+]
+
+[[package]]
 name = "smallvec"
 version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -908,7 +919,17 @@ source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.8.3#f16bea1f0c7925296e
 dependencies = [
  "itertools",
  "smallvec",
- "ssz_primitives",
+ "ssz_primitives 0.8.3",
+]
+
+[[package]]
+name = "ssz"
+version = "0.8.4"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fu256-type-parsing#aafb3036dc4e09a0dfe1fda6d95956b6001009f8"
+dependencies = [
+ "itertools",
+ "smallvec",
+ "ssz_primitives 0.8.4",
 ]
 
 [[package]]
@@ -920,20 +941,49 @@ dependencies = [
  "proc-macro2",
  "quote",
  "serde",
- "sizzle-parser",
- "ssz",
- "ssz_derive",
- "ssz_types",
+ "sizzle-parser 0.8.3",
+ "ssz 0.8.3",
+ "ssz_derive 0.8.3",
+ "ssz_types 0.8.3",
  "syn",
  "toml",
- "tree_hash",
- "tree_hash_derive",
+ "tree_hash 0.8.3",
+ "tree_hash_derive 0.8.3",
+]
+
+[[package]]
+name = "ssz_codegen"
+version = "0.8.4"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fu256-type-parsing#aafb3036dc4e09a0dfe1fda6d95956b6001009f8"
+dependencies = [
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "sizzle-parser 0.8.4",
+ "ssz 0.8.4",
+ "ssz_derive 0.8.4",
+ "ssz_types 0.8.4",
+ "syn",
+ "toml",
+ "tree_hash 0.8.4",
+ "tree_hash_derive 0.8.4",
 ]
 
 [[package]]
 name = "ssz_derive"
 version = "0.8.3"
 source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.8.3#f16bea1f0c7925296e8a4c82d358bd1bb9fe71d8"
+dependencies = [
+ "darling",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "ssz_derive"
+version = "0.8.4"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fu256-type-parsing#aafb3036dc4e09a0dfe1fda6d95956b6001009f8"
 dependencies = [
  "darling",
  "quote",
@@ -951,13 +1001,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "ssz_primitives"
+version = "0.8.4"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fu256-type-parsing#aafb3036dc4e09a0dfe1fda6d95956b6001009f8"
+dependencies = [
+ "hex",
+ "rand 0.8.5",
+ "ruint",
+]
+
+[[package]]
 name = "ssz_types"
 version = "0.8.3"
 source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.8.3#f16bea1f0c7925296e8a4c82d358bd1bb9fe71d8"
 dependencies = [
- "ssz",
- "ssz_primitives",
- "tree_hash",
+ "ssz 0.8.3",
+ "ssz_primitives 0.8.3",
+ "tree_hash 0.8.3",
+]
+
+[[package]]
+name = "ssz_types"
+version = "0.8.4"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fu256-type-parsing#aafb3036dc4e09a0dfe1fda6d95956b6001009f8"
+dependencies = [
+ "ssz 0.8.4",
+ "ssz_primitives 0.8.4",
+ "tree_hash 0.8.4",
 ]
 
 [[package]]
@@ -977,14 +1047,14 @@ dependencies = [
  "digest",
  "serde",
  "sha2",
- "ssz",
- "ssz_codegen",
- "ssz_derive",
- "ssz_types",
+ "ssz 0.8.3",
+ "ssz_codegen 0.8.3",
+ "ssz_derive 0.8.3",
+ "ssz_types 0.8.3",
  "strata-codec",
  "thiserror 2.0.17",
- "tree_hash",
- "tree_hash_derive",
+ "tree_hash 0.8.3",
+ "tree_hash_derive 0.8.3",
 ]
 
 [[package]]
@@ -997,13 +1067,13 @@ dependencies = [
  "k256",
  "serde",
  "signature",
- "ssz",
- "ssz_codegen",
- "ssz_derive",
- "ssz_types",
+ "ssz 0.8.3",
+ "ssz_codegen 0.8.3",
+ "ssz_derive 0.8.3",
+ "ssz_types 0.8.3",
  "thiserror 2.0.17",
- "tree_hash",
- "tree_hash_derive",
+ "tree_hash 0.8.3",
+ "tree_hash_derive 0.8.3",
  "zkaleido-sp1-groth16-verifier",
 ]
 
@@ -1175,14 +1245,36 @@ dependencies = [
  "digest",
  "sha2",
  "smallvec",
- "ssz",
- "ssz_primitives",
+ "ssz 0.8.3",
+ "ssz_primitives 0.8.3",
+]
+
+[[package]]
+name = "tree_hash"
+version = "0.8.4"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fu256-type-parsing#aafb3036dc4e09a0dfe1fda6d95956b6001009f8"
+dependencies = [
+ "digest",
+ "sha2",
+ "smallvec",
+ "ssz 0.8.4",
+ "ssz_primitives 0.8.4",
 ]
 
 [[package]]
 name = "tree_hash_derive"
 version = "0.8.3"
 source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.8.3#f16bea1f0c7925296e8a4c82d358bd1bb9fe71d8"
+dependencies = [
+ "darling",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "tree_hash_derive"
+version = "0.8.4"
+source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fu256-type-parsing#aafb3036dc4e09a0dfe1fda6d95956b6001009f8"
 dependencies = [
  "darling",
  "quote",

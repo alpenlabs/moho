@@ -16,6 +16,9 @@ class MohoState(Container):
     ### Export state containing containers for bridge proof verification.
     export_state: ExportState
 
+    ### Accumulated proof of work
+    acc_pow: uint256
+
 ### Contains a list of export containers, each corresponding to an application like a 
 ### particular bridge design.
 class ExportState(Container):
