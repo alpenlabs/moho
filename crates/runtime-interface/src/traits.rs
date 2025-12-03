@@ -4,6 +4,7 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use moho_types::{ExportState, InnerStateCommitment, StateReference};
+use ssz_primitives::U256;
 use strata_predicate::PredicateKey;
 
 /// Trait implementation for the Moho program.
@@ -19,6 +20,9 @@ pub trait MohoProgram {
 
     /// Computes the reference to the input state.
     fn compute_input_reference(input: &Self::StepInput) -> StateReference;
+
+    /// Computes the proof of work of the input
+    fn compute_input_pow(input: &Self::StepInput) -> U256;
 
     /// Extracts the state reference to the input's previous input from it.
     fn extract_prev_reference(input: &Self::StepInput) -> StateReference;
