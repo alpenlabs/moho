@@ -27,8 +27,9 @@ zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-
 zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc18" }
 
 ssz = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.8.3" }
-ssz_codegen = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.8.3" }
+ssz_codegen = { git = "https://github.com/alpenlabs/ssz-gen", branch = "fix/u256-type-parsing" }
 ssz_derive = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.8.3" }
+ssz_primitives = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.8.3" }
 ssz_types = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.8.3" }
 tree_hash = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.8.3" }
 tree_hash_derive = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.8.3" }

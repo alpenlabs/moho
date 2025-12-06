@@ -1,6 +1,7 @@
 //! Moho state types and SSZ-based commitment/proof helpers.
 
 use ssz_generated::ssz::moho::*;
+use ssz_types::U256;
 use strata_merkle::{MAX_MMR_PEAKS, MerkleMr64B32};
 use strata_predicate::PredicateKey;
 use tree_hash::{Sha256Hasher, TreeHash};
@@ -13,11 +14,13 @@ impl MohoState {
         inner_state: InnerStateCommitment,
         next_predicate: PredicateKey,
         export_state: ExportState,
+        acc_pow: U256,
     ) -> Self {
         Self {
             inner_state: inner_state.into_inner().into(),
             next_predicate,
             export_state,
+            acc_pow,
         }
     }
 
@@ -187,7 +190,7 @@ mod tests {
         )
             .prop_map(|(inner_bytes, predicate, export_state)| {
                 let inner_state = InnerStateCommitment::from(inner_bytes);
-                MohoState::new(inner_state, predicate, export_state)
+                MohoState::new(inner_state, predicate, export_state, U256::from(0))
             })
     }
 
@@ -334,7 +337,7 @@ mod tests {
             let pred_bytes: &[u8] = &[PredicateTypeId::AlwaysAccept.as_u8()];
             let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
             let export = ExportState::new(vec![]);
-            let state = MohoState::new(inner, predicate, export);
+            let state = MohoState::new(inner, predicate, export, U256::from(0));
 
             let encoded = state.as_ssz_bytes();
             let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
@@ -354,7 +357,7 @@ mod tests {
             let inner = InnerStateCommitment::from([0xAB; 32]);
             let predicate = PredicateKey::always_accept();
             let export = ExportState::new(vec![]);
-            let state = MohoState::new(inner, predicate, export);
+            let state = MohoState::new(inner, predicate, export, U256::from(0));
 
             let encoded = state.as_ssz_bytes();
             let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
@@ -385,7 +388,7 @@ mod tests {
             container2.add_entry(entry3).unwrap();
 
             let export = ExportState::new(vec![container1, container2]);
-            let state = MohoState::new(inner, predicate, export);
+            let state = MohoState::new(inner, predicate, export, U256::from(0));
 
             let encoded = state.as_ssz_bytes();
             let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
@@ -414,8 +417,8 @@ mod tests {
             let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
             let export = ExportState::new(vec![]);
 
-            let state1 = MohoState::new(inner1, predicate.clone(), export.clone());
-            let state2 = MohoState::new(inner2, predicate, export);
+            let state1 = MohoState::new(inner1, predicate.clone(), export.clone(), U256::from(0));
+            let state2 = MohoState::new(inner2, predicate, export, U256::from(0));
 
             let commitment1 = state1.compute_commitment();
             let commitment2 = state2.compute_commitment();
@@ -428,7 +431,7 @@ mod tests {
             let inner = InnerStateCommitment::from([0xCD; 32]);
             let predicate = PredicateKey::always_accept();
             let export = ExportState::new(vec![]);
-            let state = MohoState::new(inner, predicate.clone(), export);
+            let state = MohoState::new(inner, predicate.clone(), export, U256::from(0));
 
             assert_eq!(state.inner_state().inner(), &[0xCD; 32]);
             assert_eq!(
@@ -445,7 +448,7 @@ mod tests {
             let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
             let container = ExportContainer::new(1);
             let export = ExportState::new(vec![container]);
-            let state = MohoState::new(inner, predicate, export);
+            let state = MohoState::new(inner, predicate, export, U256::from(0));
 
             let extracted_export = state.into_export_state();
             assert_eq!(extracted_export.containers().len(), 1);

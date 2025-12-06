@@ -99,6 +99,7 @@ mod tests {
     use moho_types::{MohoState, StateRefAttestation, StateReference};
     use rand_core::OsRng;
     use ssz::ssz_encode;
+    use ssz_primitives::U256;
     use strata_merkle::{BinaryMerkleTree, MerkleProofB32, Sha256NoPrefixHasher};
     use strata_predicate::{PredicateKey, PredicateTypeId};
     use tree_hash::{Sha256Hasher as TreeSha256Hasher, TreeHash};
@@ -129,7 +130,7 @@ mod tests {
     fn create_state(id: u8, predicate: &PredicateKey) -> MohoState {
         let inner_state = moho_types::InnerStateCommitment::from([id; 32]);
         let export_state = moho_types::ExportState::new(vec![]);
-        MohoState::new(inner_state, predicate.clone(), export_state)
+        MohoState::new(inner_state, predicate.clone(), export_state, U256::from(id))
     }
 
     fn attestation(id: u8, state: &MohoState) -> StateRefAttestation {

@@ -20,6 +20,7 @@ zkaleido-native-adapter.workspace = true
 [dev-dependencies]
 k256 = { version = "0.13.4", features = ["schnorr"] }
 rand_core = "0.6"
+ssz_primitives.workspace = true
 
 [lints]
 workspace = true
