@@ -5,27 +5,16 @@ use zkaleido::ZkVmEnv;
 
 use crate::{MohoError, MohoRecursiveOutput, MohoStateTransition, program::MohoRecursiveInput};
 
-/// Entry point for processing recursive Moho proofs within a zkVM environment.
-///
-/// This function reads a [`MohoRecursiveInput`] from the zkVM, performs verification
-/// of the proof components and chaining of the corresponding states, then commits the resulting
-/// complete state transition along with the Moho predicate key back to the zkVM.
+/// Reads an SSZ-encoded [`MohoRecursiveInput`] from the zkVM, verifies and chains the proof,
+/// and commits the resulting [`MohoRecursiveOutput`] back to the zkVM.
 ///
 /// # Arguments
 ///
-/// * `zkvm` - A zkVM environment that implements [`ZkVmEnv`] for reading input data and committing
-///   output data using Borsh serialization
-///
-/// # Type Parameters
-///
-/// * `V` - A verifier type that implements `ZkVmVerifier + BorshSerialize + BorshDeserialize` for
-///   proof verification operations
+/// * `zkvm` - A zkVM environment that implements [`ZkVmEnv`] for reading and committing buffers.
 ///
 /// # Panics
 ///
-/// Panics if proof verification or chaining fails, as this function calls
-/// `unwrap()` on the result from `verify_and_chain_transition`. Consider using
-/// `verify_and_chain_transition` directly for error handling.
+/// Panics if decoding the input or verifying/chaining the proof fails.
 pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
     let input_ssz_bytes = zkvm.read_buf();
     let input = MohoRecursiveInput::from_ssz_bytes(&input_ssz_bytes).unwrap();
