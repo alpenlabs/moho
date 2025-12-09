@@ -1,9 +1,9 @@
 //! Runtime input.
 
-use borsh::{BorshDeserialize, BorshSerialize};
 use moho_types::{MohoState, MohoStateCommitment, StateReference};
+use ssz_derive::{Decode, Encode};
 
-#[derive(Clone, Debug, BorshDeserialize, BorshSerialize)]
+#[derive(Clone, Debug, Encode, Decode)]
 pub struct RuntimeInput {
     /// Attestation for the pre-state.
     pre_state_ref: StateReference,

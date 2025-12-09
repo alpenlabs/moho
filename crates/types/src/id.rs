@@ -1,11 +1,12 @@
 //! Reference types.
 
-use borsh::{BorshDeserialize, BorshSerialize};
+use ssz_derive::{Decode, Encode};
 use ssz_types::FixedBytes;
 
 macro_rules! inst_id {
     ($name:ident) => {
-        #[derive(Copy, Clone, Eq, PartialEq)]
+        #[derive(Debug, Copy, Clone, Eq, PartialEq, Encode, Decode)]
+        #[ssz(struct_behaviour = "transparent")]
         pub struct $name(FixedBytes<32>);
 
         impl $name {
@@ -39,26 +40,9 @@ macro_rules! inst_id {
             }
         }
 
-        impl BorshSerialize for $name {
-            fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
-                writer.write_all(self.0.as_ref())
-            }
-        }
-
-        impl BorshDeserialize for $name {
-            fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
-                let mut bytes = [0u8; 32];
-                reader.read_exact(&mut bytes)?;
-                Ok(Self(FixedBytes::from(bytes)))
-            }
-        }
-
-        impl ::std::fmt::Debug for $name {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                // twice as large, required by the hex::encode_to_slice.
-                let mut buf = [0; 64];
-                ::hex::encode_to_slice(self.0.as_ref(), &mut buf).expect("buf: enc hex");
-                f.write_str(unsafe { ::core::str::from_utf8_unchecked(&buf) })
+        impl From<FixedBytes<32>> for $name {
+            fn from(inner: FixedBytes<32>) -> Self {
+                Self(FixedBytes::from(inner))
             }
         }
     };

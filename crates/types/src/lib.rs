@@ -21,4 +21,4 @@ mod ssz_generated {
 }
 
 // Publicly re-export only the SSZ items this crate's API intends to expose
-pub use ssz_generated::ssz::moho::{ExportContainer, ExportState, MAX_PREDICATE_SIZE, MohoState};
+pub use ssz_generated::ssz::moho::{ExportContainer, ExportState, MohoState, PredicateKey};

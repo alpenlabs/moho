@@ -500,9 +500,11 @@ checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 name = "moho-recursive-proof"
 version = "0.1.0"
 dependencies = [
- "borsh",
+ "k256",
  "moho-types",
- "ssz_types",
+ "rand_core 0.6.4",
+ "ssz",
+ "ssz_derive",
  "strata-merkle",
  "strata-predicate",
  "thiserror 2.0.17",
@@ -518,6 +520,8 @@ dependencies = [
  "borsh",
  "moho-runtime-interface",
  "moho-types",
+ "ssz",
+ "ssz_derive",
 ]
 
 [[package]]
@@ -533,7 +537,6 @@ dependencies = [
 name = "moho-types"
 version = "0.1.0"
 dependencies = [
- "borsh",
  "hex",
  "proptest",
  "sha2",
@@ -542,7 +545,6 @@ dependencies = [
  "ssz_derive",
  "ssz_types",
  "strata-merkle",
- "strata-predicate",
  "thiserror 2.0.17",
  "tree_hash",
  "tree_hash_derive",
