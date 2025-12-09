@@ -1,7 +1,17 @@
 import strata_merkle
-import strata_predicate
 
+### Maximum no of containers
 MAX_EXPORT_CONTAINERS = 256
+
+### Maximum length of the predicate condition bytes
+MAX_CONDITION_LEN = 1 << 10
+
+### A predicate key encodes a formal boolean statement with a type identifier.
+class PredicateKey(Container):
+    ### The predicate type identifier.
+    id: uint8
+    ### Backend-specific predicate condition bytes.
+    condition: List[byte, MAX_CONDITION_LEN]
 
 ### The Moho state serves as the interface between the upgradable inner state
 ### transition function proof, the surrounding Moho proof mechanism, and consumer proofs.
@@ -10,8 +20,7 @@ class MohoState(Container):
     inner_state: Bytes32
 
     ### Predicate key used to verify the next incremental proof step.
-    #~# external_kind: container
-    next_predicate: strata_predicate.PredicateKey
+    next_predicate: PredicateKey
 
     ### Export state containing containers for bridge proof verification.
     export_state: ExportState

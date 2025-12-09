@@ -129,7 +129,12 @@ mod tests {
     fn create_state(id: u8, predicate: &PredicateKey) -> MohoState {
         let inner_state = moho_types::InnerStateCommitment::from([id; 32]);
         let export_state = moho_types::ExportState::new(vec![]);
-        MohoState::new(inner_state, predicate.clone(), export_state)
+        let buf = predicate.as_buf_ref();
+        let moho_predicate = moho_types::PredicateKey {
+            id: buf.id() as u8,
+            condition: buf.condition().to_vec().into(),
+        };
+        MohoState::new(inner_state, moho_predicate, export_state)
     }
 
     fn attestation(id: u8, state: &MohoState) -> StateRefAttestation {

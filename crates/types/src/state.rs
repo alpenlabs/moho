@@ -2,7 +2,6 @@
 
 use ssz_generated::ssz::moho::*;
 use strata_merkle::{MAX_MMR_PEAKS, MerkleMr64B32};
-use strata_predicate::PredicateKey;
 use tree_hash::{Sha256Hasher, TreeHash};
 
 use crate::{InnerStateCommitment, MohoStateCommitment, errors::ExportStateError, ssz_generated};
@@ -130,36 +129,24 @@ impl ExportContainer {
 mod tests {
     use proptest::prelude::*;
     use ssz::{Decode, Encode};
-    use strata_predicate::{PredicateKeyBuf, PredicateTypeId};
     use tree_hash::Sha256Hasher;
 
     use super::*;
 
-    fn predicate_bytes_strategy() -> impl Strategy<Value = Vec<u8>> {
-        let valid_ids = vec![
-            PredicateTypeId::NeverAccept.as_u8(),
-            PredicateTypeId::AlwaysAccept.as_u8(),
-            PredicateTypeId::Bip340Schnorr.as_u8(),
-            PredicateTypeId::Sp1Groth16.as_u8(),
-        ];
-
-        (
-            prop::sample::select(valid_ids),
-            prop::collection::vec(any::<u8>(), 0..8),
-        )
-            .prop_map(|(id, mut condition)| {
-                let mut bytes = Vec::with_capacity(1 + condition.len());
-                bytes.push(id);
-                bytes.append(&mut condition);
-                bytes
-            })
+    /// Helper function to create an always_accept predicate
+    fn always_accept() -> PredicateKey {
+        PredicateKey {
+            id: 1, // AlwaysAccept ID
+            condition: vec![].into(),
+        }
     }
 
     fn predicate_strategy() -> impl Strategy<Value = PredicateKey> {
-        predicate_bytes_strategy().prop_map(|bytes| {
-            PredicateKeyBuf::try_from(bytes.as_slice())
-                .expect("generated predicate bytes should be valid")
-                .to_owned()
+        (any::<u8>(), prop::collection::vec(any::<u8>(), 0..8)).prop_map(|(id, condition)| {
+            PredicateKey {
+                id,
+                condition: condition.into(),
+            }
         })
     }
 
@@ -302,8 +289,8 @@ mod tests {
                 let decoded_inner = decoded.inner_state().into_inner();
                 prop_assert_eq!(state_inner, decoded_inner);
                 prop_assert_eq!(
-                    state.next_predicate().as_buf_ref().to_bytes(),
-                    decoded.next_predicate().as_buf_ref().to_bytes()
+                    state.next_predicate(),
+                    decoded.next_predicate()
                 );
                 prop_assert_eq!(
                     state.export_state().containers().len(),
@@ -331,8 +318,7 @@ mod tests {
         #[test]
         fn test_minimal_state_ssz() {
             let inner = InnerStateCommitment::from([0u8; 32]);
-            let pred_bytes: &[u8] = &[PredicateTypeId::AlwaysAccept.as_u8()];
-            let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
+            let predicate = always_accept();
             let export = ExportState::new(vec![]);
             let state = MohoState::new(inner, predicate, export);
 
@@ -343,16 +329,13 @@ mod tests {
                 state.inner_state().into_inner(),
                 decoded.inner_state().into_inner()
             );
-            assert_eq!(
-                state.next_predicate().as_buf_ref().to_bytes(),
-                decoded.next_predicate().as_buf_ref().to_bytes()
-            );
+            assert_eq!(state.next_predicate(), decoded.next_predicate());
         }
 
         #[test]
         fn test_state_with_valid_predicate() {
             let inner = InnerStateCommitment::from([0xAB; 32]);
-            let predicate = PredicateKey::always_accept();
+            let predicate = always_accept();
             let export = ExportState::new(vec![]);
             let state = MohoState::new(inner, predicate, export);
 
@@ -363,16 +346,13 @@ mod tests {
                 state.inner_state().into_inner(),
                 decoded.inner_state().into_inner()
             );
-            assert_eq!(
-                state.next_predicate().as_buf_ref().to_bytes(),
-                decoded.next_predicate().as_buf_ref().to_bytes()
-            );
+            assert_eq!(state.next_predicate(), decoded.next_predicate());
         }
 
         #[test]
         fn test_state_with_complex_export() {
             let inner = InnerStateCommitment::from([0x12; 32]);
-            let predicate = PredicateKey::always_accept();
+            let predicate = always_accept();
 
             let entry1 = [0x01; 32];
             let entry2 = [0x02; 32];
@@ -410,8 +390,7 @@ mod tests {
         fn test_commitment_uniqueness() {
             let inner1 = InnerStateCommitment::from([0x01; 32]);
             let inner2 = InnerStateCommitment::from([0x02; 32]);
-            let pred_bytes: &[u8] = &[PredicateTypeId::AlwaysAccept.as_u8()];
-            let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
+            let predicate = always_accept();
             let export = ExportState::new(vec![]);
 
             let state1 = MohoState::new(inner1, predicate.clone(), export.clone());
@@ -426,23 +405,19 @@ mod tests {
         #[test]
         fn test_accessors() {
             let inner = InnerStateCommitment::from([0xCD; 32]);
-            let predicate = PredicateKey::always_accept();
+            let predicate = always_accept();
             let export = ExportState::new(vec![]);
             let state = MohoState::new(inner, predicate.clone(), export);
 
             assert_eq!(state.inner_state().inner(), &[0xCD; 32]);
-            assert_eq!(
-                state.next_predicate().as_buf_ref().to_bytes(),
-                predicate.as_buf_ref().to_bytes()
-            );
+            assert_eq!(state.next_predicate(), &predicate);
             assert_eq!(state.export_state().containers().len(), 0);
         }
 
         #[test]
         fn test_into_export_state() {
             let inner = InnerStateCommitment::from([0x00; 32]);
-            let pred_bytes: &[u8] = &[PredicateTypeId::AlwaysAccept.as_u8()];
-            let predicate = PredicateKeyBuf::try_from(pred_bytes).unwrap().to_owned();
+            let predicate = always_accept();
             let container = ExportContainer::new(1);
             let export = ExportState::new(vec![container]);
             let state = MohoState::new(inner, predicate, export);

@@ -126,7 +126,13 @@ fn compute_wrapping_moho_state<P: MohoProgram>(
     // Determine the next predicate key: use the updated key if available, otherwise fall
     // back to the previous one
     let next_predicate = match P::extract_next_predicate(step_output) {
-        Some(predicate) => predicate,
+        Some(predicate) => {
+            let buf = predicate.as_buf_ref();
+            moho_types::PredicateKey {
+                id: buf.id() as u8,
+                condition: buf.condition().to_vec().into(),
+            }
+        }
         None => moho_state.next_predicate().clone(),
     };
 
