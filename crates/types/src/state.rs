@@ -95,11 +95,12 @@ impl ExportState {
 }
 
 impl ExportContainer {
-    /// Creates a new export container with an empty MMR.
+    /// Creates a new export container with an empty MMR and default extra data.
     pub fn new(container_id: u8) -> Self {
         let entries_mmr = MerkleMr64B32::new(MAX_MMR_PEAKS as usize);
         Self {
             container_id,
+            extra_data: [0u8; 32].into(),
             entries_mmr,
         }
     }
@@ -107,6 +108,11 @@ impl ExportContainer {
     /// Returns the container ID.
     pub fn container_id(&self) -> u8 {
         self.container_id
+    }
+
+    /// Returns the container extra data.
+    pub fn extra_data(&self) -> &[u8; 32] {
+        &self.extra_data.0
     }
 
     /// Returns a reference to the entries MMR.
@@ -122,6 +128,11 @@ impl ExportContainer {
     pub fn add_entry(&mut self, entry: [u8; 32]) -> Result<(), ExportStateError> {
         self.entries_mmr.add_leaf(entry)?;
         Ok(())
+    }
+
+    /// Updates the extra data of the container.
+    pub fn update_extra_data(&mut self, extra_data: [u8; 32]) {
+        self.extra_data = extra_data.into()
     }
 }
 
