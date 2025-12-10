@@ -31,12 +31,19 @@ class ExportState(Container):
     ### List of export containers, up to MAX_EXPORT_CONTAINERS.
     containers: List[ExportContainer, MAX_EXPORT_CONTAINERS]
 
-### An export container with an immutable MMR accumulator that stores OperatorClaimUnlock 
-### entries representing completed operator fulfillments.
+### An export container with an MMR accumulator and extra data.
 class ExportContainer(Container):
     ### Unique identifier for this container/application.
     container_id: uint8
 
-    ### MMR accumulator storing immutable OperatorClaimUnlock entries.
+    ### Container specific extra data
+    ###
+    ### For bridge v1, it contains the accumulated proof of work
+    extra_data: Bytes32
+
+    ### MMR accumulator storing entries.
+    ###
+    ### For bridge v1, it contains OperatorClaimUnlock entries representing a
+    ### claim to the payout transaction.
     #~# external_kind: container
     entries_mmr: strata_merkle.MerkleMr64B32
