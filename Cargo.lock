@@ -873,8 +873,8 @@ dependencies = [
 
 [[package]]
 name = "sizzle-parser"
-version = "0.10.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fexternal-container-union-variants#011d31685cd879daf8be40e8368de44614bd43eb"
+version = "0.11.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
 dependencies = [
  "thiserror 2.0.17",
 ]
@@ -903,8 +903,8 @@ dependencies = [
 
 [[package]]
 name = "ssz"
-version = "0.10.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fexternal-container-union-variants#011d31685cd879daf8be40e8368de44614bd43eb"
+version = "0.11.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
 dependencies = [
  "itertools",
  "smallvec",
@@ -913,8 +913,8 @@ dependencies = [
 
 [[package]]
 name = "ssz_codegen"
-version = "0.10.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fexternal-container-union-variants#011d31685cd879daf8be40e8368de44614bd43eb"
+version = "0.11.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
 dependencies = [
  "prettyplease",
  "proc-macro2",
@@ -932,8 +932,8 @@ dependencies = [
 
 [[package]]
 name = "ssz_derive"
-version = "0.10.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fexternal-container-union-variants#011d31685cd879daf8be40e8368de44614bd43eb"
+version = "0.11.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
 dependencies = [
  "darling",
  "quote",
@@ -942,8 +942,8 @@ dependencies = [
 
 [[package]]
 name = "ssz_primitives"
-version = "0.10.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fexternal-container-union-variants#011d31685cd879daf8be40e8368de44614bd43eb"
+version = "0.11.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
 dependencies = [
  "hex",
  "rand 0.8.5",
@@ -952,8 +952,8 @@ dependencies = [
 
 [[package]]
 name = "ssz_types"
-version = "0.10.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fexternal-container-union-variants#011d31685cd879daf8be40e8368de44614bd43eb"
+version = "0.11.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
 dependencies = [
  "ssz",
  "ssz_primitives",
@@ -963,7 +963,7 @@ dependencies = [
 [[package]]
 name = "strata-codec"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?branch=update-ssz-deps#aeb49cb5946754a3399a7d49c658ee73d25fd425"
+source = "git+https://github.com/alpenlabs/strata-common#113fcced8ab225b7639ac4d6a9685d9f19af7c80"
 dependencies = [
  "thiserror 2.0.17",
 ]
@@ -971,7 +971,7 @@ dependencies = [
 [[package]]
 name = "strata-merkle"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?branch=update-ssz-deps#aeb49cb5946754a3399a7d49c658ee73d25fd425"
+source = "git+https://github.com/alpenlabs/strata-common#113fcced8ab225b7639ac4d6a9685d9f19af7c80"
 dependencies = [
  "borsh",
  "digest",
@@ -991,7 +991,7 @@ dependencies = [
 [[package]]
 name = "strata-predicate"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?branch=update-ssz-deps#aeb49cb5946754a3399a7d49c658ee73d25fd425"
+source = "git+https://github.com/alpenlabs/strata-common#113fcced8ab225b7639ac4d6a9685d9f19af7c80"
 dependencies = [
  "borsh",
  "hex",
@@ -1171,8 +1171,8 @@ checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 
 [[package]]
 name = "tree_hash"
-version = "0.10.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fexternal-container-union-variants#011d31685cd879daf8be40e8368de44614bd43eb"
+version = "0.11.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
 dependencies = [
  "digest",
  "sha2",
@@ -1183,8 +1183,8 @@ dependencies = [
 
 [[package]]
 name = "tree_hash_derive"
-version = "0.10.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fexternal-container-union-variants#011d31685cd879daf8be40e8368de44614bd43eb"
+version = "0.11.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
 dependencies = [
  "darling",
  "quote",
