@@ -95,7 +95,7 @@ impl ExportState {
 }
 
 impl ExportContainer {
-    /// Creates a new export container with an empty MMR and default extra data.
+    /// Creates a new export container with an empty MMR and default empty/zeroed out extra data.
     pub fn new(container_id: u8) -> Self {
         let entries_mmr = MerkleMr64B32::new(MAX_MMR_PEAKS as usize);
         Self {
