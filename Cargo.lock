@@ -873,8 +873,8 @@ dependencies = [
 
 [[package]]
 name = "sizzle-parser"
-version = "0.11.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
+version = "0.11.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.1#a22b12f83a569599744412990934683dd7466cc4"
 dependencies = [
  "thiserror 2.0.17",
 ]
@@ -903,18 +903,19 @@ dependencies = [
 
 [[package]]
 name = "ssz"
-version = "0.11.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
+version = "0.11.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.1#a22b12f83a569599744412990934683dd7466cc4"
 dependencies = [
  "itertools",
  "smallvec",
  "ssz_primitives",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
 name = "ssz_codegen"
-version = "0.11.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
+version = "0.11.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.1#a22b12f83a569599744412990934683dd7466cc4"
 dependencies = [
  "prettyplease",
  "proc-macro2",
@@ -932,8 +933,8 @@ dependencies = [
 
 [[package]]
 name = "ssz_derive"
-version = "0.11.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
+version = "0.11.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.1#a22b12f83a569599744412990934683dd7466cc4"
 dependencies = [
  "darling",
  "quote",
@@ -942,8 +943,8 @@ dependencies = [
 
 [[package]]
 name = "ssz_primitives"
-version = "0.11.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
+version = "0.11.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.1#a22b12f83a569599744412990934683dd7466cc4"
 dependencies = [
  "hex",
  "rand 0.8.5",
@@ -952,26 +953,27 @@ dependencies = [
 
 [[package]]
 name = "ssz_types"
-version = "0.11.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
+version = "0.11.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.1#a22b12f83a569599744412990934683dd7466cc4"
 dependencies = [
  "ssz",
  "ssz_primitives",
+ "thiserror 2.0.17",
  "tree_hash",
 ]
 
 [[package]]
 name = "strata-codec"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common#113fcced8ab225b7639ac4d6a9685d9f19af7c80"
+source = "git+https://github.com/alpenlabs/strata-common#93511df4d0505d179df4aecf67713d94723c69a8"
 dependencies = [
  "thiserror 2.0.17",
 ]
 
 [[package]]
 name = "strata-merkle"
-version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common#113fcced8ab225b7639ac4d6a9685d9f19af7c80"
+version = "0.2.0"
+source = "git+https://github.com/alpenlabs/strata-common#93511df4d0505d179df4aecf67713d94723c69a8"
 dependencies = [
  "borsh",
  "digest",
@@ -991,7 +993,7 @@ dependencies = [
 [[package]]
 name = "strata-predicate"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common#113fcced8ab225b7639ac4d6a9685d9f19af7c80"
+source = "git+https://github.com/alpenlabs/strata-common#93511df4d0505d179df4aecf67713d94723c69a8"
 dependencies = [
  "borsh",
  "hex",
@@ -1171,20 +1173,21 @@ checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 
 [[package]]
 name = "tree_hash"
-version = "0.11.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
+version = "0.11.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.1#a22b12f83a569599744412990934683dd7466cc4"
 dependencies = [
  "digest",
  "sha2",
  "smallvec",
  "ssz",
  "ssz_primitives",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
 name = "tree_hash_derive"
-version = "0.11.0"
-source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.0#5695787b88b50ba9330fcf6c5d3d8cd7ff33a8e6"
+version = "0.11.1"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.11.1#a22b12f83a569599744412990934683dd7466cc4"
 dependencies = [
  "darling",
  "quote",

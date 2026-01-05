@@ -1,8 +1,10 @@
 //! Moho state types and SSZ-based commitment/proof helpers.
 
 use ssz_generated::ssz::moho::*;
-use strata_merkle::{MAX_MMR_PEAKS, MerkleMr64B32};
+use strata_merkle::{CompactMmr64, MAX_MMR_PEAKS, Mmr, Mmr64B32, Sha256Hasher as MerkleHasher};
 use tree_hash::{Sha256Hasher, TreeHash};
+
+type Hash32 = [u8; 32];
 
 use crate::{InnerStateCommitment, MohoStateCommitment, errors::ExportStateError, ssz_generated};
 
@@ -74,7 +76,7 @@ impl ExportState {
     /// This method will never panic in practice because `MAX_EXPORT_CONTAINERS = 256` exactly
     /// matches the full range of `u8` container IDs (0-255). Since each container_id is unique,
     /// we can never exceed the container list capacity.
-    pub fn add_entry(&mut self, container_id: u8, entry: [u8; 32]) -> Result<(), ExportStateError> {
+    pub fn add_entry(&mut self, container_id: u8, entry: Hash32) -> Result<(), ExportStateError> {
         if let Some(container) = self
             .containers
             .iter_mut()
@@ -97,10 +99,11 @@ impl ExportState {
 impl ExportContainer {
     /// Creates a new export container with an empty MMR and default empty/zeroed out extra data.
     pub fn new(container_id: u8) -> Self {
-        let entries_mmr = MerkleMr64B32::new(MAX_MMR_PEAKS as usize);
+        let mmr = CompactMmr64::<Hash32>::new(MAX_MMR_PEAKS as u8);
+        let entries_mmr = Mmr64B32::from_generic(&mmr);
         Self {
             container_id,
-            extra_data: [0u8; 32].into(),
+            extra_data: Hash32::default().into(),
             entries_mmr,
         }
     }
@@ -111,12 +114,12 @@ impl ExportContainer {
     }
 
     /// Returns the container extra data.
-    pub fn extra_data(&self) -> &[u8; 32] {
+    pub fn extra_data(&self) -> &Hash32 {
         &self.extra_data.0
     }
 
     /// Returns a reference to the entries MMR.
-    pub fn entries_mmr(&self) -> &MerkleMr64B32 {
+    pub fn entries_mmr(&self) -> &Mmr64B32 {
         &self.entries_mmr
     }
 
@@ -125,13 +128,15 @@ impl ExportContainer {
     /// # Errors
     ///
     /// Returns `ExportStateError::AddEntryFailed` if the MMR capacity is exceeded.
-    pub fn add_entry(&mut self, entry: [u8; 32]) -> Result<(), ExportStateError> {
-        self.entries_mmr.add_leaf(entry)?;
+    pub fn add_entry(&mut self, entry: Hash32) -> Result<(), ExportStateError> {
+        let mut mmr = self.entries_mmr.to_generic();
+        Mmr::<MerkleHasher>::add_leaf(&mut mmr, entry)?;
+        self.entries_mmr = Mmr64B32::from_generic(&mmr);
         Ok(())
     }
 
     /// Updates the extra data of the container.
-    pub fn update_extra_data(&mut self, extra_data: [u8; 32]) {
+    pub fn update_extra_data(&mut self, extra_data: Hash32) {
         self.extra_data = extra_data.into()
     }
 }
@@ -162,7 +167,7 @@ mod tests {
     }
 
     fn export_container_strategy() -> impl Strategy<Value = ExportContainer> {
-        (any::<u8>(), prop::collection::vec(any::<[u8; 32]>(), 0..10)).prop_map(
+        (any::<u8>(), prop::collection::vec(any::<Hash32>(), 0..10)).prop_map(
             |(container_id, entries)| {
                 let mut container = ExportContainer::new(container_id);
                 for entry in entries {
@@ -179,7 +184,7 @@ mod tests {
 
     fn moho_state_strategy() -> impl Strategy<Value = MohoState> {
         (
-            any::<[u8; 32]>(),
+            any::<Hash32>(),
             predicate_strategy(),
             export_state_strategy(),
         )
@@ -328,7 +333,7 @@ mod tests {
 
         #[test]
         fn test_minimal_state_ssz() {
-            let inner = InnerStateCommitment::from([0u8; 32]);
+            let inner = InnerStateCommitment::from(Hash32::default());
             let predicate = always_accept();
             let export = ExportState::new(vec![]);
             let state = MohoState::new(inner, predicate, export);
@@ -427,7 +432,7 @@ mod tests {
 
         #[test]
         fn test_into_export_state() {
-            let inner = InnerStateCommitment::from([0x00; 32]);
+            let inner = InnerStateCommitment::from(Hash32::default());
             let predicate = always_accept();
             let container = ExportContainer::new(1);
             let export = ExportState::new(vec![container]);
