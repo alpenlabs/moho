@@ -46,4 +46,4 @@ class ExportContainer(Container):
     ### For bridge v1, it contains OperatorClaimUnlock entries representing a
     ### claim to the payout transaction.
     #~# external_kind: container
-    entries_mmr: strata_merkle.MerkleMr64B32
+    entries_mmr: strata_merkle.Mmr64B32
