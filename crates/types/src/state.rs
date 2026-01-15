@@ -2,6 +2,7 @@
 
 use ssz_generated::ssz::moho::*;
 use strata_merkle::{CompactMmr64, MAX_MMR_PEAKS, Mmr, Mmr64B32, Sha256Hasher as MerkleHasher};
+use strata_predicate::PredicateKey;
 use tree_hash::{Sha256Hasher, TreeHash};
 
 type Hash32 = [u8; 32];
