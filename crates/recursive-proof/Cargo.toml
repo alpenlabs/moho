@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 strata-merkle.workspace = true
-strata-predicate.workspace = true
+strata-predicate = { workspace = true, features = ["all"] }
 
 moho-types.workspace = true
 ssz.workspace = true

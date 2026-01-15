@@ -126,15 +126,10 @@ mod tests {
         }
     }
 
-    fn create_state(id: u8, predicate: &PredicateKey) -> MohoState {
+    fn create_state(id: u8, predicate: PredicateKey) -> MohoState {
         let inner_state = moho_types::InnerStateCommitment::from([id; 32]);
         let export_state = moho_types::ExportState::new(vec![]);
-        let buf = predicate.as_buf_ref();
-        let moho_predicate = moho_types::PredicateKey {
-            id: buf.id() as u8,
-            condition: buf.condition().to_vec().into(),
-        };
-        MohoState::new(inner_state, moho_predicate, export_state)
+        MohoState::new(inner_state, predicate, export_state)
     }
 
     fn attestation(id: u8, state: &MohoState) -> StateRefAttestation {
@@ -195,14 +190,14 @@ mod tests {
         moho: &SchnorrPredicate,
         step: &SchnorrPredicate,
     ) -> MohoRecursiveInput {
-        let from_state = create_state(from, &step.predicate);
-        let to_state = create_state(to, &step.predicate);
+        let from_state = create_state(from, step.predicate.clone());
+        let to_state = create_state(to, step.predicate.clone());
         let (step_proof, step_predicate_merkle_proof) =
             transition_with_proof(from, to, &from_state, &to_state, &step.signing_key);
 
         let prev_recursive_proof = prev.map(|(f, t)| {
-            let prev_from_state = create_state(f, &step.predicate);
-            let prev_to_state = create_state(t, &step.predicate);
+            let prev_from_state = create_state(f, step.predicate.clone());
+            let prev_to_state = create_state(t, step.predicate.clone());
             let transition = transition_with_predicate(f, t, &prev_from_state, &prev_to_state);
             let signature = sign_transition(&transition, &moho.signing_key);
             MohoTransitionWithProof::new(transition, signature)
@@ -218,8 +213,8 @@ mod tests {
     }
 
     fn expected_transition(from: u8, to: u8, predicate: &PredicateKey) -> MohoStateTransition {
-        let from_state = create_state(from, predicate);
-        let to_state = create_state(to, predicate);
+        let from_state = create_state(from, predicate.clone());
+        let to_state = create_state(to, predicate.clone());
         transition_with_predicate(from, to, &from_state, &to_state)
     }
 
@@ -283,8 +278,8 @@ mod tests {
         let step = SchnorrPredicate::new();
         let bad_step_key = SchnorrPredicate::new();
 
-        let from_state = create_state(1, &step.predicate);
-        let to_state = create_state(2, &step.predicate);
+        let from_state = create_state(1, step.predicate.clone());
+        let to_state = create_state(2, step.predicate.clone());
         let transition = transition_with_predicate(1, 2, &from_state, &to_state);
         let mut bad_signature = sign_transition(&transition, &bad_step_key.signing_key);
         bad_signature[0] ^= 0xFF; // ensure signature mismatch

@@ -14,10 +14,9 @@ moho-runtime-interface = { path = "crates/runtime-interface" }
 moho-types = { path = "crates/types" }
 
 strata-merkle = { git = "https://github.com/alpenlabs/strata-common", features = [
-  "borsh",
   "ssz",
 ] }
-strata-predicate = { git = "https://github.com/alpenlabs/strata-common", features = ["schnorr"] }
+strata-predicate = { git = "https://github.com/alpenlabs/strata-common" }
 
 borsh = { version = "1.5.7", features = ["derive"] }
 hex = { version = "0.4" }
