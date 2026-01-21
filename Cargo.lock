@@ -439,7 +439,7 @@ dependencies = [
  "ssz_derive",
  "strata-merkle",
  "strata-predicate",
- "thiserror 2.0.17",
+ "thiserror 2.0.18",
  "tree_hash",
  "zkaleido",
  "zkaleido-native-adapter",
@@ -478,7 +478,7 @@ dependencies = [
  "ssz_primitives",
  "ssz_types",
  "strata-merkle",
- "thiserror 2.0.17",
+ "thiserror 2.0.18",
  "tree_hash",
  "tree_hash_derive",
  "zkaleido",
@@ -794,9 +794,9 @@ dependencies = [
 [[package]]
 name = "sizzle-parser"
 version = "0.12.3"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fdiamond-dependency-order#da847c537665cb2f7bea68cb0f019ff5365bbb40"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.3#62b8567cd8a6e4a73bbee0ba25d06dd8ac0972be"
 dependencies = [
- "thiserror 2.0.17",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -818,18 +818,18 @@ dependencies = [
 [[package]]
 name = "ssz"
 version = "0.12.3"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fdiamond-dependency-order#da847c537665cb2f7bea68cb0f019ff5365bbb40"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.3#62b8567cd8a6e4a73bbee0ba25d06dd8ac0972be"
 dependencies = [
  "itertools",
  "smallvec",
  "ssz_primitives",
- "thiserror 2.0.17",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
 name = "ssz_codegen"
 version = "0.12.3"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fdiamond-dependency-order#da847c537665cb2f7bea68cb0f019ff5365bbb40"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.3#62b8567cd8a6e4a73bbee0ba25d06dd8ac0972be"
 dependencies = [
  "prettyplease",
  "proc-macro2",
@@ -849,7 +849,7 @@ dependencies = [
 [[package]]
 name = "ssz_derive"
 version = "0.12.3"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fdiamond-dependency-order#da847c537665cb2f7bea68cb0f019ff5365bbb40"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.3#62b8567cd8a6e4a73bbee0ba25d06dd8ac0972be"
 dependencies = [
  "darling",
  "quote",
@@ -859,7 +859,7 @@ dependencies = [
 [[package]]
 name = "ssz_primitives"
 version = "0.12.3"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fdiamond-dependency-order#da847c537665cb2f7bea68cb0f019ff5365bbb40"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.3#62b8567cd8a6e4a73bbee0ba25d06dd8ac0972be"
 dependencies = [
  "hex",
  "rand 0.8.5",
@@ -869,26 +869,26 @@ dependencies = [
 [[package]]
 name = "ssz_types"
 version = "0.12.3"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fdiamond-dependency-order#da847c537665cb2f7bea68cb0f019ff5365bbb40"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.3#62b8567cd8a6e4a73bbee0ba25d06dd8ac0972be"
 dependencies = [
  "ssz",
  "ssz_primitives",
- "thiserror 2.0.17",
+ "thiserror 2.0.18",
  "tree_hash",
 ]
 
 [[package]]
 name = "strata-codec"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?branch=update-ssz-deps#8faf8080fc17ea429ef55aa6e57afd2fe9d47c97"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc4#197c4fb95d52f81ccece68b3f1185fa583f648d2"
 dependencies = [
- "thiserror 2.0.17",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
 name = "strata-merkle"
 version = "0.2.0"
-source = "git+https://github.com/alpenlabs/strata-common?branch=update-ssz-deps#8faf8080fc17ea429ef55aa6e57afd2fe9d47c97"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc4#197c4fb95d52f81ccece68b3f1185fa583f648d2"
 dependencies = [
  "borsh",
  "digest",
@@ -900,7 +900,7 @@ dependencies = [
  "ssz_primitives",
  "ssz_types",
  "strata-codec",
- "thiserror 2.0.17",
+ "thiserror 2.0.18",
  "tree_hash",
  "tree_hash_derive",
 ]
@@ -908,7 +908,7 @@ dependencies = [
 [[package]]
 name = "strata-predicate"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?branch=update-ssz-deps#8faf8080fc17ea429ef55aa6e57afd2fe9d47c97"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc4#197c4fb95d52f81ccece68b3f1185fa583f648d2"
 dependencies = [
  "borsh",
  "hex",
@@ -920,7 +920,7 @@ dependencies = [
  "ssz_derive",
  "ssz_primitives",
  "ssz_types",
- "thiserror 2.0.17",
+ "thiserror 2.0.18",
  "tree_hash",
  "tree_hash_derive",
 ]
@@ -972,11 +972,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.17"
+version = "2.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8"
+checksum = "4288b5bcbc7920c07a1149a35cf9590a2aa808e0bc1eafaade0b80947865fbc4"
 dependencies = [
- "thiserror-impl 2.0.17",
+ "thiserror-impl 2.0.18",
 ]
 
 [[package]]
@@ -992,9 +992,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.17"
+version = "2.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ff15c8ecd7de3849db632e14d18d2571fa09dfc5ed93479bc4485c7a517c913"
+checksum = "ebc4ee7f67670e9b64d05fa4253e753e016c6c95ff35b89b7941d6b856dec1d5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1075,20 +1075,20 @@ checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 [[package]]
 name = "tree_hash"
 version = "0.12.3"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fdiamond-dependency-order#da847c537665cb2f7bea68cb0f019ff5365bbb40"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.3#62b8567cd8a6e4a73bbee0ba25d06dd8ac0972be"
 dependencies = [
  "digest",
  "sha2",
  "smallvec",
  "ssz",
  "ssz_primitives",
- "thiserror 2.0.17",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
 name = "tree_hash_derive"
 version = "0.12.3"
-source = "git+https://github.com/alpenlabs/ssz-gen?branch=fix%2Fdiamond-dependency-order#da847c537665cb2f7bea68cb0f019ff5365bbb40"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.3#62b8567cd8a6e4a73bbee0ba25d06dd8ac0972be"
 dependencies = [
  "darling",
  "quote",
