@@ -11,7 +11,7 @@ fn main() {
     let entry_points = ["moho.ssz"]; // ssz/moho.ssz
     let base_dir = "ssz/"; // relative to this crate root
     // External crates whose SSZ modules are imported by `moho.ssz`
-    let crates = ["strata_merkle"];
+    let crates = ["strata_merkle", "strata_predicate"];
 
     build_ssz_files(
         &entry_points,
