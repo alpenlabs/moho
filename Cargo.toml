@@ -15,25 +15,25 @@ moho-types = { path = "crates/types" }
 
 strata-merkle = { git = "https://github.com/alpenlabs/strata-common", features = [
   "ssz",
-], tag = "v0.1.0-alpha-rc4" }
+], tag = "v0.1.0-alpha-rc7" }
 strata-predicate = { git = "https://github.com/alpenlabs/strata-common", features = [
   "schnorr",
-], tag = "v0.1.0-alpha-rc4" }
+], tag = "v0.1.0-alpha-rc7" }
 
 borsh = { version = "1.5.7", features = ["derive"] }
 hex = { version = "0.4" }
 sha2 = { version = "0.10.9" }
 thiserror = { version = "2" }
-zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc18" }
-zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc18" }
+zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc20" }
+zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc20" }
 
-ssz = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.3" }
-ssz_codegen = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.3" }
-ssz_derive = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.3" }
-ssz_primitives = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.3" }
-ssz_types = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.3" }
-tree_hash = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.3" }
-tree_hash_derive = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.3" }
+ssz = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.4" }
+ssz_codegen = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.4" }
+ssz_derive = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.4" }
+ssz_primitives = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.4" }
+ssz_types = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.4" }
+tree_hash = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.4" }
+tree_hash_derive = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.12.4" }
 
 [workspace.lints]
 rust.missing_debug_implementations = "warn"

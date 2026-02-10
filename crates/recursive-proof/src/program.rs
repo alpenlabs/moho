@@ -1,15 +1,10 @@
-use std::{
-    panic::{AssertUnwindSafe, catch_unwind},
-    sync::Arc,
-};
-
 use moho_types::MohoAttestation;
 use ssz::{Decode, Encode};
 use ssz_derive::{Decode, Encode};
 use strata_merkle::MerkleProofB32;
 use strata_predicate::PredicateKey;
 use zkaleido::{ZkVmError, ZkVmProgram, ZkVmResult};
-use zkaleido_native_adapter::{NativeHost, NativeMachine};
+use zkaleido_native_adapter::NativeHost;
 
 use crate::{
     MohoStateTransition, process_recursive_moho_proof, transition::MohoTransitionWithProof,
@@ -90,15 +85,7 @@ impl ZkVmProgram for MohoRecursiveProgram {
 impl MohoRecursiveProgram {
     /// Returns the native host for the moho recursive program
     pub fn native_host() -> NativeHost {
-        NativeHost {
-            process_proof: Arc::new(Box::new(move |zkvm: &NativeMachine| {
-                catch_unwind(AssertUnwindSafe(|| {
-                    process_recursive_moho_proof(zkvm);
-                }))
-                .map_err(|_| ZkVmError::ExecutionError(Self::name()))?;
-                Ok(())
-            })),
-        }
+        NativeHost::new(process_recursive_moho_proof)
     }
 
     /// Executes the moho recursive program in the native mode
