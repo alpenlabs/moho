@@ -504,12 +504,12 @@ dependencies = [
  "k256",
  "moho-types",
  "rand_core 0.6.4",
- "ssz",
+ "ssz 0.12.4",
  "ssz_derive",
  "strata-merkle",
  "strata-predicate",
  "thiserror 2.0.18",
- "tree_hash",
+ "tree_hash 0.12.4",
  "zkaleido",
  "zkaleido-native-adapter",
 ]
@@ -521,7 +521,7 @@ dependencies = [
  "borsh",
  "moho-runtime-interface",
  "moho-types",
- "ssz",
+ "ssz 0.12.4",
  "ssz_derive",
 ]
 
@@ -541,15 +541,15 @@ dependencies = [
  "hex",
  "proptest",
  "sha2",
- "ssz",
+ "ssz 0.12.4",
  "ssz_codegen",
  "ssz_derive",
- "ssz_primitives",
- "ssz_types",
+ "ssz_primitives 0.12.4",
+ "ssz_types 0.13.0",
  "strata-merkle",
  "strata-predicate",
  "thiserror 2.0.18",
- "tree_hash",
+ "tree_hash 0.12.4",
  "tree_hash_derive",
  "zkaleido",
 ]
@@ -910,7 +910,18 @@ source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.4#5a6243a71ff37a34e
 dependencies = [
  "itertools",
  "smallvec",
- "ssz_primitives",
+ "ssz_primitives 0.12.4",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ssz"
+version = "0.13.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.13.0#93ae0b935e0b958386e32acad50b339bffe0cb85"
+dependencies = [
+ "itertools",
+ "smallvec",
+ "ssz_primitives 0.13.0",
  "thiserror 2.0.18",
 ]
 
@@ -924,13 +935,13 @@ dependencies = [
  "quote",
  "serde",
  "sizzle-parser",
- "ssz",
+ "ssz 0.12.4",
  "ssz_derive",
- "ssz_primitives",
- "ssz_types",
+ "ssz_primitives 0.12.4",
+ "ssz_types 0.12.4",
  "syn",
  "toml",
- "tree_hash",
+ "tree_hash 0.12.4",
  "tree_hash_derive",
 ]
 
@@ -955,14 +966,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "ssz_primitives"
+version = "0.13.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.13.0#93ae0b935e0b958386e32acad50b339bffe0cb85"
+dependencies = [
+ "hex",
+ "rand 0.8.5",
+ "ruint",
+]
+
+[[package]]
 name = "ssz_types"
 version = "0.12.4"
 source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.4#5a6243a71ff37a34ede72319e57666224507794e"
 dependencies = [
- "ssz",
- "ssz_primitives",
+ "ssz 0.12.4",
+ "ssz_primitives 0.12.4",
  "thiserror 2.0.18",
- "tree_hash",
+ "tree_hash 0.12.4",
+]
+
+[[package]]
+name = "ssz_types"
+version = "0.13.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.13.0#93ae0b935e0b958386e32acad50b339bffe0cb85"
+dependencies = [
+ "ssz 0.13.0",
+ "ssz_primitives 0.13.0",
+ "thiserror 2.0.18",
+ "tree_hash 0.13.0",
 ]
 
 [[package]]
@@ -982,14 +1014,14 @@ dependencies = [
  "digest",
  "serde",
  "sha2",
- "ssz",
+ "ssz 0.12.4",
  "ssz_codegen",
  "ssz_derive",
- "ssz_primitives",
- "ssz_types",
+ "ssz_primitives 0.12.4",
+ "ssz_types 0.12.4",
  "strata-codec",
  "thiserror 2.0.18",
- "tree_hash",
+ "tree_hash 0.12.4",
  "tree_hash_derive",
 ]
 
@@ -1003,13 +1035,13 @@ dependencies = [
  "k256",
  "serde",
  "signature",
- "ssz",
+ "ssz 0.12.4",
  "ssz_codegen",
  "ssz_derive",
- "ssz_primitives",
- "ssz_types",
+ "ssz_primitives 0.12.4",
+ "ssz_types 0.12.4",
  "thiserror 2.0.18",
- "tree_hash",
+ "tree_hash 0.12.4",
  "tree_hash_derive",
  "zkaleido-sp1-groth16-verifier",
 ]
@@ -1182,8 +1214,21 @@ dependencies = [
  "digest",
  "sha2",
  "smallvec",
- "ssz",
- "ssz_primitives",
+ "ssz 0.12.4",
+ "ssz_primitives 0.12.4",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "tree_hash"
+version = "0.13.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.13.0#93ae0b935e0b958386e32acad50b339bffe0cb85"
+dependencies = [
+ "digest",
+ "sha2",
+ "smallvec",
+ "ssz 0.13.0",
+ "ssz_primitives 0.13.0",
  "thiserror 2.0.18",
 ]
 
