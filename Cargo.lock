@@ -505,7 +505,7 @@ dependencies = [
  "moho-types",
  "rand_core 0.6.4",
  "ssz",
- "ssz_derive",
+ "ssz_derive 0.13.0",
  "strata-merkle",
  "strata-predicate",
  "thiserror 2.0.18",
@@ -522,7 +522,7 @@ dependencies = [
  "moho-runtime-interface",
  "moho-types",
  "ssz",
- "ssz_derive",
+ "ssz_derive 0.13.0",
 ]
 
 [[package]]
@@ -543,7 +543,7 @@ dependencies = [
  "sha2",
  "ssz",
  "ssz_codegen",
- "ssz_derive",
+ "ssz_derive 0.13.0",
  "ssz_primitives",
  "ssz_types",
  "strata-merkle",
@@ -925,7 +925,7 @@ dependencies = [
  "serde",
  "sizzle-parser",
  "ssz",
- "ssz_derive",
+ "ssz_derive 0.12.4",
  "ssz_primitives",
  "ssz_types",
  "syn",
@@ -938,6 +938,16 @@ dependencies = [
 name = "ssz_derive"
 version = "0.12.4"
 source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.4#5a6243a71ff37a34ede72319e57666224507794e"
+dependencies = [
+ "darling",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "ssz_derive"
+version = "0.13.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.13.0#93ae0b935e0b958386e32acad50b339bffe0cb85"
 dependencies = [
  "darling",
  "quote",
@@ -984,7 +994,7 @@ dependencies = [
  "sha2",
  "ssz",
  "ssz_codegen",
- "ssz_derive",
+ "ssz_derive 0.12.4",
  "ssz_primitives",
  "ssz_types",
  "strata-codec",
@@ -1005,7 +1015,7 @@ dependencies = [
  "signature",
  "ssz",
  "ssz_codegen",
- "ssz_derive",
+ "ssz_derive 0.12.4",
  "ssz_primitives",
  "ssz_types",
  "thiserror 2.0.18",
