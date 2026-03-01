@@ -544,7 +544,7 @@ dependencies = [
  "ssz",
  "ssz_codegen",
  "ssz_derive",
- "ssz_primitives",
+ "ssz_primitives 0.13.0",
  "ssz_types",
  "strata-merkle",
  "strata-predicate",
@@ -910,7 +910,7 @@ source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.4#5a6243a71ff37a34e
 dependencies = [
  "itertools",
  "smallvec",
- "ssz_primitives",
+ "ssz_primitives 0.12.4",
  "thiserror 2.0.18",
 ]
 
@@ -926,7 +926,7 @@ dependencies = [
  "sizzle-parser",
  "ssz",
  "ssz_derive",
- "ssz_primitives",
+ "ssz_primitives 0.12.4",
  "ssz_types",
  "syn",
  "toml",
@@ -955,12 +955,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "ssz_primitives"
+version = "0.13.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.13.0#93ae0b935e0b958386e32acad50b339bffe0cb85"
+dependencies = [
+ "hex",
+ "rand 0.8.5",
+ "ruint",
+]
+
+[[package]]
 name = "ssz_types"
 version = "0.12.4"
 source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.12.4#5a6243a71ff37a34ede72319e57666224507794e"
 dependencies = [
  "ssz",
- "ssz_primitives",
+ "ssz_primitives 0.12.4",
  "thiserror 2.0.18",
  "tree_hash",
 ]
@@ -985,7 +995,7 @@ dependencies = [
  "ssz",
  "ssz_codegen",
  "ssz_derive",
- "ssz_primitives",
+ "ssz_primitives 0.12.4",
  "ssz_types",
  "strata-codec",
  "thiserror 2.0.18",
@@ -1006,7 +1016,7 @@ dependencies = [
  "ssz",
  "ssz_codegen",
  "ssz_derive",
- "ssz_primitives",
+ "ssz_primitives 0.12.4",
  "ssz_types",
  "thiserror 2.0.18",
  "tree_hash",
@@ -1183,7 +1193,7 @@ dependencies = [
  "sha2",
  "smallvec",
  "ssz",
- "ssz_primitives",
+ "ssz_primitives 0.12.4",
  "thiserror 2.0.18",
 ]
 
