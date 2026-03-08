@@ -29,7 +29,9 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@fcf085fcb4b4b8f63f96906cd713eb52181b5ea4 # stable
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
 
       - name: Install latest cargo-nextest release
         uses: taiki-e/install-action@d6d752794628f1e1fffa3c4d3c8874e06f043d50 # v2.62.15
@@ -71,7 +73,9 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@fcf085fcb4b4b8f63f96906cd713eb52181b5ea4 # stable
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
 
       - name: Rust cache
         uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
