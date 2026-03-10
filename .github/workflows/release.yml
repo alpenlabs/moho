@@ -20,11 +20,17 @@ jobs:
           persist-credentials: false
 
       - name: Upload binary to release
-        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b # v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF_NAME: ${{ github.ref_name }}
+        run: gh release create "$REF_NAME" --generate-notes
 
   cratesio:
     name: Publish Release to Crates.io
     runs-on: ubuntu-latest
+    environment: cratesio
+    permissions:
+      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
@@ -32,7 +38,9 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@fcf085fcb4b4b8f63f96906cd713eb52181b5ea4 # stable
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
 
       - name: Publish to crates.io
         run: cargo publish
