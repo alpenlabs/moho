@@ -22,7 +22,8 @@ jobs:
       - name: Upload binary to release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" --generate-notes
+          REF_NAME: ${{ github.ref_name }}
+        run: gh release create "$REF_NAME" --generate-notes
 
   cratesio:
     name: Publish Release to Crates.io
