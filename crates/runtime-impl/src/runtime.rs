@@ -16,7 +16,7 @@ use crate::RuntimeInput;
 /// # Panics
 ///
 /// If it's incorrect.
-pub fn verify_input<P: MohoProgram>(input: RuntimeInput) -> MohoAttestation {
+pub fn verify_input<P: MohoProgram>(input: RuntimeInput, spec: &P::Spec) -> MohoAttestation {
     let inner_pre_state = deserialize_borsh::<P::State>(input.inner_pre_state())
         .expect("runtime: deserialize pre state");
     let inner_input = deserialize_borsh::<P::StepInput>(input.input_payload())
@@ -34,6 +34,7 @@ pub fn verify_input<P: MohoProgram>(input: RuntimeInput) -> MohoAttestation {
         input.into_pre_state(),
         &inner_pre_state,
         &inner_input,
+        spec,
     );
 
     // Check the attestation matches the reference in the input.
@@ -63,6 +64,7 @@ fn compute_transition_attestation<P: MohoProgram>(
     pre_moho_state: MohoState,
     pre_inner_state: &P::State,
     input: &P::StepInput,
+    spec: &P::Spec,
 ) -> StateRefAttestation {
     // Check the input's parent extends it properly.
     let input_ref = P::compute_input_reference(input);
@@ -73,7 +75,8 @@ fn compute_transition_attestation<P: MohoProgram>(
     );
 
     // Compute the transition.
-    let post_state = compute_transition::<P>(pre_state_ref, pre_moho_state, pre_inner_state, input);
+    let post_state =
+        compute_transition::<P>(pre_state_ref, pre_moho_state, pre_inner_state, input, spec);
 
     // Construct the attestation.
     let post_state_commitment = compute_moho_state_commitment(&post_state);
@@ -87,6 +90,7 @@ pub fn compute_transition<P: MohoProgram>(
     pre_moho_state: MohoState,
     pre_inner_state: &P::State,
     input: &P::StepInput,
+    spec: &P::Spec,
 ) -> MohoState {
     // Check the pre-state matches that in the moho pre-state.
     let computed_inner_state_root = P::compute_state_commitment(pre_inner_state);
@@ -105,7 +109,7 @@ pub fn compute_transition<P: MohoProgram>(
     );
 
     // Compute the new state and wrap it.
-    let output = P::process_transition(pre_inner_state, input);
+    let output = P::process_transition(pre_inner_state, spec, input);
     compute_wrapping_moho_state::<P>(pre_moho_state, &output)
 }
 
@@ -130,7 +134,8 @@ fn compute_wrapping_moho_state<P: MohoProgram>(
         None => moho_state.next_predicate().clone(),
     };
 
-    let new_export_state = P::compute_export_state(moho_state.into_export_state(), step_output);
+    let new_export_state =
+        P::compute_next_export_state(moho_state.into_export_state(), step_output);
 
     MohoState::new(post_inner_root, next_predicate, new_export_state)
 }
