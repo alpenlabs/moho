@@ -9,4 +9,5 @@ moho-types.workspace = true
 ssz.workspace = true
 ssz_derive.workspace = true
 
-borsh.workspace = true
+[dev-dependencies]
+strata-predicate.workspace = true

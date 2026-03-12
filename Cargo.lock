@@ -584,19 +584,19 @@ dependencies = [
 name = "moho-runtime-impl"
 version = "0.1.0"
 dependencies = [
- "borsh",
  "moho-runtime-interface",
  "moho-types",
  "ssz",
  "ssz_derive",
+ "strata-predicate",
 ]
 
 [[package]]
 name = "moho-runtime-interface"
 version = "0.1.0"
 dependencies = [
- "borsh",
  "moho-types",
+ "ssz",
  "strata-predicate",
 ]
 
