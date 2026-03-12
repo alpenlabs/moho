@@ -4,4 +4,4 @@ mod input;
 mod runtime;
 
 pub use input::RuntimeInput;
-pub use runtime::verify_input;
+pub use runtime::compute_moho_attestation;
