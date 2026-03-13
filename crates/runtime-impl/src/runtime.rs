@@ -33,8 +33,8 @@ pub fn compute_moho_attestation<P: MohoProgram>(
     input: RuntimeInput,
     spec: &P::Spec,
 ) -> MohoAttestation {
-    let inner_pre_state = deserialize_ssz::<P::State>(input.inner_pre_state())
-        .expect("runtime: deserialize pre state");
+    let inner_pre_state =
+        P::State::from_ssz_bytes(input.inner_pre_state()).expect("runtime: deserialize pre state");
     let inner_input = deserialize_ssz::<P::StepInput>(input.input_payload())
         .expect("runtime: deserialize inner input");
 
