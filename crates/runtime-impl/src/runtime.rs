@@ -2,15 +2,12 @@
 //!
 //! This module contains [`compute_moho_attestation`], the main entry point for executing
 //! an incremental state transition. It takes a [`RuntimeInput`] (containing the Moho
-//! pre-state and borsh-encoded inner state/input), runs the
+//! pre-state and SSZ-encoded inner state/input), runs the
 //! [`MohoProgram`] transition logic, and returns a [`MohoAttestation`] — the public
 //! parameter required by the recursive proof.
-
-use std::io::Cursor;
-
-use borsh::BorshDeserialize;
 use moho_runtime_interface::MohoProgram;
 use moho_types::{MohoAttestation, MohoState, StateRefAttestation};
+use ssz::Decode;
 
 use crate::RuntimeInput;
 
@@ -36,9 +33,9 @@ pub fn compute_moho_attestation<P: MohoProgram>(
     input: RuntimeInput,
     spec: &P::Spec,
 ) -> MohoAttestation {
-    let inner_pre_state = deserialize_borsh::<P::State>(input.inner_pre_state())
-        .expect("runtime: deserialize pre state");
-    let inner_input = deserialize_borsh::<P::StepInput>(input.input_payload())
+    let inner_pre_state =
+        P::State::from_ssz_bytes(input.inner_pre_state()).expect("runtime: deserialize pre state");
+    let inner_input = deserialize_ssz::<P::StepInput>(input.input_payload())
         .expect("runtime: deserialize inner input");
 
     // Verify that the provided inner pre-state is consistent with the Moho pre-state
@@ -90,8 +87,7 @@ pub fn compute_moho_attestation<P: MohoProgram>(
     MohoAttestation::new(pre_state_attestation, post_state_attestation)
 }
 
-/// Deserializes a borsh-encoded value from a byte slice.
-fn deserialize_borsh<T: BorshDeserialize>(buf: &[u8]) -> Result<T, borsh::io::Error> {
-    let mut cur = Cursor::new(buf);
-    borsh::from_reader::<_, T>(&mut cur)
+/// Deserializes an SSZ-encoded value from a byte slice.
+fn deserialize_ssz<T: Decode>(buf: &[u8]) -> Result<T, ssz::DecodeError> {
+    T::from_ssz_bytes(buf)
 }
