@@ -1,9 +1,8 @@
 use moho_types::MohoAttestation;
-use ssz::{Decode, Encode};
 use ssz_derive::{Decode, Encode};
 use strata_merkle::MerkleProofB32;
 use strata_predicate::PredicateKey;
-use zkaleido::{ZkVmError, ZkVmProgram, ZkVmResult};
+use zkaleido::{ZkVmProgram, ZkVmResult};
 use zkaleido_native_adapter::NativeHost;
 
 use crate::{
@@ -66,9 +65,7 @@ impl ZkVmProgram for MohoRecursiveProgram {
     where
         B: zkaleido::ZkVmInputBuilder<'a>,
     {
-        let mut zkvm_input = B::new();
-        zkvm_input.write_buf(&input.as_ssz_bytes())?;
-        zkvm_input.build()
+        B::new().write_ssz(&input)?.build()
     }
 
     fn process_output<H>(
@@ -77,8 +74,7 @@ impl ZkVmProgram for MohoRecursiveProgram {
     where
         H: zkaleido::ZkVmHost,
     {
-        MohoAttestation::from_ssz_bytes(public_values.as_bytes())
-            .map_err(|_| ZkVmError::Other("invalid SSZ".to_string())) // TODO:PG
+        H::extract_ssz_public_output(public_values)
     }
 }
 
