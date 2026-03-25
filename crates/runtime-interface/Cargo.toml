@@ -5,5 +5,5 @@ edition = "2024"
 
 [dependencies]
 moho-types.workspace = true
-strata-predicate.workspace = true
 ssz.workspace = true
+strata-predicate.workspace = true

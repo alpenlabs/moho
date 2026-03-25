@@ -12,7 +12,7 @@ ssz.workspace = true
 ssz_derive.workspace = true
 thiserror.workspace = true
 tree_hash.workspace = true
-zkaleido.workspace = true
+zkaleido = { workspace = true, features = ["ssz"] }
 
 [target.'cfg(not(target_os = "zkvm"))'.dependencies]
 zkaleido-native-adapter.workspace = true

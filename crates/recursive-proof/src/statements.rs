@@ -3,7 +3,7 @@ use strata_merkle::Sha256NoPrefixHasher;
 use tree_hash::{Sha256Hasher, TreeHash};
 use zkaleido::ZkVmEnv;
 
-use crate::{MohoError, MohoRecursiveOutput, MohoStateTransition, program::MohoRecursiveInput};
+use crate::{MohoError, MohoRecursiveInput, MohoRecursiveOutput, MohoStateTransition};
 
 /// Reads an SSZ-encoded [`MohoRecursiveInput`] from the zkVM, verifies and chains the proof,
 /// and commits the resulting [`MohoRecursiveOutput`] back to the zkVM.
@@ -263,7 +263,7 @@ mod tests {
         let mut input = create_input(2, 3, None, &moho, &step);
         input.step_predicate = SchnorrPredicate::new().predicate;
 
-        let result = verify_and_chain_transition(input.clone());
+        let result = verify_and_chain_transition(input);
         assert!(matches!(result, Err(MohoError::InvalidMerkleProof)));
 
         let expected = expected_transition(2, 3, &step.predicate);
