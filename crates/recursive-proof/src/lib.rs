@@ -8,6 +8,8 @@ mod io;
 #[cfg(not(target_os = "zkvm"))]
 mod program;
 mod statements;
+#[cfg(any(test, feature = "test-utils"))]
+pub mod test_utils;
 mod transition;
 
 pub use errors::MohoError;
