@@ -96,13 +96,12 @@ pub fn verify_and_chain_transition(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::*;
-    use crate::transition::MohoTransitionWithProof;
+    use crate::{test_utils::*, transition::MohoTransitionWithProof};
 
     #[test]
     fn test_verify_and_chain_transition_success() {
-        let moho = SchnorrPredicate::new();
-        let step = SchnorrPredicate::new();
+        let moho = SchnorrPredicate::new_random();
+        let step = SchnorrPredicate::new_random();
 
         let expected = expected_transition(1, 2, &step.predicate);
         let result = verify_and_chain_transition(create_input(1, 2, None, &moho, &step)).unwrap();
@@ -115,8 +114,8 @@ mod tests {
 
     #[test]
     fn test_verify_and_chain_transition_with_previous_proof_success() {
-        let moho = SchnorrPredicate::new();
-        let step = SchnorrPredicate::new();
+        let moho = SchnorrPredicate::new_random();
+        let step = SchnorrPredicate::new_random();
 
         let expected = expected_transition(1, 3, &step.predicate);
         let result =
@@ -131,18 +130,18 @@ mod tests {
 
     #[test]
     fn test_verify_and_chain_transition_invalid_chain() {
-        let moho = SchnorrPredicate::new();
-        let step = SchnorrPredicate::new();
+        let moho = SchnorrPredicate::new_random();
+        let step = SchnorrPredicate::new_random();
         let result = verify_and_chain_transition(create_input(3, 5, Some((1, 2)), &moho, &step));
         assert!(matches!(result, Err(MohoError::InvalidMohoChain(_))));
     }
 
     #[test]
     fn test_verify_and_chain_transition_invalid_merkle_proof() {
-        let moho = SchnorrPredicate::new();
-        let step = SchnorrPredicate::new();
+        let moho = SchnorrPredicate::new_random();
+        let step = SchnorrPredicate::new_random();
         let mut input = create_input(2, 3, None, &moho, &step);
-        input.step_predicate = SchnorrPredicate::new().predicate;
+        input.step_predicate = SchnorrPredicate::new_random().predicate;
 
         let result = verify_and_chain_transition(input);
         assert!(matches!(result, Err(MohoError::InvalidMerkleProof)));
@@ -155,9 +154,9 @@ mod tests {
 
     #[test]
     fn test_verify_and_chain_transition_invalid_incremental_proof() {
-        let moho = SchnorrPredicate::new();
-        let step = SchnorrPredicate::new();
-        let bad_step_key = SchnorrPredicate::new();
+        let moho = SchnorrPredicate::new_random();
+        let step = SchnorrPredicate::new_random();
+        let bad_step_key = SchnorrPredicate::new_random();
 
         let from_state = create_state(1, step.predicate.clone());
         let to_state = create_state(2, step.predicate.clone());
@@ -186,10 +185,10 @@ mod tests {
 
     #[test]
     fn test_verify_and_chain_transition_invalid_recursive_proof() {
-        let moho = SchnorrPredicate::new();
-        let step = SchnorrPredicate::new();
+        let moho = SchnorrPredicate::new_random();
+        let step = SchnorrPredicate::new_random();
         let mut input = create_input(2, 3, Some((1, 2)), &moho, &step);
-        input.moho_predicate = SchnorrPredicate::new().predicate;
+        input.moho_predicate = SchnorrPredicate::new_random().predicate;
 
         let result = verify_and_chain_transition(input);
         assert!(matches!(result, Err(MohoError::InvalidRecursiveProof(_))));
@@ -197,8 +196,8 @@ mod tests {
 
     #[test]
     fn test_verify_and_chain_transition_edge_case_same_state() {
-        let moho = SchnorrPredicate::new();
-        let step = SchnorrPredicate::new();
+        let moho = SchnorrPredicate::new_random();
+        let step = SchnorrPredicate::new_random();
         let input = create_input(5, 5, None, &moho, &step);
         assert!(verify_and_chain_transition(input).is_ok());
     }

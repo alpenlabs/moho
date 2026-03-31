@@ -24,7 +24,7 @@ pub struct SchnorrPredicate {
 
 impl SchnorrPredicate {
     /// Creates a new random Schnorr predicate.
-    pub fn new() -> Self {
+    pub fn new_random() -> Self {
         let signing_key = SigningKey::random(&mut OsRng);
         let predicate = PredicateKey::new(
             PredicateTypeId::Bip340Schnorr,
