@@ -10,9 +10,12 @@ strata-predicate = { workspace = true, features = ["all"] }
 moho-types.workspace = true
 ssz.workspace = true
 ssz_derive.workspace = true
-thiserror.workspace = true
 tree_hash.workspace = true
 zkaleido = { workspace = true, features = ["ssz"] }
+
+k256 = { version = "0.13.4", features = ["schnorr"], optional = true }
+rand_core = { version = "0.6", optional = true }
+thiserror.workspace = true
 
 [target.'cfg(not(target_os = "zkvm"))'.dependencies]
 zkaleido-native-adapter.workspace = true
@@ -20,6 +23,9 @@ zkaleido-native-adapter.workspace = true
 [dev-dependencies]
 k256 = { version = "0.13.4", features = ["schnorr"] }
 rand_core = "0.6"
+
+[features]
+test-utils = ["dep:k256", "dep:rand_core"]
 
 [lints]
 workspace = true
