@@ -14,7 +14,7 @@ tree_hash.workspace = true
 zkaleido = { workspace = true, features = ["ssz"] }
 
 k256 = { version = "0.13.4", features = ["schnorr"], optional = true }
-rand_core = { version = "0.6", optional = true }
+rand_core = { version = "0.9", optional = true }
 thiserror.workspace = true
 
 [target.'cfg(not(target_os = "zkvm"))'.dependencies]
@@ -22,7 +22,7 @@ zkaleido-native-adapter.workspace = true
 
 [dev-dependencies]
 k256 = { version = "0.13.4", features = ["schnorr"] }
-rand_core = "0.6"
+rand_core = "0.9"
 
 [features]
 test-utils = ["dep:k256", "dep:rand_core"]
