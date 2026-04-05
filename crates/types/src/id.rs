@@ -34,6 +34,15 @@ macro_rules! inst_id {
             }
         }
 
+        impl core::fmt::Display for $name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                for byte in self.0.as_ref() {
+                    write!(f, "{byte:02x}")?;
+                }
+                Ok(())
+            }
+        }
+
         impl From<[u8; 32]> for $name {
             fn from(bytes: [u8; 32]) -> Self {
                 Self(FixedBytes::from(bytes))
