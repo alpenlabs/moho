@@ -8,7 +8,7 @@ use ssz_derive::{Decode, Encode};
 use crate::{MohoStateCommitment, StateReference};
 
 /// The aggregated state transformation that we are verifying with a Moho proof.
-#[derive(Clone, Debug, Encode, Decode)]
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct MohoAttestation {
     /// Commitment to the base case state.
     ///
@@ -34,7 +34,7 @@ impl MohoAttestation {
 }
 
 /// A mapping of a state reference to its corresponding state commitment.
-#[derive(Clone, Debug, PartialEq, Encode, Decode)]
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct StateRefAttestation {
     reference: StateReference,
     commitment: MohoStateCommitment,

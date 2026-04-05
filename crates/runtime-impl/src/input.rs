@@ -9,7 +9,7 @@ use ssz_derive::{Decode, Encode};
 /// borsh-encoded step input. The runtime deserializes these, runs the
 /// [`MohoProgram`](moho_runtime_interface::MohoProgram) transition logic, and
 /// produces a [`MohoAttestation`](moho_types::MohoAttestation).
-#[derive(Clone, Debug, Encode, Decode)]
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct RuntimeInput {
     /// The [`MohoState`] before the transition. Contains the
     /// [`InnerStateCommitment`](moho_types::InnerStateCommitment) that
