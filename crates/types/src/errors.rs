@@ -1,6 +1,6 @@
 //! Error types for Moho state operations.
 
-use strata_merkle::error::MerkleError;
+use strata_merkle::MerkleError;
 use thiserror::Error;
 
 /// Errors that can occur when working with export state.

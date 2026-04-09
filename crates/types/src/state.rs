@@ -1,7 +1,7 @@
 //! Moho state types and SSZ-based commitment/proof helpers.
 
 use ssz_generated::ssz::moho::*;
-use strata_merkle::{CompactMmr64, MAX_MMR_PEAKS, Mmr, Mmr64B32, Sha256Hasher as MerkleHasher};
+use strata_merkle::{Mmr, Mmr64B32, MmrState, Sha256Hasher as MerkleHasher};
 use strata_predicate::PredicateKey;
 use tree_hash::{Sha256Hasher, TreeHash};
 
@@ -100,8 +100,7 @@ impl ExportState {
 impl ExportContainer {
     /// Creates a new export container with an empty MMR and default empty/zeroed out extra data.
     pub fn new(container_id: u8) -> Self {
-        let mmr = CompactMmr64::<Hash32>::new(MAX_MMR_PEAKS as u8);
-        let entries_mmr = Mmr64B32::from_generic(&mmr);
+        let entries_mmr = <Mmr64B32 as MmrState<Hash32>>::new_empty();
         Self {
             container_id,
             extra_data: Hash32::default().into(),
@@ -130,9 +129,7 @@ impl ExportContainer {
     ///
     /// Returns `ExportStateError::AddEntryFailed` if the MMR capacity is exceeded.
     pub fn add_entry(&mut self, entry: Hash32) -> Result<(), ExportStateError> {
-        let mut mmr = self.entries_mmr.to_generic();
-        Mmr::<MerkleHasher>::add_leaf(&mut mmr, entry)?;
-        self.entries_mmr = Mmr64B32::from_generic(&mmr);
+        Mmr::<MerkleHasher>::add_leaf(&mut self.entries_mmr, entry)?;
         Ok(())
     }
 
