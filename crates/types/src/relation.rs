@@ -93,6 +93,10 @@ impl StepMohoAttestation {
     pub fn to(&self) -> &StateRefAttestation {
         &self.to
     }
+
+    pub fn into_parts(self) -> (StateRefAttestation, StateRefAttestation) {
+        (self.from, self.to)
+    }
 }
 
 impl fmt::Display for StepMohoAttestation {
@@ -123,6 +127,10 @@ impl StepMohoProof {
     pub fn proof(&self) -> &[u8] {
         &self.proof
     }
+
+    pub fn into_attestation(self) -> StepMohoAttestation {
+        self.attestation
+    }
 }
 
 /// A [`RecursiveMohoAttestation`] bundled with the cryptographic proof that backs it.
@@ -147,13 +155,17 @@ impl RecursiveMohoProof {
     pub fn proof(&self) -> &[u8] {
         &self.proof
     }
+
+    pub fn into_attestation(self) -> RecursiveMohoAttestation {
+        self.attestation
+    }
 }
 
 /// A binding between a [`StateReference`] and the [`MohoStateCommitment`] it resolves to.
 ///
 /// This pairing is what both step and recursive attestations operate on — equality of two
 /// `StateRefAttestation` values is what establishes continuity between attestations.
-#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct StateRefAttestation {
     /// An opaque identifier for the state (e.g. a block hash).
     reference: StateReference,
@@ -213,8 +225,8 @@ mod tests {
         let s1 = state_ref(1);
         let s2 = state_ref(2);
 
-        let rec = RecursiveMohoAttestation::new(s0.clone(), s1.clone());
-        let step = StepMohoAttestation::new(s1, s2.clone());
+        let rec = RecursiveMohoAttestation::new(s0, s1);
+        let step = StepMohoAttestation::new(s1, s2);
 
         let chained = rec.chain(step).expect("continuous chain should succeed");
         assert_eq!(*chained.genesis(), s0, "genesis must be preserved");
@@ -239,13 +251,13 @@ mod tests {
         let s2 = state_ref(2);
         let s3 = state_ref(3);
 
-        let rec = RecursiveMohoAttestation::new(s0.clone(), s1.clone());
+        let rec = RecursiveMohoAttestation::new(s0, s1);
 
         let rec = rec
-            .chain(StepMohoAttestation::new(s1, s2.clone()))
+            .chain(StepMohoAttestation::new(s1, s2))
             .expect("step 1→2 should chain");
         let rec = rec
-            .chain(StepMohoAttestation::new(s2, s3.clone()))
+            .chain(StepMohoAttestation::new(s2, s3))
             .expect("step 2→3 should chain");
 
         assert_eq!(*rec.genesis(), s0, "genesis stays fixed across all chains");
@@ -258,7 +270,7 @@ mod tests {
         let s1 = state_ref(1);
         let s2 = state_ref(2);
 
-        let rec = RecursiveMohoAttestation::new(s0, s1.clone());
+        let rec = RecursiveMohoAttestation::new(s0, s1);
         let rec = rec
             .chain(StepMohoAttestation::new(s1, s2))
             .expect("first chain should succeed");

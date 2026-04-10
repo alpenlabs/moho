@@ -1,4 +1,6 @@
-use moho_types::{RecursiveMohoAttestation, RecursiveMohoProof, StepMohoProof};
+use moho_types::{
+    RecursiveMohoAttestation, RecursiveMohoProof, StepMohoAttestation, StepMohoProof,
+};
 use ssz::{Decode, Encode, ssz_encode};
 use strata_merkle::Sha256NoPrefixHasher;
 use strata_predicate::PredicateKey;
@@ -52,34 +54,31 @@ pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttest
     }
 
     // 2: Verify the step proof.
-    verify_step_proof(&input.incremental_step_proof, &input.step_predicate)
+    let step_att = verify_step_proof(input.incremental_step_proof, &input.step_predicate)
         .map_err(MohoError::InvalidIncrementalProof)?;
-
-    let step_att = input.incremental_step_proof.attestation().clone();
 
     // 3: Handle previous recursive proof and continuity check.
     match input.prev_recursive_proof {
         // No previous proof: the step becomes the initial recursive attestation.
-        None => Ok(RecursiveMohoAttestation::new(
-            step_att.from().clone(),
-            step_att.to().clone(),
-        )),
+        None => {
+            let (from, to) = step_att.into_parts();
+            Ok(RecursiveMohoAttestation::new(from, to))
+        }
 
         // Previous proof exists: verify it, then chain.
         Some(prev_proof) => {
-            verify_recursive_proof(&prev_proof, &input.moho_predicate)
+            let prev_att = verify_recursive_proof(prev_proof, &input.moho_predicate)
                 .map_err(MohoError::InvalidRecursiveProof)?;
 
-            let prev_att = prev_proof.attestation().clone();
-            let prev_proven = prev_att.proven().clone();
-            let step_from = step_att.from().clone();
+            let prev_proven = *prev_att.proven();
+            let step_from = *step_att.from();
 
-            prev_att.chain(step_att).ok_or_else(|| {
-                MohoError::InvalidMohoChain {
+            prev_att
+                .chain(step_att)
+                .ok_or_else(|| MohoError::InvalidMohoChain {
                     recursive_end: prev_proven,
                     step_start: step_from,
-                }
-            })
+                })
         }
     }
 }
@@ -87,35 +86,39 @@ pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttest
 /// Verifies a [`StepMohoProof`] against a predicate key.
 ///
 /// Step proofs attest directly to the SSZ-encoded [`StepMohoAttestation`].
+/// On success, returns the attestation by consuming the proof.
 fn verify_step_proof(
-    proof: &StepMohoProof,
+    proof: StepMohoProof,
     verifier: &PredicateKey,
-) -> Result<(), InvalidStepProofError> {
+) -> Result<StepMohoAttestation, InvalidStepProofError> {
     let claim = ssz_encode(proof.attestation());
-    verifier
-        .verify_claim_witness(&claim, proof.proof())
-        .map_err(|e| InvalidStepProofError {
-            attestation: proof.attestation().clone(),
+    match verifier.verify_claim_witness(&claim, proof.proof()) {
+        Ok(()) => Ok(proof.into_attestation()),
+        Err(e) => Err(InvalidStepProofError {
+            attestation: proof.into_attestation(),
             source: e,
-        })
+        }),
+    }
 }
 
 /// Verifies a [`RecursiveMohoProof`] against a predicate key.
 ///
 /// Recursive proofs attest to a [`MohoRecursiveOutput`] which wraps the attestation together
 /// with the predicate key as an additional public value.
+/// On success, returns the attestation by consuming the proof.
 fn verify_recursive_proof(
-    proof: &RecursiveMohoProof,
+    proof: RecursiveMohoProof,
     verifier: &PredicateKey,
-) -> Result<(), InvalidRecursiveProofError> {
+) -> Result<RecursiveMohoAttestation, InvalidRecursiveProofError> {
     let output = MohoRecursiveOutput::new(proof.attestation().clone(), verifier.clone());
     let claim = ssz_encode(&output);
-    verifier
-        .verify_claim_witness(&claim, proof.proof())
-        .map_err(|e| InvalidRecursiveProofError {
-            attestation: proof.attestation().clone(),
+    match verifier.verify_claim_witness(&claim, proof.proof()) {
+        Ok(()) => Ok(proof.into_attestation()),
+        Err(e) => Err(InvalidRecursiveProofError {
+            attestation: proof.into_attestation(),
             source: e,
-        })
+        }),
+    }
 }
 
 #[cfg(test)]
@@ -197,7 +200,7 @@ mod tests {
 
         // Sanity check: the step proof should not verify under the expected predicate
         assert!(
-            verify_step_proof(&step_proof, &step.predicate).is_err(),
+            verify_step_proof(step_proof.clone(), &step.predicate).is_err(),
             "corrupted step proof should fail standalone verification"
         );
 
