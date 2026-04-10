@@ -11,6 +11,8 @@
 //! attestation matches the starting state of the step attestation. If so, the recursive
 //! attestation advances to the step's target state while preserving the original genesis.
 
+use std::fmt;
+
 use ssz_derive::{Decode, Encode};
 
 use crate::{MohoStateCommitment, StateReference};
@@ -60,6 +62,12 @@ impl RecursiveMohoAttestation {
     }
 }
 
+impl fmt::Display for RecursiveMohoAttestation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} => {}", self.genesis, self.proven)
+    }
+}
+
 /// An attestation proving a single state transition step.
 ///
 /// This is the building block for [`RecursiveMohoAttestation`]. Each step attests that the
@@ -84,6 +92,12 @@ impl StepMohoAttestation {
 
     pub fn to(&self) -> &StateRefAttestation {
         &self.to
+    }
+}
+
+impl fmt::Display for StepMohoAttestation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} -> {}", self.from, self.to)
     }
 }
 
@@ -162,6 +176,12 @@ impl StateRefAttestation {
 
     pub fn commitment(&self) -> &MohoStateCommitment {
         &self.commitment
+    }
+}
+
+impl fmt::Display for StateRefAttestation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}@{}", self.reference, self.commitment)
     }
 }
 
