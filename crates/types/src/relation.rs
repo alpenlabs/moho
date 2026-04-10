@@ -87,6 +87,54 @@ impl StepMohoAttestation {
     }
 }
 
+/// A [`StepMohoAttestation`] bundled with the cryptographic proof that backs it.
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
+pub struct StepMohoProof {
+    /// The claim being proven.
+    attestation: StepMohoAttestation,
+
+    /// The raw proof bytes that attest to the step transition's validity.
+    proof: Vec<u8>,
+}
+
+impl StepMohoProof {
+    pub fn new(attestation: StepMohoAttestation, proof: Vec<u8>) -> Self {
+        Self { attestation, proof }
+    }
+
+    pub fn attestation(&self) -> &StepMohoAttestation {
+        &self.attestation
+    }
+
+    pub fn proof(&self) -> &[u8] {
+        &self.proof
+    }
+}
+
+/// A [`RecursiveMohoAttestation`] bundled with the cryptographic proof that backs it.
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
+pub struct RecursiveMohoProof {
+    /// The claim being proven.
+    attestation: RecursiveMohoAttestation,
+
+    /// The raw proof bytes that attest to the recursive transition's validitiy.
+    proof: Vec<u8>,
+}
+
+impl RecursiveMohoProof {
+    pub fn new(attestation: RecursiveMohoAttestation, proof: Vec<u8>) -> Self {
+        Self { attestation, proof }
+    }
+
+    pub fn attestation(&self) -> &RecursiveMohoAttestation {
+        &self.attestation
+    }
+
+    pub fn proof(&self) -> &[u8] {
+        &self.proof
+    }
+}
+
 /// A binding between a [`StateReference`] and the [`MohoStateCommitment`] it resolves to.
 ///
 /// This pairing is what both step and recursive attestations operate on — equality of two
