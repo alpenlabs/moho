@@ -7,7 +7,7 @@ mod state;
 
 pub use errors::ExportStateError;
 pub use id::{InnerStateCommitment, MohoStateCommitment, StateReference};
-pub use relation::{MohoAttestation, StateRefAttestation};
+pub use relation::{RecursiveMohoAttestation, StateRefAttestation, StepMohoAttestation};
 
 // Include generated SSZ types from build.rs output
 #[allow(

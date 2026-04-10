@@ -1,4 +1,4 @@
-use moho_types::MohoAttestation;
+use moho_types::RecursiveMohoAttestation;
 use zkaleido::{ZkVmProgram, ZkVmResult};
 use zkaleido_native_adapter::NativeHost;
 
@@ -11,7 +11,7 @@ pub struct MohoRecursiveProgram;
 
 impl ZkVmProgram for MohoRecursiveProgram {
     type Input = MohoRecursiveInput;
-    type Output = MohoAttestation;
+    type Output = RecursiveMohoAttestation;
 
     fn name() -> String {
         "Moho Recursive".to_string()

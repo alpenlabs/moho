@@ -6,7 +6,7 @@
 //! [`MohoProgram`] transition logic, and returns a [`MohoAttestation`] — the public
 //! parameter required by the recursive proof.
 use moho_runtime_interface::MohoProgram;
-use moho_types::{MohoAttestation, MohoState, StateRefAttestation};
+use moho_types::{MohoState, RecursiveMohoAttestation, StateRefAttestation};
 use ssz::Decode;
 
 use crate::RuntimeInput;
@@ -32,7 +32,7 @@ use crate::RuntimeInput;
 pub fn compute_moho_attestation<P: MohoProgram>(
     input: RuntimeInput,
     spec: &P::Spec,
-) -> MohoAttestation {
+) -> RecursiveMohoAttestation {
     let inner_pre_state =
         P::State::from_ssz_bytes(input.inner_pre_state()).expect("runtime: deserialize pre state");
     let inner_input = deserialize_ssz::<P::StepInput>(input.input_payload())
@@ -84,7 +84,7 @@ pub fn compute_moho_attestation<P: MohoProgram>(
         P::compute_input_reference(&inner_input),
         post_moho_state.compute_commitment(),
     );
-    MohoAttestation::new(pre_state_attestation, post_state_attestation)
+    RecursiveMohoAttestation::new(pre_state_attestation, post_state_attestation)
 }
 
 /// Deserializes an SSZ-encoded value from a byte slice.
