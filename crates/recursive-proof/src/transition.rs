@@ -3,7 +3,10 @@ use ssz::{Decode, Encode, ssz_encode};
 use ssz_derive::{Decode, Encode};
 use strata_predicate::PredicateKey;
 
-use crate::errors::{InvalidProofError, TransitionChainError};
+use crate::{
+    MohoRecursiveOutput,
+    errors::{InvalidProofError, TransitionChainError},
+};
 
 /// Represents a state transition between two states of the same type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Encode, Decode)]
@@ -112,13 +115,30 @@ impl MohoTransitionWithProof {
 
     /// Verifies the transition's proof against the given predicate key.
     pub fn verify(&self, verifier: &PredicateKey) -> Result<(), InvalidProofError> {
-        // The proof attests to the validity of the transition itself.
-        let public_values = ssz_encode(&self.transition);
-        match verifier.verify_claim_witness(&public_values, self.proof()) {
-            Ok(_) => Ok(()),
-            // TODO: Better error?
-            Err(_) => Err(InvalidProofError(Box::new(self.transition.clone()))),
+        // Legacy/step proofs attest directly to the transition bytes.
+        let transition_claim = ssz_encode(&self.transition);
+        if verifier
+            .verify_claim_witness(&transition_claim, self.proof())
+            .is_ok()
+        {
+            return Ok(());
         }
+
+        // Recursive proofs attest to MohoRecursiveOutput, which wraps the same
+        // transition with the recursive predicate key as an additional public value.
+        let recursive_output_claim = ssz_encode(&MohoRecursiveOutput::new(
+            self.transition.clone(),
+            verifier.clone(),
+        ));
+        if verifier
+            .verify_claim_witness(&recursive_output_claim, self.proof())
+            .is_ok()
+        {
+            return Ok(());
+        }
+
+        // TODO: Better error?
+        Err(InvalidProofError(Box::new(self.transition.clone())))
     }
 }
 
