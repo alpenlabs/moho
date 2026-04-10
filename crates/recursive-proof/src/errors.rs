@@ -7,7 +7,7 @@ use thiserror::Error;
 /// Several variants contain large payloads (attestations, proof errors). Rather than
 /// suppressing `clippy::result_large_err` with `#[allow]`, we box the large fields so that
 /// `Result<_, MohoError>` stays small on the stack. This matters because the error path is
-/// cold while the success path — which pays for the `Result` size — is hot.
+/// rare while the success path — which pays for the `Result` size — is much more common.
 #[derive(Error, Debug)]
 pub enum MohoError {
     /// The recursive proof's proven state does not match the step proof's starting state.

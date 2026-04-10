@@ -12,13 +12,14 @@ use strata_predicate::PredicateKey;
 pub struct MohoRecursiveInput {
     /// Predicate key for verifying the previous recursive proof.
     pub(crate) moho_predicate: PredicateKey,
-    /// Previous recursive proof, if this is not the first step.
+    /// Previous recursive proof to extend, or `None` for the base case (first step in the chain).
     pub(crate) prev_recursive_proof: Option<RecursiveMohoProof>,
     /// Predicate key for verifying the incremental step proof.
     pub(crate) step_predicate: PredicateKey,
-    /// The new step proof to chain onto the recursive attestation.
+    /// The step proof attesting to the next state transition to be verified and chained.
     pub(crate) incremental_step_proof: StepMohoProof,
-    /// Merkle proof that `step_predicate` is included in the starting state.
+    /// Merkle proof that `step_predicate` is included in the step proof's starting state
+    /// commitment.
     pub(crate) step_predicate_merkle_proof: MerkleProofB32,
 }
 
