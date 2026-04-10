@@ -156,8 +156,8 @@ impl RecursiveMohoProof {
         &self.proof
     }
 
-    pub fn into_attestation(self) -> RecursiveMohoAttestation {
-        self.attestation
+    pub fn into_parts(self) -> (RecursiveMohoAttestation, Vec<u8>) {
+        (self.attestation, self.proof)
     }
 }
 

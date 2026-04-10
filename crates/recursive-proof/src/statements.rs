@@ -106,12 +106,13 @@ fn verify_recursive_proof(
     proof: RecursiveMohoProof,
     verifier: &PredicateKey,
 ) -> Result<RecursiveMohoAttestation, Box<InvalidRecursiveProofError>> {
-    let output = MohoRecursiveOutput::new(proof.attestation().clone(), verifier.clone());
+    let (attestation, proof) = proof.into_parts();
+    let output = MohoRecursiveOutput::new(attestation.clone(), verifier.clone());
     let claim = ssz_encode(&output);
-    match verifier.verify_claim_witness(&claim, proof.proof()) {
-        Ok(()) => Ok(proof.into_attestation()),
+    match verifier.verify_claim_witness(&claim, &proof) {
+        Ok(()) => Ok(attestation),
         Err(e) => Err(Box::new(InvalidRecursiveProofError {
-            attestation: proof.into_attestation(),
+            attestation,
             source: e,
         })),
     }

@@ -1,8 +1,7 @@
-use moho_types::RecursiveMohoAttestation;
 use zkaleido::{ZkVmProgram, ZkVmResult};
 use zkaleido_native_adapter::NativeHost;
 
-use crate::{MohoRecursiveInput, process_recursive_moho_proof};
+use crate::{MohoRecursiveInput, MohoRecursiveOutput, process_recursive_moho_proof};
 
 /// A host-agnostic ZkVM “program” that encapsulates the recursive proof logic
 /// for the Moho protocol.
@@ -11,7 +10,7 @@ pub struct MohoRecursiveProgram;
 
 impl ZkVmProgram for MohoRecursiveProgram {
     type Input = MohoRecursiveInput;
-    type Output = RecursiveMohoAttestation;
+    type Output = MohoRecursiveOutput;
 
     fn name() -> String {
         "Moho Recursive".to_string()
