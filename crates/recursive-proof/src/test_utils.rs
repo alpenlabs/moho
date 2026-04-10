@@ -1,16 +1,15 @@
 //! Test utilities for constructing Moho proofs, states, and transitions.
 use k256::schnorr::{SigningKey, signature::Signer};
-use moho_types::{MohoState, StateRefAttestation, StateReference};
-use rand_core::OsRng;
+use moho_types::{
+    MohoState, RecursiveMohoAttestation, RecursiveMohoProof, StateRefAttestation, StateReference,
+    StepMohoAttestation, StepMohoProof,
+};
 use ssz::ssz_encode;
 use strata_merkle::{BinaryMerkleTree, MerkleProofB32, Sha256NoPrefixHasher};
 use strata_predicate::{PredicateKey, PredicateTypeId};
 use tree_hash::{Sha256Hasher as TreeSha256Hasher, TreeHash};
 
-use crate::{
-    io::MohoRecursiveInput,
-    transition::{MohoStateTransition, MohoTransitionWithProof, Transition},
-};
+use crate::{MohoRecursiveOutput, io::MohoRecursiveInput};
 
 /// A Schnorr key pair bundled with a [`PredicateKey`] for convenient test setup.
 #[derive(Clone)]
@@ -25,7 +24,7 @@ pub struct SchnorrPredicate {
 impl SchnorrPredicate {
     /// Creates a new random Schnorr predicate.
     pub fn new_random() -> Self {
-        let signing_key = SigningKey::random(&mut OsRng);
+        let signing_key = SigningKey::random(&mut rand_core::OsRng);
         let predicate = PredicateKey::new(
             PredicateTypeId::Bip340Schnorr,
             signing_key.verifying_key().to_bytes().to_vec(),
@@ -67,35 +66,32 @@ pub fn create_predicate_inclusion_proof(state: &MohoState) -> MerkleProofB32 {
     MerkleProofB32::from_generic(&generic_proof)
 }
 
-/// Creates a [`MohoStateTransition`] between two states identified by `from`/`to` IDs.
-pub fn transition_with_predicate(
+/// Creates a [`StepMohoAttestation`] between two states identified by `from`/`to` IDs.
+pub fn step_attestation(
     from: u8,
     to: u8,
     from_state: &MohoState,
     to_state: &MohoState,
-) -> MohoStateTransition {
-    Transition::new(attestation(from, from_state), attestation(to, to_state))
+) -> StepMohoAttestation {
+    StepMohoAttestation::new(attestation(from, from_state), attestation(to, to_state))
 }
 
-/// Signs a [`MohoStateTransition`] with the given signing key.
-pub fn sign_transition(transition: &MohoStateTransition, signing_key: &SigningKey) -> Vec<u8> {
-    signing_key
-        .sign(&ssz_encode(transition))
-        .to_bytes()
-        .to_vec()
+/// Signs a [`StepMohoAttestation`] with the given signing key.
+pub fn sign_attestation(att: &StepMohoAttestation, signing_key: &SigningKey) -> Vec<u8> {
+    signing_key.sign(&ssz_encode(att)).to_bytes().to_vec()
 }
 
-/// Creates a [`MohoTransitionWithProof`] and its corresponding Merkle inclusion proof.
-pub fn transition_with_proof(
+/// Creates a [`StepMohoProof`] and its corresponding Merkle inclusion proof.
+pub fn step_proof_with_merkle(
     from: u8,
     to: u8,
     from_state: &MohoState,
     to_state: &MohoState,
     signing_key: &SigningKey,
-) -> (MohoTransitionWithProof, MerkleProofB32) {
-    let transition = transition_with_predicate(from, to, from_state, to_state);
-    let signature = sign_transition(&transition, signing_key);
-    let proof = MohoTransitionWithProof::new(transition, signature);
+) -> (StepMohoProof, MerkleProofB32) {
+    let att = step_attestation(from, to, from_state, to_state);
+    let signature = sign_attestation(&att, signing_key);
+    let proof = StepMohoProof::new(att, signature);
     let merkle_proof = create_predicate_inclusion_proof(from_state);
     (proof, merkle_proof)
 }
@@ -114,14 +110,18 @@ pub fn create_input(
     let from_state = create_state(from, step.predicate.clone());
     let to_state = create_state(to, step.predicate.clone());
     let (step_proof, step_predicate_merkle_proof) =
-        transition_with_proof(from, to, &from_state, &to_state, &step.signing_key);
+        step_proof_with_merkle(from, to, &from_state, &to_state, &step.signing_key);
 
     let prev_recursive_proof = prev.map(|(f, t)| {
         let prev_from_state = create_state(f, step.predicate.clone());
         let prev_to_state = create_state(t, step.predicate.clone());
-        let transition = transition_with_predicate(f, t, &prev_from_state, &prev_to_state);
-        let signature = sign_transition(&transition, &moho.signing_key);
-        MohoTransitionWithProof::new(transition, signature)
+        let rec_att = RecursiveMohoAttestation::new(
+            attestation(f, &prev_from_state),
+            attestation(t, &prev_to_state),
+        );
+        let output = MohoRecursiveOutput::new(rec_att.clone(), moho.predicate.clone());
+        let signature = moho.signing_key.sign(&ssz_encode(&output)).to_bytes().to_vec();
+        RecursiveMohoProof::new(rec_att, signature)
     });
 
     MohoRecursiveInput {
@@ -133,9 +133,9 @@ pub fn create_input(
     }
 }
 
-/// Creates the expected [`MohoStateTransition`] for a given `from`/`to` pair and predicate.
-pub fn expected_transition(from: u8, to: u8, predicate: &PredicateKey) -> MohoStateTransition {
+/// Creates the expected [`StepMohoAttestation`] for a given `from`/`to` pair and predicate.
+pub fn expected_attestation(from: u8, to: u8, predicate: &PredicateKey) -> StepMohoAttestation {
     let from_state = create_state(from, predicate.clone());
     let to_state = create_state(to, predicate.clone());
-    transition_with_predicate(from, to, &from_state, &to_state)
+    step_attestation(from, to, &from_state, &to_state)
 }
