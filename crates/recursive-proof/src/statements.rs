@@ -71,12 +71,10 @@ pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttest
             let prev_proven = *prev_att.proven();
             let step_from = *step_att.from();
 
-            prev_att
-                .chain(step_att)
-                .ok_or_else(|| MohoError::InvalidMohoChain {
-                    recursive_end: prev_proven,
-                    step_start: step_from,
-                })
+            prev_att.chain(step_att).ok_or(MohoError::InvalidMohoChain {
+                recursive_end: Box::new(prev_proven),
+                step_start: Box::new(step_from),
+            })
         }
     }
 }
@@ -88,14 +86,14 @@ pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttest
 fn verify_step_proof(
     proof: StepMohoProof,
     verifier: &PredicateKey,
-) -> Result<StepMohoAttestation, InvalidStepProofError> {
+) -> Result<StepMohoAttestation, Box<InvalidStepProofError>> {
     let claim = ssz_encode(proof.attestation());
     match verifier.verify_claim_witness(&claim, proof.proof()) {
         Ok(()) => Ok(proof.into_attestation()),
-        Err(e) => Err(InvalidStepProofError {
+        Err(e) => Err(Box::new(InvalidStepProofError {
             attestation: proof.into_attestation(),
             source: e,
-        }),
+        })),
     }
 }
 
@@ -107,15 +105,15 @@ fn verify_step_proof(
 fn verify_recursive_proof(
     proof: RecursiveMohoProof,
     verifier: &PredicateKey,
-) -> Result<RecursiveMohoAttestation, InvalidRecursiveProofError> {
+) -> Result<RecursiveMohoAttestation, Box<InvalidRecursiveProofError>> {
     let output = MohoRecursiveOutput::new(proof.attestation().clone(), verifier.clone());
     let claim = ssz_encode(&output);
     match verifier.verify_claim_witness(&claim, proof.proof()) {
         Ok(()) => Ok(proof.into_attestation()),
-        Err(e) => Err(InvalidRecursiveProofError {
+        Err(e) => Err(Box::new(InvalidRecursiveProofError {
             attestation: proof.into_attestation(),
             source: e,
-        }),
+        })),
     }
 }
 
