@@ -1,23 +1,28 @@
-use std::fmt::Debug;
-
-use moho_types::StateRefAttestation;
+use moho_types::{RecursiveMohoAttestation, StateRefAttestation, StepMohoAttestation};
+use strata_predicate::PredicateError;
 use thiserror::Error;
 
 /// Errors that can occur when working with Moho state transitions.
 #[derive(Error, Debug)]
 pub enum MohoError {
-    /// Two attestations cannot be chained because the end of the first
-    /// does not align with the start of the second.
-    #[error(transparent)]
-    InvalidMohoChain(#[from] Box<TransitionChainError<StateRefAttestation>>),
+    /// The recursive proof's proven state does not match the step proof's starting state.
+    #[error(
+        "cannot chain attestations: recursive proof ends at {recursive_end}, but step proof starts at {step_start}"
+    )]
+    InvalidMohoChain {
+        /// The proven state of the recursive attestation.
+        recursive_end: StateRefAttestation,
+        /// The starting state of the step attestation.
+        step_start: StateRefAttestation,
+    },
 
     /// The incremental step proof is invalid.
     #[error("invalid incremental proof: {0}")]
-    InvalidIncrementalProof(#[source] InvalidProofError),
+    InvalidIncrementalProof(#[source] InvalidStepProofError),
 
     /// The recursive proof is invalid.
     #[error("invalid recursive proof: {0}")]
-    InvalidRecursiveProof(#[source] InvalidProofError),
+    InvalidRecursiveProof(#[source] InvalidRecursiveProofError),
 
     /// A Merkle inclusion proof is invalid.
     #[error("invalid merkle proof")]
@@ -25,19 +30,17 @@ pub enum MohoError {
 }
 
 #[derive(Debug, Error)]
-#[error(
-    "Cannot chain attestations: first ends at {first_end_state:?}, but second starts at {second_start_state:?}"
-)]
-pub struct TransitionChainError<T>
-where
-    T: Debug,
-{
-    /// The end state of the first attestation.
-    pub first_end_state: T,
-    /// The start state of the second attestation.
-    pub second_start_state: T,
+#[error("{attestation}: {source}")]
+pub struct InvalidStepProofError {
+    pub attestation: StepMohoAttestation,
+    #[source]
+    pub source: PredicateError,
 }
 
 #[derive(Debug, Error)]
-#[error("Cannot prove validity of attestation: {0}")]
-pub struct InvalidProofError(pub String);
+#[error("{attestation}: {source}")]
+pub struct InvalidRecursiveProofError {
+    pub attestation: RecursiveMohoAttestation,
+    #[source]
+    pub source: PredicateError,
+}

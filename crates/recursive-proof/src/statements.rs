@@ -7,7 +7,7 @@ use zkaleido::ZkVmEnv;
 
 use crate::{
     MohoError, MohoRecursiveInput, MohoRecursiveOutput,
-    errors::{InvalidProofError, TransitionChainError},
+    errors::{InvalidRecursiveProofError, InvalidStepProofError},
 };
 
 /// Reads an SSZ-encoded [`MohoRecursiveInput`] from the zkVM, verifies and chains the proof,
@@ -20,38 +20,12 @@ pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
     let input_ssz_bytes = zkvm.read_buf();
     let input = MohoRecursiveInput::from_ssz_bytes(&input_ssz_bytes).unwrap();
     let moho_predicate = input.moho_predicate.clone();
+
     let attestation = verify_and_chain(input).unwrap();
+
     let output = MohoRecursiveOutput::new(attestation, moho_predicate);
     let output_bytes = output.as_ssz_bytes();
     zkvm.commit_buf(&output_bytes);
-}
-
-/// Verifies a [`StepMohoProof`] against a predicate key.
-///
-/// Step proofs attest directly to the SSZ-encoded [`StepMohoAttestation`].
-fn verify_step_proof(
-    proof: &StepMohoProof,
-    verifier: &PredicateKey,
-) -> Result<(), InvalidProofError> {
-    let claim = ssz_encode(proof.attestation());
-    verifier
-        .verify_claim_witness(&claim, proof.proof())
-        .map_err(|_| InvalidProofError(format!("{:?}", proof.attestation())))
-}
-
-/// Verifies a [`RecursiveMohoProof`] against a predicate key.
-///
-/// Recursive proofs attest to a [`MohoRecursiveOutput`] which wraps the attestation together
-/// with the predicate key as an additional public value.
-fn verify_recursive_proof(
-    proof: &RecursiveMohoProof,
-    verifier: &PredicateKey,
-) -> Result<(), InvalidProofError> {
-    let output = MohoRecursiveOutput::new(proof.attestation().clone(), verifier.clone());
-    let claim = ssz_encode(&output);
-    verifier
-        .verify_claim_witness(&claim, proof.proof())
-        .map_err(|_| InvalidProofError(format!("{:?}", proof.attestation())))
 }
 
 /// Verifies the step and recursive proofs, then chains them into a single
@@ -65,7 +39,11 @@ pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttest
     // 1: Ensure the step proof's predicate key is part of the starting state's Merkle root.
     let next_predicate_hash =
         <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&input.step_predicate).into_inner();
-    let expected_root = input.incremental_step_proof.attestation().from().commitment();
+    let expected_root = input
+        .incremental_step_proof
+        .attestation()
+        .from()
+        .commitment();
     if !input
         .step_predicate_merkle_proof
         .verify_with_root::<Sha256NoPrefixHasher>(expected_root.inner(), &next_predicate_hash)
@@ -97,13 +75,47 @@ pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttest
             let step_from = step_att.from().clone();
 
             prev_att.chain(step_att).ok_or_else(|| {
-                MohoError::InvalidMohoChain(Box::new(TransitionChainError {
-                    first_end_state: prev_proven,
-                    second_start_state: step_from,
-                }))
+                MohoError::InvalidMohoChain {
+                    recursive_end: prev_proven,
+                    step_start: step_from,
+                }
             })
         }
     }
+}
+
+/// Verifies a [`StepMohoProof`] against a predicate key.
+///
+/// Step proofs attest directly to the SSZ-encoded [`StepMohoAttestation`].
+fn verify_step_proof(
+    proof: &StepMohoProof,
+    verifier: &PredicateKey,
+) -> Result<(), InvalidStepProofError> {
+    let claim = ssz_encode(proof.attestation());
+    verifier
+        .verify_claim_witness(&claim, proof.proof())
+        .map_err(|e| InvalidStepProofError {
+            attestation: proof.attestation().clone(),
+            source: e,
+        })
+}
+
+/// Verifies a [`RecursiveMohoProof`] against a predicate key.
+///
+/// Recursive proofs attest to a [`MohoRecursiveOutput`] which wraps the attestation together
+/// with the predicate key as an additional public value.
+fn verify_recursive_proof(
+    proof: &RecursiveMohoProof,
+    verifier: &PredicateKey,
+) -> Result<(), InvalidRecursiveProofError> {
+    let output = MohoRecursiveOutput::new(proof.attestation().clone(), verifier.clone());
+    let claim = ssz_encode(&output);
+    verifier
+        .verify_claim_witness(&claim, proof.proof())
+        .map_err(|e| InvalidRecursiveProofError {
+            attestation: proof.attestation().clone(),
+            source: e,
+        })
 }
 
 #[cfg(test)]
@@ -134,15 +146,13 @@ mod tests {
 
         let from_att = expected_attestation(1, 2, &step.predicate);
         let to_att = expected_attestation(2, 3, &step.predicate);
-        let result =
-            verify_and_chain(create_input(2, 3, Some((1, 2)), &moho, &step)).unwrap();
+        let result = verify_and_chain(create_input(2, 3, Some((1, 2)), &moho, &step)).unwrap();
         assert_eq!(*result.genesis(), *from_att.from());
         assert_eq!(*result.proven(), *to_att.to());
 
         let from_att = expected_attestation(1, 3, &step.predicate);
         let to_att = expected_attestation(3, 10, &step.predicate);
-        let result =
-            verify_and_chain(create_input(3, 10, Some((1, 3)), &moho, &step)).unwrap();
+        let result = verify_and_chain(create_input(3, 10, Some((1, 3)), &moho, &step)).unwrap();
         assert_eq!(*result.genesis(), *from_att.from());
         assert_eq!(*result.proven(), *to_att.to());
     }
@@ -152,7 +162,7 @@ mod tests {
         let moho = SchnorrPredicate::new_random();
         let step = SchnorrPredicate::new_random();
         let result = verify_and_chain(create_input(3, 5, Some((1, 2)), &moho, &step));
-        assert!(matches!(result, Err(MohoError::InvalidMohoChain(_))));
+        assert!(matches!(result, Err(MohoError::InvalidMohoChain { .. })));
     }
 
     #[test]
