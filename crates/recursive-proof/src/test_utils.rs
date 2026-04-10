@@ -120,7 +120,11 @@ pub fn create_input(
             attestation(t, &prev_to_state),
         );
         let output = MohoRecursiveOutput::new(rec_att.clone(), moho.predicate.clone());
-        let signature = moho.signing_key.sign(&ssz_encode(&output)).to_bytes().to_vec();
+        let signature = moho
+            .signing_key
+            .sign(&ssz_encode(&output))
+            .to_bytes()
+            .to_vec();
         RecursiveMohoProof::new(rec_att, signature)
     });
 

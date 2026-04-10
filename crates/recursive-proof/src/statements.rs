@@ -1,11 +1,11 @@
 use moho_types::{
     RecursiveMohoAttestation, RecursiveMohoProof, StepMohoAttestation, StepMohoProof,
 };
-use ssz::{Decode, Encode, ssz_encode};
+use ssz::ssz_encode;
 use strata_merkle::Sha256NoPrefixHasher;
 use strata_predicate::PredicateKey;
 use tree_hash::{Sha256Hasher, TreeHash};
-use zkaleido::ZkVmEnv;
+use zkaleido::{ZkVmEnv, ZkVmEnvSsz};
 
 use crate::{
     MohoError, MohoRecursiveInput, MohoRecursiveOutput,
@@ -19,15 +19,13 @@ use crate::{
 ///
 /// Panics if decoding the input or verifying/chaining the proof fails.
 pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
-    let input_ssz_bytes = zkvm.read_buf();
-    let input = MohoRecursiveInput::from_ssz_bytes(&input_ssz_bytes).unwrap();
+    let input: MohoRecursiveInput = zkvm.read_ssz();
+
     let moho_predicate = input.moho_predicate.clone();
-
-    let attestation = verify_and_chain(input).unwrap();
-
+    let attestation = verify_and_chain(input).expect("failed to verify and chain moho proof");
     let output = MohoRecursiveOutput::new(attestation, moho_predicate);
-    let output_bytes = output.as_ssz_bytes();
-    zkvm.commit_buf(&output_bytes);
+
+    zkvm.commit_ssz(&output);
 }
 
 /// Verifies the step and recursive proofs, then chains them into a single
