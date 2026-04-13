@@ -1,5 +1,6 @@
 //! Error types for Moho state operations.
 
+use ssz_types::Error as SszError;
 use strata_merkle::MerkleError;
 use thiserror::Error;
 
@@ -9,4 +10,8 @@ pub enum ExportStateError {
     /// Failed to add entry to container.
     #[error("Failed to add entry to container: {0}")]
     AddEntryFailed(#[from] MerkleError),
+
+    /// failed
+    #[error("Failed to add entry to container: {0}")]
+    SszError(#[from] SszError),
 }

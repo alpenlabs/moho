@@ -1,6 +1,7 @@
 //! Moho state types and SSZ-based commitment/proof helpers.
 
 use ssz_generated::ssz::moho::*;
+use ssz_types::VariableList;
 use strata_merkle::{Mmr, Mmr64B32, MmrState, Sha256Hasher as MerkleHasher};
 use strata_predicate::PredicateKey;
 use tree_hash::{Sha256Hasher, TreeHash};
@@ -52,10 +53,9 @@ impl MohoState {
 // Compatibility constructors and accessors for SSZ-generated types
 impl ExportState {
     /// Creates a new export state with the given containers.
-    pub fn new(containers: Vec<ExportContainer>) -> Self {
-        Self {
-            containers: ssz_types::VariableList::from(containers),
-        }
+    pub fn new(containers: Vec<ExportContainer>) -> Result<Self, ExportStateError> {
+        let containers = VariableList::new(containers)?;
+        Ok(Self { containers })
     }
 
     /// Returns a slice of all containers.
@@ -151,7 +151,7 @@ mod tests {
     fn always_accept() -> PredicateKey {
         PredicateKey {
             id: 1, // AlwaysAccept ID
-            condition: vec![].into(),
+            condition: vec![].try_into().unwrap(),
         }
     }
 
@@ -159,7 +159,7 @@ mod tests {
         (any::<u8>(), prop::collection::vec(any::<u8>(), 0..8)).prop_map(|(id, condition)| {
             PredicateKey {
                 id,
-                condition: condition.into(),
+                condition: condition.try_into().unwrap(),
             }
         })
     }
@@ -177,7 +177,8 @@ mod tests {
     }
 
     fn export_state_strategy() -> impl Strategy<Value = ExportState> {
-        prop::collection::vec(export_container_strategy(), 0..5).prop_map(ExportState::new)
+        prop::collection::vec(export_container_strategy(), 0..5)
+            .prop_map(|containers| ExportState::new(containers).unwrap())
     }
 
     fn moho_state_strategy() -> impl Strategy<Value = MohoState> {
@@ -254,7 +255,7 @@ mod tests {
 
         #[test]
         fn test_empty_state_ssz() {
-            let state = ExportState::new(vec![]);
+            let state = ExportState::new(vec![]).unwrap();
             let encoded = state.as_ssz_bytes();
             let decoded = ExportState::from_ssz_bytes(&encoded).unwrap();
             assert_eq!(state.containers().len(), 0);
@@ -265,7 +266,7 @@ mod tests {
         fn test_add_entry() {
             let container1 = ExportContainer::new(1);
             let container2 = ExportContainer::new(2);
-            let mut state = ExportState::new(vec![container1, container2]);
+            let mut state = ExportState::new(vec![container1, container2]).unwrap();
 
             let initial_mmr = state.containers()[0].entries_mmr().clone();
             let entry = [0xFF; 32];
@@ -278,7 +279,7 @@ mod tests {
 
         #[test]
         fn test_add_entry_creates_container() {
-            let mut state = ExportState::new(vec![]);
+            let mut state = ExportState::new(vec![]).unwrap();
             let entry = [0x11; 32];
 
             state.add_entry(42, entry).unwrap();
@@ -333,7 +334,7 @@ mod tests {
         fn test_minimal_state_ssz() {
             let inner = InnerStateCommitment::from(Hash32::default());
             let predicate = always_accept();
-            let export = ExportState::new(vec![]);
+            let export = ExportState::new(vec![]).unwrap();
             let state = MohoState::new(inner, predicate, export);
 
             let encoded = state.as_ssz_bytes();
@@ -350,7 +351,7 @@ mod tests {
         fn test_state_with_valid_predicate() {
             let inner = InnerStateCommitment::from([0xAB; 32]);
             let predicate = always_accept();
-            let export = ExportState::new(vec![]);
+            let export = ExportState::new(vec![]).unwrap();
             let state = MohoState::new(inner, predicate, export);
 
             let encoded = state.as_ssz_bytes();
@@ -378,7 +379,7 @@ mod tests {
             let mut container2 = ExportContainer::new(20);
             container2.add_entry(entry3).unwrap();
 
-            let export = ExportState::new(vec![container1, container2]);
+            let export = ExportState::new(vec![container1, container2]).unwrap();
             let state = MohoState::new(inner, predicate, export);
 
             let encoded = state.as_ssz_bytes();
@@ -405,7 +406,7 @@ mod tests {
             let inner1 = InnerStateCommitment::from([0x01; 32]);
             let inner2 = InnerStateCommitment::from([0x02; 32]);
             let predicate = always_accept();
-            let export = ExportState::new(vec![]);
+            let export = ExportState::new(vec![]).unwrap();
 
             let state1 = MohoState::new(inner1, predicate.clone(), export.clone());
             let state2 = MohoState::new(inner2, predicate, export);
@@ -420,7 +421,7 @@ mod tests {
         fn test_accessors() {
             let inner = InnerStateCommitment::from([0xCD; 32]);
             let predicate = always_accept();
-            let export = ExportState::new(vec![]);
+            let export = ExportState::new(vec![]).unwrap();
             let state = MohoState::new(inner, predicate.clone(), export);
 
             assert_eq!(state.inner_state().inner(), &[0xCD; 32]);
@@ -433,7 +434,7 @@ mod tests {
             let inner = InnerStateCommitment::from(Hash32::default());
             let predicate = always_accept();
             let container = ExportContainer::new(1);
-            let export = ExportState::new(vec![container]);
+            let export = ExportState::new(vec![container]).unwrap();
             let state = MohoState::new(inner, predicate, export);
 
             let extracted_export = state.into_export_state();
