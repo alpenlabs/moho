@@ -15,24 +15,24 @@ moho-types = { path = "crates/types" }
 
 strata-merkle = { git = "https://github.com/alpenlabs/strata-common", features = [
   "ssz",
-], tag = "v0.1.0-alpha-rc14" }
+], tag = "v0.1.0-alpha-rc15" }
 strata-predicate = { git = "https://github.com/alpenlabs/strata-common", features = [
   "schnorr",
-], tag = "v0.1.0-alpha-rc14" }
+], tag = "v0.1.0-alpha-rc15" }
 
 hex = { version = "0.4" }
 sha2 = { version = "0.10.9" }
 thiserror = { version = "2" }
-zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc23" }
-zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc23" }
+zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc24" }
+zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc24" }
 
-ssz = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.14.0" }
-ssz_codegen = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.14.0" }
-ssz_derive = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.14.0" }
-ssz_primitives = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.14.0" }
-ssz_types = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.14.0" }
-tree_hash = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.14.0" }
-tree_hash_derive = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.14.0" }
+ssz = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.15.0" }
+ssz_codegen = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.15.0" }
+ssz_derive = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.15.0" }
+ssz_primitives = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.15.0" }
+ssz_types = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.15.0" }
+tree_hash = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.15.0" }
+tree_hash_derive = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.15.0" }
 
 [workspace.lints]
 rust.missing_debug_implementations = "warn"

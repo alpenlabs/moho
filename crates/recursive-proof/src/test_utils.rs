@@ -40,7 +40,7 @@ impl SchnorrPredicate {
 /// Creates a [`MohoState`] with a deterministic inner state derived from `id`.
 pub fn create_state(id: u8, predicate: PredicateKey) -> MohoState {
     let inner_state = moho_types::InnerStateCommitment::from([id; 32]);
-    let export_state = moho_types::ExportState::new(vec![]);
+    let export_state = moho_types::ExportState::new(vec![]).unwrap();
     MohoState::new(inner_state, predicate, export_state)
 }
 
