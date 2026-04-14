@@ -68,13 +68,7 @@ pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttest
             let prev_att = verify_recursive_proof(prev_proof, &input.moho_predicate)
                 .map_err(MohoError::InvalidRecursiveProof)?;
 
-            let prev_proven = *prev_att.proven();
-            let step_from = *step_att.from();
-
-            prev_att.chain(step_att).ok_or(MohoError::InvalidMohoChain {
-                recursive_end: Box::new(prev_proven),
-                step_start: Box::new(step_from),
-            })
+            prev_att.chain(step_att).map_err(MohoError::from)
         }
     }
 }
@@ -162,7 +156,7 @@ mod tests {
         let moho = SchnorrPredicate::new_random();
         let step = SchnorrPredicate::new_random();
         let result = verify_and_chain(create_input(3, 5, Some((1, 2)), &moho, &step));
-        assert!(matches!(result, Err(MohoError::InvalidMohoChain { .. })));
+        assert!(matches!(result, Err(MohoError::InvalidMohoChain(_))));
     }
 
     #[test]

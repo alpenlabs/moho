@@ -14,8 +14,22 @@
 use std::fmt;
 
 use ssz_derive::{Decode, Encode};
+use thiserror::Error;
 
 use crate::{MohoStateCommitment, StateReference};
+
+/// Error returned by [`RecursiveMohoAttestation::chain`] when the recursive attestation's proven
+/// state does not match the step attestation's starting state.
+#[derive(Debug, Clone, Error)]
+#[error(
+    "cannot chain attestations: recursive proof ends at {recursive_end}, but step proof starts at {step_start}"
+)]
+pub struct ChainError {
+    /// The proven state of the recursive attestation.
+    pub recursive_end: StateRefAttestation,
+    /// The starting state of the step attestation.
+    pub step_start: StateRefAttestation,
+}
 
 /// An aggregated attestation proving a chain of state transitions from genesis to some proven
 /// state.
@@ -48,16 +62,27 @@ impl RecursiveMohoAttestation {
     /// Extends this recursive attestation with a step attestation, producing a new recursive
     /// attestation that covers the combined range.
     ///
-    /// Returns `Some` only if the attestations are continuous — i.e., the current proven state
-    /// matches the step's starting state. The resulting attestation retains the same genesis but
-    /// advances the proven state to the step's target.
+    /// Succeeds only if the attestations are continuous — i.e., the current proven state matches
+    /// the step's starting state. The resulting attestation retains the same genesis but advances
+    /// the proven state to the step's target.
     ///
-    /// Returns `None` if there is a gap between the two attestations.
-    pub fn chain(self: RecursiveMohoAttestation, step: StepMohoAttestation) -> Option<Self> {
+    /// Returns a [`ChainError`] carrying the mismatched endpoints if there is a gap between the
+    /// two attestations.
+    #[allow(
+        clippy::result_large_err,
+        reason = "Ok variant is already the same size as ChainError, so boxing Err wouldn't shrink the Result"
+    )]
+    pub fn chain(
+        self: RecursiveMohoAttestation,
+        step: StepMohoAttestation,
+    ) -> Result<Self, ChainError> {
         if self.proven() == step.from() {
-            Some(RecursiveMohoAttestation::new(self.genesis, step.to))
+            Ok(RecursiveMohoAttestation::new(self.genesis, step.to))
         } else {
-            None
+            Err(ChainError {
+                recursive_end: self.proven,
+                step_start: step.from,
+            })
         }
     }
 }
@@ -234,14 +259,18 @@ mod tests {
     }
 
     #[test]
-    fn chain_discontinuous_step_returns_none() {
+    fn chain_discontinuous_step_returns_err() {
         let s0 = state_ref(0);
         let s1 = state_ref(1);
+        let bad_from = state_ref(3);
+        let bad_to = state_ref(4);
 
         let rec = RecursiveMohoAttestation::new(s0, s1);
-        let step = StepMohoAttestation::new(state_ref(3), state_ref(4));
+        let step = StepMohoAttestation::new(bad_from, bad_to);
 
-        assert!(rec.chain(step).is_none(), "gap should cause chain to fail");
+        let err = rec.chain(step).expect_err("gap should cause chain to fail");
+        assert_eq!(err.recursive_end, s1);
+        assert_eq!(err.step_start, bad_from);
     }
 
     #[test]
@@ -276,6 +305,6 @@ mod tests {
             .expect("first chain should succeed");
 
         let bad_step = StepMohoAttestation::new(state_ref(10), state_ref(11));
-        assert!(rec.chain(bad_step).is_none(), "gap mid-chain should fail");
+        assert!(rec.chain(bad_step).is_err(), "gap mid-chain should fail");
     }
 }

@@ -1,4 +1,4 @@
-use moho_types::{RecursiveMohoAttestation, StateRefAttestation, StepMohoAttestation};
+use moho_types::{ChainError, RecursiveMohoAttestation, StepMohoAttestation};
 use strata_predicate::PredicateError;
 use thiserror::Error;
 
@@ -11,15 +11,8 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum MohoError {
     /// The recursive proof's proven state does not match the step proof's starting state.
-    #[error(
-        "cannot chain attestations: recursive proof ends at {recursive_end}, but step proof starts at {step_start}"
-    )]
-    InvalidMohoChain {
-        /// The proven state of the recursive attestation.
-        recursive_end: Box<StateRefAttestation>,
-        /// The starting state of the step attestation.
-        step_start: Box<StateRefAttestation>,
-    },
+    #[error("{0}")]
+    InvalidMohoChain(#[source] Box<ChainError>),
 
     /// The incremental step proof is invalid.
     #[error("invalid incremental proof: {0}")]
@@ -32,6 +25,12 @@ pub enum MohoError {
     /// A Merkle inclusion proof is invalid.
     #[error("invalid merkle proof")]
     InvalidMerkleProof,
+}
+
+impl From<ChainError> for MohoError {
+    fn from(err: ChainError) -> Self {
+        MohoError::InvalidMohoChain(Box::new(err))
+    }
 }
 
 #[derive(Debug, Error)]
