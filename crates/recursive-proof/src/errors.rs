@@ -1,45 +1,50 @@
-use std::fmt::Debug;
-
-use moho_types::StateRefAttestation;
+use moho_types::{ChainError, RecursiveMohoAttestation, StepMohoAttestation};
+use strata_predicate::PredicateError;
 use thiserror::Error;
 
-use crate::transition::MohoStateTransition;
-
 /// Errors that can occur when working with Moho state transitions.
+///
+/// Several variants contain large payloads (attestations, proof errors). Rather than
+/// suppressing `clippy::result_large_err` with `#[allow]`, we box the large fields so that
+/// `Result<_, MohoError>` stays small on the stack. This matters because the error path is
+/// rare while the success path — which pays for the `Result` size — is much more common.
 #[derive(Error, Debug)]
 pub enum MohoError {
-    /// Indicates that two transitions cannot be chained because the end of the first
-    /// does not align with the start of the second.
-    #[error(transparent)]
-    InvalidMohoChain(#[from] Box<TransitionChainError<StateRefAttestation>>),
+    /// The recursive proof's proven state does not match the step proof's starting state.
+    #[error("{0}")]
+    InvalidMohoChain(#[source] Box<ChainError>),
 
-    /// Occurs when the incremental proof for a transition is invalid.
-    #[error("invalid incremental proof for transition {0:?}")]
-    InvalidIncrementalProof(#[source] InvalidProofError),
+    /// The incremental step proof is invalid.
+    #[error("invalid incremental proof: {0}")]
+    InvalidIncrementalProof(#[source] Box<InvalidStepProofError>),
 
-    /// Occurs when the recursive proof for a transition is invalid.
-    #[error("invalid recursive proof for transition {0:?}")]
-    InvalidRecursiveProof(#[source] InvalidProofError),
+    /// The recursive proof is invalid.
+    #[error("invalid recursive proof: {0}")]
+    InvalidRecursiveProof(#[source] Box<InvalidRecursiveProofError>),
 
-    /// Indicates that a Merkle proof provided is invalid.
+    /// A Merkle inclusion proof is invalid.
     #[error("invalid merkle proof")]
     InvalidMerkleProof,
 }
 
-#[derive(Debug, Error)]
-#[error(
-    "Cannot chain transitions: first transition ends at {first_end_state:?}, but second starts at {second_start_state:?}"
-)]
-pub struct TransitionChainError<T>
-where
-    T: Debug,
-{
-    /// The end state of the first transition
-    pub first_end_state: T,
-    /// The start state of the second transition  
-    pub second_start_state: T,
+impl From<ChainError> for MohoError {
+    fn from(err: ChainError) -> Self {
+        MohoError::InvalidMohoChain(Box::new(err))
+    }
 }
 
 #[derive(Debug, Error)]
-#[error("Cannot prove validity of the moho state transition {0:?}")]
-pub struct InvalidProofError(pub Box<MohoStateTransition>);
+#[error("{attestation}: {source}")]
+pub struct InvalidStepProofError {
+    pub attestation: StepMohoAttestation,
+    #[source]
+    pub source: PredicateError,
+}
+
+#[derive(Debug, Error)]
+#[error("{attestation}: {source}")]
+pub struct InvalidRecursiveProofError {
+    pub attestation: RecursiveMohoAttestation,
+    #[source]
+    pub source: PredicateError,
+}

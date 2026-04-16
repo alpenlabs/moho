@@ -1,25 +1,25 @@
+use moho_types::{RecursiveMohoAttestation, RecursiveMohoProof, StepMohoProof};
 use ssz_derive::{Decode, Encode};
 use strata_merkle::MerkleProofB32;
 use strata_predicate::PredicateKey;
 
-use crate::{MohoStateTransition, transition::MohoTransitionWithProof};
-/// Input data for generating a recursive Moho proof that combines incremental and recursive proofs.
+/// Input data for generating a recursive Moho proof.
 ///
-/// `MohoRecursiveInput` contains all the necessary components to create a new recursive proof
-/// by combining a previous recursive proof (if it exists) with a new incremental step proof.
-/// This enables efficient proof composition where each new recursive proof can represent
-/// an arbitrarily long chain of state transitions while maintaining constant verification time.
+/// Contains all the components needed to create a new recursive proof by combining a previous
+/// recursive proof (if any) with a new step proof. The recursive proof is extended by verifying
+/// both proofs and checking that they are continuous.
 #[derive(Debug, Clone, Encode, Decode)]
 pub struct MohoRecursiveInput {
-    /// Moho proof's own predicate key, necessary to verify the previous recursive proof
+    /// Predicate key for verifying the previous recursive proof.
     pub(crate) moho_predicate: PredicateKey,
-    /// Previous recursive moho proof
-    pub(crate) prev_recursive_proof: Option<MohoTransitionWithProof>,
-    /// Incremental step proof
-    pub(crate) incremental_step_proof: MohoTransitionWithProof,
-    /// Predicate key to verify the incremental step proof from initial_state to final_state
+    /// Previous recursive proof to extend, or `None` for the base case (first step in the chain).
+    pub(crate) prev_recursive_proof: Option<RecursiveMohoProof>,
+    /// Predicate key for verifying the incremental step proof.
     pub(crate) step_predicate: PredicateKey,
-    /// Merkle proof of `step_predicate` within initial_state
+    /// The step proof attesting to the next state transition to be verified and chained.
+    pub(crate) incremental_step_proof: StepMohoProof,
+    /// Merkle proof that `step_predicate` is included in the step proof's starting state
+    /// commitment.
     pub(crate) step_predicate_merkle_proof: MerkleProofB32,
 }
 
@@ -27,8 +27,8 @@ impl MohoRecursiveInput {
     /// Creates a new [`MohoRecursiveInput`].
     pub fn new(
         moho_predicate: PredicateKey,
-        prev_recursive_proof: Option<MohoTransitionWithProof>,
-        incremental_step_proof: MohoTransitionWithProof,
+        prev_recursive_proof: Option<RecursiveMohoProof>,
+        incremental_step_proof: StepMohoProof,
         step_predicate: PredicateKey,
         step_predicate_merkle_proof: MerkleProofB32,
     ) -> Self {
@@ -47,12 +47,12 @@ impl MohoRecursiveInput {
     }
 
     /// Returns the previous recursive moho proof, if any.
-    pub fn prev_recursive_proof(&self) -> Option<&MohoTransitionWithProof> {
+    pub fn prev_recursive_proof(&self) -> Option<&RecursiveMohoProof> {
         self.prev_recursive_proof.as_ref()
     }
 
     /// Returns the incremental step proof.
-    pub fn incremental_step_proof(&self) -> &MohoTransitionWithProof {
+    pub fn incremental_step_proof(&self) -> &StepMohoProof {
         &self.incremental_step_proof
     }
 
@@ -67,33 +67,32 @@ impl MohoRecursiveInput {
     }
 }
 
-/// Output data committed by a recursive Moho proof that verifiers must check.
+/// Public output committed by a recursive Moho proof.
 ///
-/// `MohoRecursiveOutput` contains the committed information produced by a recursive proof.
-/// The verifier of this proof needs to ensure that the correct recursive predicate was used,
-/// so we commit the `moho_predicate` as public output. Since we cannot hardcode this outer
-/// predicate key in the circuit, it must be included as a public parameter for verification.
+/// Contains the attestation (genesis-to-proven chain) and the predicate key used to verify
+/// the recursive proof itself. The predicate is included because it cannot be hardcoded in the
+/// circuit — verifiers need it to confirm the correct predicate was used.
 #[derive(Debug, Clone, Encode, Decode)]
 pub struct MohoRecursiveOutput {
-    /// State transition proven by this recursive proof
-    pub(crate) transition: MohoStateTransition,
-    /// Predicate key used to verify previous recursive proof, committed as public output
-    /// to ensure verifiers can confirm the correct predicate was used
+    /// The recursive attestation proven by this proof.
+    pub(crate) attestation: RecursiveMohoAttestation,
+    /// Predicate key committed as public output so verifiers can confirm the correct
+    /// predicate was used.
     pub(crate) moho_predicate: PredicateKey,
 }
 
 impl MohoRecursiveOutput {
     /// Creates a new [`MohoRecursiveOutput`].
-    pub fn new(transition: MohoStateTransition, moho_predicate: PredicateKey) -> Self {
+    pub fn new(attestation: RecursiveMohoAttestation, moho_predicate: PredicateKey) -> Self {
         Self {
-            transition,
+            attestation,
             moho_predicate,
         }
     }
 
-    /// Returns the state transition proven by this recursive proof.
-    pub fn transition(&self) -> &MohoStateTransition {
-        &self.transition
+    /// Returns the recursive attestation proven by this proof.
+    pub fn attestation(&self) -> &RecursiveMohoAttestation {
+        &self.attestation
     }
 
     /// Returns the predicate key committed as public output.

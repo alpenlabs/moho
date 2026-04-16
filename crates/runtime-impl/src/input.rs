@@ -5,11 +5,11 @@ use ssz_derive::{Decode, Encode};
 
 /// The input required to compute a single incremental state transition.
 ///
-/// Contains the Moho-level pre-state, the borsh-encoded inner state, and the
-/// borsh-encoded step input. The runtime deserializes these, runs the
+/// Contains the Moho-level pre-state, the SSZ-encoded inner state, and the
+/// SSZ-encoded step input. The runtime deserializes these, runs the
 /// [`MohoProgram`](moho_runtime_interface::MohoProgram) transition logic, and
-/// produces a [`MohoAttestation`](moho_types::MohoAttestation).
-#[derive(Clone, Debug, Encode, Decode)]
+/// produces a [`StepMohoAttestation`](moho_types::StepMohoAttestation).
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
 pub struct RuntimeInput {
     /// The [`MohoState`] before the transition. Contains the
     /// [`InnerStateCommitment`](moho_types::InnerStateCommitment) that
@@ -17,12 +17,12 @@ pub struct RuntimeInput {
     /// export state.
     moho_pre_state: MohoState,
 
-    /// Borsh-encoded inner state (`P::State`). The runtime verifies that its
+    /// SSZ-encoded inner state (`P::State`). The runtime verifies that its
     /// commitment matches `moho_pre_state.inner_state` before processing the
     /// transition.
     inner_pre_state: Vec<u8>,
 
-    /// Borsh-encoded step input (`P::StepInput`) that drives the state
+    /// SSZ-encoded step input (`P::StepInput`) that drives the state
     /// transition.
     input_payload: Vec<u8>,
 }
@@ -45,12 +45,12 @@ impl RuntimeInput {
         &self.moho_pre_state
     }
 
-    /// Returns the borsh-encoded inner pre-state bytes.
+    /// Returns the SSZ-encoded inner pre-state bytes.
     pub fn inner_pre_state(&self) -> &[u8] {
         &self.inner_pre_state
     }
 
-    /// Returns the borsh-encoded step input bytes.
+    /// Returns the SSZ-encoded step input bytes.
     pub fn input_payload(&self) -> &[u8] {
         &self.input_payload
     }

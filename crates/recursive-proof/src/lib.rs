@@ -10,11 +10,9 @@ mod program;
 mod statements;
 #[cfg(any(test, feature = "test-utils"))]
 pub mod test_utils;
-mod transition;
 
 pub use errors::MohoError;
 pub use io::{MohoRecursiveInput, MohoRecursiveOutput};
 #[cfg(not(target_os = "zkvm"))]
 pub use program::MohoRecursiveProgram;
-pub use statements::{process_recursive_moho_proof, verify_and_chain_transition};
-pub use transition::{MohoStateTransition, MohoTransitionWithProof, Transition};
+pub use statements::{process_recursive_moho_proof, verify_and_chain};

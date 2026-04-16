@@ -1,9 +1,11 @@
 //! Moho state types and SSZ-based commitment/proof helpers.
 
+use core::fmt;
+
 use ssz_generated::ssz::moho::*;
 use ssz_types::VariableList;
 use strata_merkle::{Mmr, Mmr64B32, MmrState, Sha256Hasher as MerkleHasher};
-use strata_predicate::PredicateKey;
+use strata_predicate::{PredicateKey, PredicateTypeId};
 use tree_hash::{Sha256Hasher, TreeHash};
 
 type Hash32 = [u8; 32];
@@ -47,6 +49,33 @@ impl MohoState {
     /// Computes the commitment to this Moho state via tree hash.
     pub fn compute_commitment(&self) -> MohoStateCommitment {
         MohoStateCommitment::from(<_ as TreeHash<Sha256Hasher>>::tree_hash_root(self))
+    }
+}
+
+impl fmt::Display for MohoState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let inner = self.inner_state();
+        let predicate = self.next_predicate();
+
+        // Format predicate type: use Display name if known, otherwise raw id
+        let predicate_type = match PredicateTypeId::try_from(predicate.id()) {
+            Ok(id) => id.to_string(),
+            Err(_) => format!("Unknown({})", predicate.id()),
+        };
+
+        // Format condition bytes as hex
+        let condition_hex: String = predicate
+            .condition()
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+
+        write!(
+            f,
+            "MohoState {{ inner_state: {inner}, predicate: {predicate_type}(0x{condition_hex}), \
+             export_containers: {} }}",
+            self.export_state().containers().len()
+        )
     }
 }
 
@@ -336,6 +365,8 @@ mod tests {
             let predicate = always_accept();
             let export = ExportState::new(vec![]).unwrap();
             let state = MohoState::new(inner, predicate, export);
+
+            print!("{}", state);
 
             let encoded = state.as_ssz_bytes();
             let decoded = MohoState::from_ssz_bytes(&encoded).unwrap();
