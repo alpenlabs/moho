@@ -7,7 +7,9 @@ edition = "2024"
 strata-merkle = { workspace = true, features = ["ssz"] }
 strata-predicate.workspace = true
 
+const-hex = { workspace = true, optional = true }
 hex.workspace = true
+serde = { workspace = true, optional = true }
 sha2.workspace = true
 ssz.workspace = true
 ssz_derive.workspace = true
@@ -18,8 +20,18 @@ tree_hash.workspace = true
 tree_hash_derive.workspace = true
 zkaleido.workspace = true
 
+[features]
+serde = [
+  "dep:serde",
+  "dep:const-hex",
+  "ssz_types/serde",
+  "strata-predicate/serde",
+]
+
 [build-dependencies]
 ssz_codegen.workspace = true
 
 [dev-dependencies]
+bincode.workspace = true
 proptest = "1.11"
+serde_json.workspace = true

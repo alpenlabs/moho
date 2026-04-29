@@ -3,6 +3,8 @@
 pub mod errors;
 mod id;
 mod relation;
+#[cfg(feature = "serde")]
+mod serde;
 mod state;
 
 pub use errors::ExportStateError;
