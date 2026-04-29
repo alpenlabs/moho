@@ -1059,7 +1059,7 @@ dependencies = [
 [[package]]
 name = "strata-codec"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc16#a0c346696ffbf2bc95b7fa37174e09d41462efa3"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc19#f24dc6483e9134dacf22a5fcb7481183282068f2"
 dependencies = [
  "thiserror 2.0.18",
 ]
@@ -1067,7 +1067,7 @@ dependencies = [
 [[package]]
 name = "strata-merkle"
 version = "0.2.0"
-source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc16#a0c346696ffbf2bc95b7fa37174e09d41462efa3"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc19#f24dc6483e9134dacf22a5fcb7481183282068f2"
 dependencies = [
  "borsh",
  "digest",
@@ -1087,7 +1087,7 @@ dependencies = [
 [[package]]
 name = "strata-predicate"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc16#a0c346696ffbf2bc95b7fa37174e09d41462efa3"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc19#f24dc6483e9134dacf22a5fcb7481183282068f2"
 dependencies = [
  "borsh",
  "hex",
