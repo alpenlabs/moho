@@ -38,6 +38,7 @@ pub struct ChainError {
 /// verifies continuity between the current proven state and the step's starting state, then
 /// advances the proven state to the step's target.
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RecursiveMohoAttestation {
     /// The fixed starting point of the attestation chain.
     genesis: StateRefAttestation,
@@ -98,6 +99,7 @@ impl fmt::Display for RecursiveMohoAttestation {
 /// This is the building block for [`RecursiveMohoAttestation`]. Each step attests that the
 /// state machine validly transitioned from one state to the next.
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StepMohoAttestation {
     /// The state before the transition.
     from: StateRefAttestation,
@@ -132,6 +134,7 @@ impl fmt::Display for StepMohoAttestation {
 
 /// A [`StepMohoAttestation`] bundled with the cryptographic proof that backs it.
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StepMohoProof {
     /// The claim being proven.
     attestation: StepMohoAttestation,
@@ -160,6 +163,7 @@ impl StepMohoProof {
 
 /// A [`RecursiveMohoAttestation`] bundled with the cryptographic proof that backs it.
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RecursiveMohoProof {
     /// The claim being proven.
     attestation: RecursiveMohoAttestation,
@@ -191,6 +195,7 @@ impl RecursiveMohoProof {
 /// This pairing is what both step and recursive attestations operate on — equality of two
 /// `StateRefAttestation` values is what establishes continuity between attestations.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StateRefAttestation {
     /// An opaque identifier for the state (e.g. a block hash).
     reference: StateReference,
