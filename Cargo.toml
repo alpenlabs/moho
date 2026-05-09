@@ -16,10 +16,10 @@ moho-types = { path = "crates/types" }
 # strata-common
 strata-merkle = { git = "https://github.com/alpenlabs/strata-common", features = [
   "ssz",
-], tag = "v0.1.0-alpha-rc19" }
+], rev = "75763ada955765fb7cb32dba045c7484f591aa25" }
 strata-predicate = { git = "https://github.com/alpenlabs/strata-common", features = [
   "schnorr",
-], tag = "v0.1.0-alpha-rc19" }
+], rev = "75763ada955765fb7cb32dba045c7484f591aa25" }
 
 bincode = { version = "1.3" }
 const-hex = { version = "1", default-features = false, features = ["alloc"] }
@@ -31,8 +31,8 @@ serde = { version = "1.0", default-features = false, features = [
 serde_json = { version = "1" }
 sha2 = { version = "0.11.0" }
 thiserror = { version = "2" }
-zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc24" }
-zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc24" }
+zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc26" }
+zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1.0-alpha-rc26" }
 
 ssz = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.15.0" }
 ssz_codegen = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.15.0" }
