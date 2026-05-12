@@ -40,7 +40,7 @@ impl ZkVmProgram for MohoRecursiveProgram {
 impl MohoRecursiveProgram {
     /// Returns the native host for the moho recursive program
     pub fn native_host() -> NativeHost {
-        NativeHost::new(process_recursive_moho_proof)
+        NativeHost::new_with_random_key(process_recursive_moho_proof)
     }
 
     /// Executes the moho recursive program in the native mode
@@ -49,7 +49,8 @@ impl MohoRecursiveProgram {
     ) -> ZkVmResult<<Self as ZkVmProgram>::Output> {
         // Get the native host and delegate to the trait's execute method
         let host = Self::native_host();
-        <Self as ZkVmProgram>::execute(input, &host)
+        let summary = <Self as ZkVmProgram>::execute(input, &host)?;
+        <Self as ZkVmProgram>::process_output::<NativeHost>(summary.public_values())
     }
 }
 
