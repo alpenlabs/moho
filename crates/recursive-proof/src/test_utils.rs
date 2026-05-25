@@ -53,9 +53,9 @@ pub fn attestation(id: u8, state: &MohoState) -> StateRefAttestation {
 /// Creates a Merkle inclusion proof for the predicate within the given state.
 pub fn create_predicate_inclusion_proof(state: &MohoState) -> MerkleProofB32 {
     let leaves = vec![
-        <_ as TreeHash<TreeSha256Hasher>>::tree_hash_root(&state.inner_state).into_inner(),
-        <_ as TreeHash<TreeSha256Hasher>>::tree_hash_root(&state.next_predicate).into_inner(),
-        <_ as TreeHash<TreeSha256Hasher>>::tree_hash_root(&state.export_state).into_inner(),
+        <_ as TreeHash>::tree_hash_root::<TreeSha256Hasher>(&state.inner_state).into_inner(),
+        <_ as TreeHash>::tree_hash_root::<TreeSha256Hasher>(&state.next_predicate).into_inner(),
+        <_ as TreeHash>::tree_hash_root::<TreeSha256Hasher>(&state.export_state).into_inner(),
         [0u8; 32],
     ];
 

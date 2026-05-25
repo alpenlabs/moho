@@ -38,7 +38,7 @@ pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
 pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttestation, MohoError> {
     // 1: Ensure the step proof's predicate key is part of the starting state's Merkle root.
     let next_predicate_hash =
-        <_ as TreeHash<Sha256Hasher>>::tree_hash_root(&input.step_predicate).into_inner();
+        <_ as TreeHash>::tree_hash_root::<Sha256Hasher>(&input.step_predicate).into_inner();
     let expected_root = input
         .incremental_step_proof
         .attestation()

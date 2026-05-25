@@ -48,7 +48,7 @@ impl MohoState {
 
     /// Computes the commitment to this Moho state via tree hash.
     pub fn compute_commitment(&self) -> MohoStateCommitment {
-        MohoStateCommitment::from(<_ as TreeHash<Sha256Hasher>>::tree_hash_root(self))
+        MohoStateCommitment::from(<_ as TreeHash>::tree_hash_root::<Sha256Hasher>(self))
     }
 }
 
@@ -236,8 +236,8 @@ mod tests {
 
             #[test]
             fn tree_hash_deterministic(container in export_container_strategy()) {
-                let hash1 = <ExportContainer as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&container);
-                let hash2 = <ExportContainer as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&container);
+                let hash1 = <ExportContainer as tree_hash::TreeHash>::tree_hash_root::<Sha256Hasher>(&container);
+                let hash2 = <ExportContainer as tree_hash::TreeHash>::tree_hash_root::<Sha256Hasher>(&container);
                 prop_assert_eq!(hash1, hash2);
             }
         }
@@ -276,8 +276,8 @@ mod tests {
 
             #[test]
             fn tree_hash_deterministic(state in export_state_strategy()) {
-                let hash1 = <ExportState as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&state);
-                let hash2 = <ExportState as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&state);
+                let hash1 = <ExportState as tree_hash::TreeHash>::tree_hash_root::<Sha256Hasher>(&state);
+                let hash2 = <ExportState as tree_hash::TreeHash>::tree_hash_root::<Sha256Hasher>(&state);
                 prop_assert_eq!(hash1, hash2);
             }
         }
@@ -344,8 +344,8 @@ mod tests {
 
             #[test]
             fn tree_hash_deterministic(state in moho_state_strategy()) {
-                let hash1 = <MohoState as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&state);
-                let hash2 = <MohoState as tree_hash::TreeHash<Sha256Hasher>>::tree_hash_root(&state);
+                let hash1 = <MohoState as tree_hash::TreeHash>::tree_hash_root::<Sha256Hasher>(&state);
+                let hash2 = <MohoState as tree_hash::TreeHash>::tree_hash_root::<Sha256Hasher>(&state);
                 prop_assert_eq!(hash1, hash2);
             }
 
