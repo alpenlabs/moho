@@ -616,7 +616,7 @@ dependencies = [
  "strata-predicate",
  "thiserror",
  "tree_hash",
- "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.1-beta.5)",
+ "zkaleido",
  "zkaleido-native-adapter",
 ]
 
@@ -661,7 +661,7 @@ dependencies = [
  "thiserror",
  "tree_hash",
  "tree_hash_derive",
- "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.1-beta.5)",
+ "zkaleido",
 ]
 
 [[package]]
@@ -1119,7 +1119,7 @@ dependencies = [
 [[package]]
 name = "strata-codec"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc25#064ebd8a932936bb3255a7a80db235c2f50bf04a"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc26#f2c6703b2a641838e0058730bb076fdf9a9dbdff"
 dependencies = [
  "thiserror",
 ]
@@ -1127,7 +1127,7 @@ dependencies = [
 [[package]]
 name = "strata-merkle"
 version = "0.2.0"
-source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc25#064ebd8a932936bb3255a7a80db235c2f50bf04a"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc26#f2c6703b2a641838e0058730bb076fdf9a9dbdff"
 dependencies = [
  "borsh",
  "digest 0.10.7",
@@ -1147,7 +1147,7 @@ dependencies = [
 [[package]]
 name = "strata-predicate"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc25#064ebd8a932936bb3255a7a80db235c2f50bf04a"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.1.0-alpha-rc26#f2c6703b2a641838e0058730bb076fdf9a9dbdff"
 dependencies = [
  "hex",
  "k256",
@@ -1557,17 +1557,6 @@ checksum = "b97154e67e32c85465826e8bcc1c59429aaaf107c1e4a9e53c8d8ccd5eff88d0"
 [[package]]
 name = "zkaleido"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.1-beta.4#5ea37d52d253ff890efbfbd1422aad4c3def58f7"
-dependencies = [
- "bincode",
- "borsh",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "zkaleido"
-version = "0.1.0"
 source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.1-beta.5#0ee0c39cd1a05a79db91266126550f9aa61b4524"
 dependencies = [
  "bincode",
@@ -1586,13 +1575,13 @@ dependencies = [
  "k256",
  "rand_core 0.6.4",
  "serde",
- "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.1-beta.5)",
+ "zkaleido",
 ]
 
 [[package]]
 name = "zkaleido-sp1-groth16-verifier"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.1-beta.4#5ea37d52d253ff890efbfbd1422aad4c3def58f7"
+source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.1-beta.5#0ee0c39cd1a05a79db91266126550f9aa61b4524"
 dependencies = [
  "blake3",
  "borsh",
@@ -1601,7 +1590,7 @@ dependencies = [
  "sha2 0.10.9",
  "substrate-bn",
  "thiserror",
- "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.1-beta.4)",
+ "zkaleido",
 ]
 
 [[package]]
