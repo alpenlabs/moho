@@ -31,8 +31,8 @@ serde = { version = "1.0", default-features = false, features = [
 serde_json = { version = "1" }
 sha2 = { version = "0.11.0" }
 thiserror = { version = "2" }
-zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1-beta.4" }
-zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1-beta.4" }
+zkaleido = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1-beta.5" }
+zkaleido-native-adapter = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.1-beta.5" }
 
 ssz = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.16.0" }
 ssz_codegen = { git = "https://github.com/alpenlabs/ssz-gen", tag = "v0.16.0" }
