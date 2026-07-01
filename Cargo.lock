@@ -494,6 +494,15 @@ dependencies = [
 
 [[package]]
 name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
@@ -561,13 +570,13 @@ dependencies = [
  "k256",
  "moho-types",
  "rand_core 0.6.4",
- "ssz",
+ "ssz 0.16.0",
  "ssz_derive",
  "strata-merkle",
  "strata-predicate",
- "thiserror",
+ "thiserror 2.0.18",
  "tree_hash",
- "zkaleido",
+ "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.1.0-alpha-rc26)",
  "zkaleido-native-adapter",
 ]
 
@@ -577,7 +586,7 @@ version = "0.1.0"
 dependencies = [
  "moho-runtime-interface",
  "moho-types",
- "ssz",
+ "ssz 0.16.0",
  "ssz_derive",
  "strata-predicate",
 ]
@@ -587,7 +596,7 @@ name = "moho-runtime-interface"
 version = "0.1.0"
 dependencies = [
  "moho-types",
- "ssz",
+ "ssz 0.16.0",
  "strata-predicate",
 ]
 
@@ -602,17 +611,17 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.11.0",
- "ssz",
+ "ssz 0.16.0",
  "ssz_codegen",
  "ssz_derive",
- "ssz_primitives",
+ "ssz_primitives 0.16.0",
  "ssz_types",
  "strata-merkle",
  "strata-predicate",
- "thiserror",
+ "thiserror 2.0.18",
  "tree_hash",
  "tree_hash_derive",
- "zkaleido",
+ "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.1.0-alpha-rc26)",
 ]
 
 [[package]]
@@ -969,7 +978,7 @@ name = "sizzle-parser"
 version = "0.16.0"
 source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.16.0#a43cb62e88b22a4626dddc158bcd09b298c103e7"
 dependencies = [
- "thiserror",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -996,15 +1005,26 @@ dependencies = [
 
 [[package]]
 name = "ssz"
+version = "0.15.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.15.0#6e4b99ef2831ea3a97b8cb98a88c06206395f337"
+dependencies = [
+ "itertools 0.13.0",
+ "smallvec",
+ "ssz_primitives 0.15.0",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ssz"
 version = "0.16.0"
 source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.16.0#a43cb62e88b22a4626dddc158bcd09b298c103e7"
 dependencies = [
  "hex",
- "itertools",
+ "itertools 0.14.0",
  "serde",
  "smallvec",
- "ssz_primitives",
- "thiserror",
+ "ssz_primitives 0.16.0",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -1017,9 +1037,9 @@ dependencies = [
  "quote",
  "serde",
  "sizzle-parser",
- "ssz",
+ "ssz 0.16.0",
  "ssz_derive",
- "ssz_primitives",
+ "ssz_primitives 0.16.0",
  "ssz_types",
  "syn",
  "toml",
@@ -1039,6 +1059,16 @@ dependencies = [
 
 [[package]]
 name = "ssz_primitives"
+version = "0.15.0"
+source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.15.0#6e4b99ef2831ea3a97b8cb98a88c06206395f337"
+dependencies = [
+ "hex",
+ "rand 0.8.6",
+ "ruint",
+]
+
+[[package]]
+name = "ssz_primitives"
 version = "0.16.0"
 source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.16.0#a43cb62e88b22a4626dddc158bcd09b298c103e7"
 dependencies = [
@@ -1052,12 +1082,12 @@ name = "ssz_types"
 version = "0.16.0"
 source = "git+https://github.com/alpenlabs/ssz-gen?tag=v0.16.0#a43cb62e88b22a4626dddc158bcd09b298c103e7"
 dependencies = [
- "itertools",
+ "itertools 0.14.0",
  "serde",
  "serde_derive",
- "ssz",
- "ssz_primitives",
- "thiserror",
+ "ssz 0.16.0",
+ "ssz_primitives 0.16.0",
+ "thiserror 2.0.18",
  "tree_hash",
 ]
 
@@ -1066,7 +1096,7 @@ name = "strata-codec"
 version = "0.1.0"
 source = "git+https://github.com/alpenlabs/strata-common?tag=v0.3.0-rc.1#861ef15a7a2e0335ca84d21d35c2326c85638904"
 dependencies = [
- "thiserror",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -1078,13 +1108,13 @@ dependencies = [
  "digest 0.10.7",
  "serde",
  "sha2 0.10.9",
- "ssz",
+ "ssz 0.16.0",
  "ssz_codegen",
  "ssz_derive",
- "ssz_primitives",
+ "ssz_primitives 0.16.0",
  "ssz_types",
  "strata-codec",
- "thiserror",
+ "thiserror 2.0.18",
  "tree_hash",
  "tree_hash_derive",
 ]
@@ -1098,12 +1128,12 @@ dependencies = [
  "k256",
  "serde",
  "signature",
- "ssz",
+ "ssz 0.16.0",
  "ssz_codegen",
  "ssz_derive",
- "ssz_primitives",
+ "ssz_primitives 0.16.0",
  "ssz_types",
- "thiserror",
+ "thiserror 2.0.18",
  "tree_hash",
  "tree_hash_derive",
  "zkaleido-sp1-groth16-verifier",
@@ -1160,11 +1190,31 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
+version = "1.0.69"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
+dependencies = [
+ "thiserror-impl 1.0.69",
+]
+
+[[package]]
+name = "thiserror"
 version = "2.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4288b5bcbc7920c07a1149a35cf9590a2aa808e0bc1eafaade0b80947865fbc4"
 dependencies = [
- "thiserror-impl",
+ "thiserror-impl 2.0.18",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.69"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1237,9 +1287,9 @@ dependencies = [
  "digest 0.10.7",
  "sha2 0.10.9",
  "smallvec",
- "ssz",
- "ssz_primitives",
- "thiserror",
+ "ssz 0.16.0",
+ "ssz_primitives 0.16.0",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -1365,13 +1415,24 @@ checksum = "e13c156562582aa81c60cb29407084cdb54c4164760106ab78e6c5b0858cf64e"
 [[package]]
 name = "zkaleido"
 version = "0.1.0"
+source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.1.0-alpha-rc26#4ec7ebfe380924219837f185146f5c8b4f0066fa"
+dependencies = [
+ "bincode",
+ "borsh",
+ "serde",
+ "ssz 0.15.0",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "zkaleido"
+version = "0.1.0"
 source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.3.0-rc.1#b1c3a5a34ea713d6e35e792c497d4f8327feaf61"
 dependencies = [
  "bincode",
  "borsh",
  "serde",
- "ssz",
- "thiserror",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -1383,7 +1444,7 @@ dependencies = [
  "k256",
  "rand_core 0.6.4",
  "serde",
- "zkaleido",
+ "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.3.0-rc.1)",
 ]
 
 [[package]]
@@ -1397,8 +1458,8 @@ dependencies = [
  "serde",
  "sha2 0.10.9",
  "substrate-bn",
- "thiserror",
- "zkaleido",
+ "thiserror 2.0.18",
+ "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.3.0-rc.1)",
 ]
 
 [[package]]
