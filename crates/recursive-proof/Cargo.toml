@@ -13,7 +13,7 @@ ssz_derive.workspace = true
 tree_hash.workspace = true
 zkaleido = { workspace = true, features = ["ssz"] }
 
-k256 = { version = "0.13.4", features = ["schnorr"], optional = true }
+k256 = { version = "0.14.0", features = ["schnorr"], optional = true }
 rand_core = { version = "0.6", optional = true }
 thiserror.workspace = true
 
@@ -21,7 +21,7 @@ thiserror.workspace = true
 zkaleido-native-adapter.workspace = true
 
 [dev-dependencies]
-k256 = { version = "0.13.4", features = ["schnorr"] }
+k256 = { version = "0.14.0", features = ["schnorr"] }
 rand_core = "0.6"
 
 [features]
