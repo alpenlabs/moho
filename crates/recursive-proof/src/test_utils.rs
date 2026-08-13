@@ -25,10 +25,11 @@ impl SchnorrPredicate {
     /// Creates a new random Schnorr predicate.
     pub fn new_random() -> Self {
         let signing_key = SigningKey::random(&mut rand_core::OsRng);
-        let predicate = PredicateKey::new(
+        let predicate = PredicateKey::try_new(
             PredicateTypeId::Bip340Schnorr,
             signing_key.verifying_key().to_bytes().to_vec(),
-        );
+        )
+        .expect("valid predicate key");
         Self {
             signing_key,
             predicate,
