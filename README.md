@@ -27,3 +27,12 @@ itself, but it provides useful infrastructure on top of the low-level proof
 interface that supports using it to verify a state machine.  Consumers implement
 the `MohoProgram` trait, defining state types and implementation logic, then
 plug it into the proof runtime implementation within the proof program.
+
+The recursive Moho proof itself lives in `crates/recursive-proof`. The SP1 guest
+that runs it is in `guest-builder/sp1`. That directory is its own Cargo
+workspace, so the SP1 crates stay out of the main one. Running `cargo build`
+there with `BUILD_ELF=1` compiles the guest ELF. With `BUILD_VKEY=1`, it also
+derives the guest's verifying key, which consumers such as the bridge use as the
+trust anchor for Moho proofs. Both land in `guest-builder/sp1/elfs/`. Each
+release tag attaches `moho.elf` and `moho-vk.json` to its GitHub release, so
+downstream repos can use them without building the guest.
