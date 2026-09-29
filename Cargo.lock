@@ -1064,7 +1064,7 @@ dependencies = [
 [[package]]
 name = "strata-codec"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?tag=v0.4.0-rc.3#4b7fd841447910cd9b29b057c02d847b91d23872"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.4.0#fc71f121d8990af0e56c2da436754b0b1fd304e0"
 dependencies = [
  "thiserror",
 ]
@@ -1072,9 +1072,8 @@ dependencies = [
 [[package]]
 name = "strata-merkle"
 version = "0.2.0"
-source = "git+https://github.com/alpenlabs/strata-common?tag=v0.4.0-rc.3#4b7fd841447910cd9b29b057c02d847b91d23872"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.4.0#fc71f121d8990af0e56c2da436754b0b1fd304e0"
 dependencies = [
- "borsh",
  "digest 0.10.7",
  "serde",
  "sha2 0.10.9",
@@ -1092,7 +1091,7 @@ dependencies = [
 [[package]]
 name = "strata-predicate"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?tag=v0.4.0-rc.3#4b7fd841447910cd9b29b057c02d847b91d23872"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.4.0#fc71f121d8990af0e56c2da436754b0b1fd304e0"
 dependencies = [
  "hex",
  "k256",
@@ -1376,7 +1375,7 @@ checksum = "e13c156562582aa81c60cb29407084cdb54c4164760106ab78e6c5b0858cf64e"
 [[package]]
 name = "zkaleido"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.3.0#8205a0543d4e60e7a7d8e73da483ffb83765c4e9"
+source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.4.0#675183920c830a30cc512874d5ec039e57d1a188"
 dependencies = [
  "bincode",
  "borsh",
@@ -1388,7 +1387,7 @@ dependencies = [
 [[package]]
 name = "zkaleido-native-adapter"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.3.0#8205a0543d4e60e7a7d8e73da483ffb83765c4e9"
+source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.4.0#675183920c830a30cc512874d5ec039e57d1a188"
 dependencies = [
  "bincode",
  "k256",
@@ -1400,10 +1399,9 @@ dependencies = [
 [[package]]
 name = "zkaleido-sp1-groth16-verifier"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.3.0#8205a0543d4e60e7a7d8e73da483ffb83765c4e9"
+source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.4.0#675183920c830a30cc512874d5ec039e57d1a188"
 dependencies = [
  "blake3",
- "borsh",
  "hex",
  "serde",
  "sha2 0.10.9",
