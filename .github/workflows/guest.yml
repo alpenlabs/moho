@@ -11,6 +11,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # Keep in step with the SP1 crates in guest-builder/sp1/Cargo.lock.
+  SP1_VERSION: v6.8.1
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -40,7 +42,7 @@ jobs:
       - name: Install SP1 toolchain
         run: |
           curl -fsSL --proto '=https' --tlsv1.2 https://sp1.succinct.xyz | bash
-          ~/.sp1/bin/sp1up
+          ~/.sp1/bin/sp1up -v "$SP1_VERSION"
           echo "$HOME/.sp1/bin" >> "$GITHUB_PATH"
 
       - name: Check SP1 toolchain

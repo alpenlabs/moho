@@ -14,6 +14,9 @@ jobs:
     timeout-minutes: 90
     permissions:
       contents: write # create the release and upload assets via the GitHub Releases API
+    env:
+      # Keep in step with the SP1 crates in guest-builder/sp1/Cargo.lock.
+      SP1_VERSION: v6.8.1
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -29,7 +32,7 @@ jobs:
       - name: Install SP1 toolchain
         run: |
           curl -fsSL --proto '=https' --tlsv1.2 https://sp1.succinct.xyz | bash
-          ~/.sp1/bin/sp1up
+          ~/.sp1/bin/sp1up -v "$SP1_VERSION"
           echo "$HOME/.sp1/bin" >> "$GITHUB_PATH"
 
       - name: Check SP1 toolchain
