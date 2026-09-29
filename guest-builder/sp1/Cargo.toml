@@ -13,10 +13,10 @@ docker-build = []
 
 [build-dependencies]
 serde_json = "1"
-sp1-build = "6.2.0"
-sp1-sdk = { version = "6.2.0", features = ["blocking"] }
-sp1-verifier = "6.2.0"
+sp1-build = "6.8.1"
+sp1-sdk = { version = "6.8.1", features = ["blocking"] }
+sp1-verifier = "6.8.1"
 strata-predicate = { git = "https://github.com/alpenlabs/strata-common", features = [
   "serde",
-], tag = "v0.4.0-rc.3" }
-zkaleido-sp1-groth16-verifier = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.3.0" }
+], tag = "v0.4.0" }
+zkaleido-sp1-groth16-verifier = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.4.0" }
