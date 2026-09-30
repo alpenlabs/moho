@@ -113,11 +113,10 @@ fn program_vkey(elf: &[u8]) -> SP1VerifyingKey {
     pk.verifying_key().clone()
 }
 
-/// Writes `contents` plus a trailing newline to `<GENERATED_DIR>/<name>`.
+/// Writes `contents` to `<GENERATED_DIR>/<name>`.
 fn write_generated(name: &str, contents: &str) {
     let path = Path::new(GENERATED_DIR).join(name);
-    fs::write(&path, format!("{contents}\n"))
-        .unwrap_or_else(|e| panic!("write {}: {e}", path.display()));
+    fs::write(&path, contents).unwrap_or_else(|e| panic!("write {}: {e}", path.display()));
     println!("cargo:warning=wrote {}", path.display());
 }
 
