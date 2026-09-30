@@ -43,7 +43,7 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build guest ELF and vk JSON
+      - name: Build guest ELF and vk files
         # The guest build and vk derivation are both opt-in (see the crate's build.rs).
         working-directory: guest-builder/sp1
         env:
@@ -55,10 +55,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          ELF_DIR=guest-builder/sp1/elfs
-          cp "$ELF_DIR/moho.elf" dist/moho.elf
-          cp "$ELF_DIR/moho-vk.json" dist/moho-vk.json
-          (cd dist && sha256sum moho-vk.json > moho-vk.json.sha256)
+          GEN_DIR=guest-builder/sp1/generated
+          cp "$GEN_DIR/moho.elf" "$GEN_DIR/moho-predicate.txt" "$GEN_DIR/moho-vkey-hash.txt" dist/
+          (cd dist && sha256sum moho.elf moho-predicate.txt moho-vkey-hash.txt > SHA256SUMS)
           ls -la dist/
 
       - name: Publish to GitHub Release
@@ -67,12 +66,14 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          assets=(dist/moho.elf dist/moho-vk.json dist/moho-vk.json.sha256)
+          assets=(dist/moho.elf dist/moho-predicate.txt dist/moho-vkey-hash.txt dist/SHA256SUMS)
           for f in "${assets[@]}"; do
             [ -f "$f" ] || { echo "::error::missing artifact: $f"; exit 1; }
           done
           # Create the release as a draft so the assets can be attached before it is published.
-          gh release create "$TAG" --draft --generate-notes
+          # The vkey hash goes in the notes too, so it can be read without downloading anything.
+          gh release create "$TAG" --draft --generate-notes \
+            --notes "Program vkey hash: \`$(cat dist/moho-vkey-hash.txt)\`"
           gh release upload "$TAG" "${assets[@]}"
           gh release edit "$TAG" --draft=false
 

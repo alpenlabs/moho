@@ -1,21 +1,25 @@
 //! Build script for the SP1 Moho recursive proof guest (`guest-moho`).
 //!
-//! The compiled ELF is emitted to `<crate>/elfs/moho.elf` regardless of the `docker-build`
-//! feature, so consumers can reference a stable path that survives `cargo clean`. Alongside the
-//! ELF, the SP1 Groth16 [`PredicateKey`] is derived and written to `<crate>/elfs/moho-vk.json`
-//! as a JSON-encoded `"Sp1Groth16:<hex>"` string. This is the form the bridge consumes as a trust
-//! anchor.
+//! The compiled ELF is emitted to `<crate>/generated/moho.elf` regardless of the
+//! `docker-build` feature, so consumers can reference a stable path that survives `cargo clean`.
+//! Alongside the ELF, two plain-text files are derived from the guest's vk:
+//!
+//! - `<crate>/generated/moho-predicate.txt` holds the SP1 Groth16 [`PredicateKey`] in its
+//!   `Display` form, `Sp1Groth16:<hex>`. The bridge uses it as the trust anchor for Moho proofs.
+//! - `<crate>/generated/moho-vkey-hash.txt` holds SP1's program vkey hash as `0x<hex>`. It is the
+//!   same value `cargo prove vkey` prints, so anyone can check it against the ELF.
 //!
 //! # Environment
 //!
 //! Both steps are off by default and opt-in, because both are slow and most builds of this
-//! workspace only need the crate to compile. The files in `<crate>/elfs/` survive `cargo clean`,
-//! so a build that skips these steps still leaves whatever was built earlier in place.
+//! workspace only need the crate to compile. The files in `<crate>/generated/` survive
+//! `cargo clean`, so a build that skips these steps still leaves whatever was built earlier in
+//! place.
 //!
 //! - **`BUILD_ELF`** — set to `1`/`true` to compile the guest program. Ignored under `cargo
 //!   clippy`, which only needs the crate to typecheck.
-//! - **`BUILD_VKEY`** — set to `1`/`true` to derive the guest's vk and write `moho-vk.json`.
-//!   Requires the ELF to exist, so it implies `BUILD_ELF`.
+//! - **`BUILD_VKEY`** — set to `1`/`true` to derive the guest's vk and write the predicate and
+//!   vkey hash files. Requires the ELF to exist, so it implies `BUILD_ELF`.
 //!
 //! # Features
 //!
@@ -28,18 +32,19 @@ use std::{env, fs, path::Path};
 
 use sp1_build::{BuildArgs, build_program_with_args};
 use sp1_sdk::{
-    HashableKey, ProvingKey,
+    HashableKey, ProvingKey, SP1VerifyingKey,
     blocking::{Prover, ProverClient},
 };
 use sp1_verifier::{GROTH16_VK_BYTES, VK_ROOT_BYTES};
 use strata_predicate::{PredicateKey, PredicateTypeId};
 use zkaleido_sp1_groth16_verifier::SP1Groth16Verifier;
 
-const ELFS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/elfs");
+const GENERATED_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/generated");
 
 const GUEST_DIR: &str = "guest-moho";
 const ELF_NAME: &str = "moho.elf";
-const VK_JSON_NAME: &str = "moho-vk.json";
+const PREDICATE_NAME: &str = "moho-predicate.txt";
+const VKEY_HASH_NAME: &str = "moho-vkey-hash.txt";
 
 fn main() {
     println!("cargo:rerun-if-env-changed=BUILD_ELF");
@@ -57,7 +62,7 @@ fn main() {
         return;
     }
 
-    println!("cargo:warning=exporting SP1 guest ELF to {ELFS_DIR}");
+    println!("cargo:warning=exporting SP1 guest ELF to {GENERATED_DIR}");
 
     // macOS-only: point cc-rs (used by secp256k1-sys etc.) at the SP1 toolchain's llvm-ar,
     // which knows how to package archives for the riscv32im-succinct-zkvm-elf target. macOS's
@@ -69,13 +74,13 @@ fn main() {
     build_guest(GUEST_DIR, ELF_NAME);
 
     if build_vkey {
-        emit_predicate(ELF_NAME, VK_JSON_NAME);
+        emit_vkey(ELF_NAME, PREDICATE_NAME, VKEY_HASH_NAME);
     }
 }
 
 fn build_guest(guest_dir: &str, elf_name: &str) {
     let build_args = BuildArgs {
-        output_directory: Some(ELFS_DIR.to_owned()),
+        output_directory: Some(GENERATED_DIR.to_owned()),
         elf_name: Some(elf_name.to_owned()),
         #[cfg(feature = "docker-build")]
         docker: true,
@@ -86,29 +91,33 @@ fn build_guest(guest_dir: &str, elf_name: &str) {
     build_program_with_args(guest_dir, build_args);
 }
 
-/// Derives the `Sp1Groth16:<hex>` predicate from the freshly built ELF and writes it as a
-/// JSON-encoded string to `<ELFS_DIR>/<vk_json_name>`.
-fn emit_predicate(elf_name: &str, vk_json_name: &str) {
-    let elf_path = Path::new(ELFS_DIR).join(elf_name);
+/// Derives the guest's vk from the freshly built ELF and writes the `Sp1Groth16:<hex>` predicate
+/// and the `0x<hex>` program vkey hash to `<GENERATED_DIR>`.
+fn emit_vkey(elf_name: &str, predicate_name: &str, vkey_hash_name: &str) {
+    let elf_path = Path::new(GENERATED_DIR).join(elf_name);
     let elf = fs::read(&elf_path)
         .unwrap_or_else(|e| panic!("read built ELF {}: {e}", elf_path.display()));
 
-    let vkey_hash = program_vkey_hash(&elf);
-    let predicate_key = sp1_groth16_predicate_key(vkey_hash);
-    let json = serde_json::to_string(&predicate_key)
-        .unwrap_or_else(|e| panic!("serialize predicate key for {elf_name}: {e}"));
+    let vk = program_vkey(&elf);
+    let predicate_key = sp1_groth16_predicate_key(vk.bytes32_raw());
 
-    let out_path = Path::new(ELFS_DIR).join(vk_json_name);
-    fs::write(&out_path, json).unwrap_or_else(|e| panic!("write {}: {e}", out_path.display()));
-    println!("cargo:warning=wrote {}", out_path.display());
+    write_generated(predicate_name, &predicate_key.to_string());
+    write_generated(vkey_hash_name, &vk.bytes32());
 }
 
-fn program_vkey_hash(elf: &[u8]) -> [u8; 32] {
+fn program_vkey(elf: &[u8]) -> SP1VerifyingKey {
     let prover = ProverClient::builder().cpu().build();
     let pk = prover
         .setup(elf.to_vec().into())
         .unwrap_or_else(|e| panic!("sp1 key setup: {e}"));
-    pk.verifying_key().bytes32_raw()
+    pk.verifying_key().clone()
+}
+
+/// Writes `contents` to `<GENERATED_DIR>/<name>`.
+fn write_generated(name: &str, contents: &str) {
+    let path = Path::new(GENERATED_DIR).join(name);
+    fs::write(&path, contents).unwrap_or_else(|e| panic!("write {}: {e}", path.display()));
+    println!("cargo:warning=wrote {}", path.display());
 }
 
 fn sp1_groth16_predicate_key(vkey_hash: [u8; 32]) -> PredicateKey {
