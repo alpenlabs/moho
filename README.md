@@ -33,6 +33,6 @@ that runs it is in `guest-builder/sp1`. That directory is its own Cargo
 workspace, so the SP1 crates stay out of the main one. Running `cargo build`
 there with `BUILD_ELF=1` compiles the guest ELF. With `BUILD_VKEY=1`, it also
 derives the guest's verifying key, which consumers such as the bridge use as the
-trust anchor for Moho proofs. Both land in `guest-builder/sp1/elfs/`. Each
+trust anchor for Moho proofs. Both land in `guest-builder/sp1/generated/`. Each
 release tag attaches `moho.elf` and `moho-vk.json` to its GitHub release, so
 downstream repos can use them without building the guest.

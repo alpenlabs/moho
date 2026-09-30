@@ -1,16 +1,17 @@
 //! Build script for the SP1 Moho recursive proof guest (`guest-moho`).
 //!
-//! The compiled ELF is emitted to `<crate>/elfs/moho.elf` regardless of the `docker-build`
-//! feature, so consumers can reference a stable path that survives `cargo clean`. Alongside the
-//! ELF, the SP1 Groth16 [`PredicateKey`] is derived and written to `<crate>/elfs/moho-vk.json`
-//! as a JSON-encoded `"Sp1Groth16:<hex>"` string. This is the form the bridge consumes as a trust
-//! anchor.
+//! The compiled ELF is emitted to `<crate>/generated/moho.elf` regardless of the
+//! `docker-build` feature, so consumers can reference a stable path that survives `cargo clean`.
+//! Alongside the ELF, the SP1 Groth16 [`PredicateKey`] is derived and written to
+//! `<crate>/generated/moho-vk.json` as a JSON-encoded `"Sp1Groth16:<hex>"` string. This is the
+//! form the bridge consumes as a trust anchor.
 //!
 //! # Environment
 //!
 //! Both steps are off by default and opt-in, because both are slow and most builds of this
-//! workspace only need the crate to compile. The files in `<crate>/elfs/` survive `cargo clean`,
-//! so a build that skips these steps still leaves whatever was built earlier in place.
+//! workspace only need the crate to compile. The files in `<crate>/generated/` survive
+//! `cargo clean`, so a build that skips these steps still leaves whatever was built earlier in
+//! place.
 //!
 //! - **`BUILD_ELF`** — set to `1`/`true` to compile the guest program. Ignored under `cargo
 //!   clippy`, which only needs the crate to typecheck.
@@ -35,7 +36,7 @@ use sp1_verifier::{GROTH16_VK_BYTES, VK_ROOT_BYTES};
 use strata_predicate::{PredicateKey, PredicateTypeId};
 use zkaleido_sp1_groth16_verifier::SP1Groth16Verifier;
 
-const ELFS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/elfs");
+const GENERATED_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/generated");
 
 const GUEST_DIR: &str = "guest-moho";
 const ELF_NAME: &str = "moho.elf";
@@ -57,7 +58,7 @@ fn main() {
         return;
     }
 
-    println!("cargo:warning=exporting SP1 guest ELF to {ELFS_DIR}");
+    println!("cargo:warning=exporting SP1 guest ELF to {GENERATED_DIR}");
 
     // macOS-only: point cc-rs (used by secp256k1-sys etc.) at the SP1 toolchain's llvm-ar,
     // which knows how to package archives for the riscv32im-succinct-zkvm-elf target. macOS's
@@ -75,7 +76,7 @@ fn main() {
 
 fn build_guest(guest_dir: &str, elf_name: &str) {
     let build_args = BuildArgs {
-        output_directory: Some(ELFS_DIR.to_owned()),
+        output_directory: Some(GENERATED_DIR.to_owned()),
         elf_name: Some(elf_name.to_owned()),
         #[cfg(feature = "docker-build")]
         docker: true,
@@ -87,9 +88,9 @@ fn build_guest(guest_dir: &str, elf_name: &str) {
 }
 
 /// Derives the `Sp1Groth16:<hex>` predicate from the freshly built ELF and writes it as a
-/// JSON-encoded string to `<ELFS_DIR>/<vk_json_name>`.
+/// JSON-encoded string to `<GENERATED_DIR>/<vk_json_name>`.
 fn emit_predicate(elf_name: &str, vk_json_name: &str) {
-    let elf_path = Path::new(ELFS_DIR).join(elf_name);
+    let elf_path = Path::new(GENERATED_DIR).join(elf_name);
     let elf = fs::read(&elf_path)
         .unwrap_or_else(|e| panic!("read built ELF {}: {e}", elf_path.display()));
 
@@ -98,7 +99,7 @@ fn emit_predicate(elf_name: &str, vk_json_name: &str) {
     let json = serde_json::to_string(&predicate_key)
         .unwrap_or_else(|e| panic!("serialize predicate key for {elf_name}: {e}"));
 
-    let out_path = Path::new(ELFS_DIR).join(vk_json_name);
+    let out_path = Path::new(GENERATED_DIR).join(vk_json_name);
     fs::write(&out_path, json).unwrap_or_else(|e| panic!("write {}: {e}", out_path.display()));
     println!("cargo:warning=wrote {}", out_path.display());
 }

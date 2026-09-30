@@ -55,9 +55,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          ELF_DIR=guest-builder/sp1/elfs
-          cp "$ELF_DIR/moho.elf" dist/moho.elf
-          cp "$ELF_DIR/moho-vk.json" dist/moho-vk.json
+          GEN_DIR=guest-builder/sp1/generated
+          cp "$GEN_DIR/moho.elf" dist/moho.elf
+          cp "$GEN_DIR/moho-vk.json" dist/moho-vk.json
           (cd dist && sha256sum moho-vk.json > moho-vk.json.sha256)
           ls -la dist/
 

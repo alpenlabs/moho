@@ -59,4 +59,4 @@ jobs:
           BUILD_ELF: "1"
         run: |
           cargo build --locked
-          test -s elfs/moho.elf
+          test -s generated/moho.elf
