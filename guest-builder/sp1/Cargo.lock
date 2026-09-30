@@ -2011,7 +2011,6 @@ dependencies = [
 name = "moho-sp1-guest-builder"
 version = "0.1.0"
 dependencies = [
- "serde_json",
  "sp1-build",
  "sp1-sdk",
  "sp1-verifier",
@@ -4561,7 +4560,6 @@ source = "git+https://github.com/alpenlabs/strata-common?tag=v0.4.0#fc71f121d899
 dependencies = [
  "hex",
  "k256",
- "serde",
  "signature",
  "ssz",
  "ssz_codegen",
