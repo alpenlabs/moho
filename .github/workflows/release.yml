@@ -77,6 +77,16 @@ jobs:
           gh release upload "$TAG" "${assets[@]}"
           gh release edit "$TAG" --draft=false
 
+  s3:
+    name: Publish Moho Guest to S3
+    needs: github
+    uses: $/.github/workflows/publish-moho-guest-s3.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      tag: ${{ github.ref_name }}
+
   cratesio:
     name: Publish Release to Crates.io
     runs-on: ubuntu-latest
