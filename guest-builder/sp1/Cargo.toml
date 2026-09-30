@@ -1,0 +1,22 @@
+[package]
+edition = "2024"
+name = "moho-sp1-guest-builder"
+publish = false
+version = "0.1.0"
+
+# Standalone so the SP1 toolchain crates stay out of the root workspace and its lockfile.
+[workspace]
+
+[features]
+default = []
+docker-build = []
+
+[build-dependencies]
+serde_json = "1"
+sp1-build = "6.8.1"
+sp1-sdk = { version = "6.8.1", features = ["blocking"] }
+sp1-verifier = "6.8.1"
+strata-predicate = { git = "https://github.com/alpenlabs/strata-common", features = [
+  "serde",
+], tag = "v0.4.0" }
+zkaleido-sp1-groth16-verifier = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.4.0" }
