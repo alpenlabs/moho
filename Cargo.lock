@@ -560,7 +560,7 @@ dependencies = [
  "strata-predicate",
  "thiserror",
  "tree_hash",
- "zkaleido",
+ "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.3.0)",
  "zkaleido-native-adapter",
 ]
 
@@ -605,7 +605,7 @@ dependencies = [
  "thiserror",
  "tree_hash",
  "tree_hash_derive",
- "zkaleido",
+ "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.3.0)",
 ]
 
 [[package]]
@@ -1368,12 +1368,23 @@ checksum = "e13c156562582aa81c60cb29407084cdb54c4164760106ab78e6c5b0858cf64e"
 [[package]]
 name = "zkaleido"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.4.0#675183920c830a30cc512874d5ec039e57d1a188"
+source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.3.0#8205a0543d4e60e7a7d8e73da483ffb83765c4e9"
 dependencies = [
  "bincode",
  "borsh",
  "serde",
  "ssz",
+ "thiserror",
+]
+
+[[package]]
+name = "zkaleido"
+version = "0.1.0"
+source = "git+https://github.com/alpenlabs/zkaleido?tag=v0.4.0#675183920c830a30cc512874d5ec039e57d1a188"
+dependencies = [
+ "bincode",
+ "borsh",
+ "serde",
  "thiserror",
 ]
 
@@ -1386,7 +1397,7 @@ dependencies = [
  "k256",
  "rand_core 0.6.4",
  "serde",
- "zkaleido",
+ "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.4.0)",
 ]
 
 [[package]]
@@ -1400,7 +1411,7 @@ dependencies = [
  "sha2 0.10.9",
  "substrate-bn",
  "thiserror",
- "zkaleido",
+ "zkaleido 0.1.0 (git+https://github.com/alpenlabs/zkaleido?tag=v0.4.0)",
 ]
 
 [[package]]
