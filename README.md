@@ -29,12 +29,9 @@ the `MohoProgram` trait, defining state types and implementation logic, then
 plug it into the proof runtime implementation within the proof program.
 
 The recursive Moho proof itself lives in `crates/recursive-proof`. The SP1 guest
-that runs it is in `guest-builder/sp1`. That directory is its own Cargo
-workspace, so the SP1 crates stay out of the main one. Running `cargo build`
-there with `BUILD_ELF=1` compiles the guest ELF. With `BUILD_VKEY=1`, it also
-derives the guest's verifying key. From it, the build writes the SP1 Groth16
-predicate, which consumers such as the bridge use as the trust anchor for Moho
-proofs, and SP1's program vkey hash. Everything lands in
-`guest-builder/sp1/generated/`. Each release tag attaches `moho.elf`,
-`moho-predicate.txt`, `moho-vkey-hash.txt` and a `SHA256SUMS` file to its GitHub
-release, so downstream repos can use them without building the guest.
+that runs it is in `guest-builder/sp1`. The build produces the guest ELF and the
+SP1 Groth16 predicate, which consumers such as the bridge use as the trust
+anchor for Moho proofs. Each release tag attaches these files to its GitHub
+release, so downstream repos can use them without building the guest. See
+[`guest-builder/sp1/README.md`](guest-builder/sp1/README.md) for the
+prerequisites, how to build the files, and how to check a release.
