@@ -115,6 +115,9 @@ Download the release files into one directory, then check the hashes:
 sha256sum -c SHA256SUMS
 ```
 
+Older macOS releases don't ship `sha256sum`. Use `shasum -a 256 -c SHA256SUMS`
+there instead.
+
 Check that the vkey hash matches the ELF:
 
 ```bash
