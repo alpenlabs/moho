@@ -56,6 +56,14 @@ pub fn attestation(id: u8, state: &MohoState) -> StateRefAttestation {
 
 /// Creates a Merkle inclusion proof for the predicate within the given state.
 pub fn create_predicate_inclusion_proof(state: &MohoState) -> MerkleProofB32 {
+    create_state_field_proof(state, 1)
+}
+
+/// Creates a Merkle inclusion proof for the field at `leaf_index` within the given state.
+///
+/// The leaves are the tree hashes of `inner_state`, `next_predicate`, `export_state` and a
+/// zero padding leaf, in that order.
+pub fn create_state_field_proof(state: &MohoState, leaf_index: usize) -> MerkleProofB32 {
     let leaves = vec![
         <_ as TreeHash>::tree_hash_root::<TreeSha256Hasher>(&state.inner_state).into_inner(),
         <_ as TreeHash>::tree_hash_root::<TreeSha256Hasher>(&state.next_predicate).into_inner(),
@@ -65,7 +73,7 @@ pub fn create_predicate_inclusion_proof(state: &MohoState) -> MerkleProofB32 {
 
     let generic_proof = BinaryMerkleTree::from_leaves::<Sha256NoPrefixHasher>(leaves)
         .expect("valid tree")
-        .gen_proof(1)
+        .gen_proof(leaf_index)
         .expect("proof exists");
     MerkleProofB32::from_generic(&generic_proof)
 }
