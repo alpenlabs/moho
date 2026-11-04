@@ -78,7 +78,8 @@ pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttest
 
     // 3: Handle previous recursive proof and continuity check.
     match input.prev_recursive_proof {
-        // No previous proof: the step becomes the initial recursive attestation.
+        // No previous proof: the step becomes the initial recursive attestation. Its `from`
+        // becomes the genesis, which consumers check against their trusted anchor.
         None => {
             let (from, to) = step_att.into_parts();
             Ok(RecursiveMohoAttestation::new(from, to))

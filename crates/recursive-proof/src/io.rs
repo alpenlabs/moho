@@ -72,6 +72,10 @@ impl MohoRecursiveInput {
 /// Contains the attestation (genesis-to-proven chain) and the predicate key used to verify
 /// the recursive proof itself. The predicate is included because it cannot be hardcoded in the
 /// circuit — verifiers need it to confirm the correct predicate was used.
+///
+/// The genesis is not hardcoded either, so moho can serve any deployment. A valid proof only
+/// shows a valid chain from the attestation's genesis. Verifiers must check both the predicate
+/// and [`RecursiveMohoAttestation::genesis`] against trusted values.
 #[derive(Debug, Clone, Encode, Decode)]
 pub struct MohoRecursiveOutput {
     /// The recursive attestation proven by this proof.
