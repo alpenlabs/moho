@@ -16,7 +16,7 @@ jobs:
       contents: write # create the release and upload assets via the GitHub Releases API
     env:
       # Keep in step with the SP1 crates in guest-builder/sp1/Cargo.lock.
-      SP1_VERSION: v6.8.1
+      SP1_VERSION: v6.10.0
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
