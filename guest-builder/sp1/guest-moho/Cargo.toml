@@ -7,11 +7,14 @@ version = "0.1.0"
 
 [dependencies]
 moho-recursive-proof = { path = "../../../crates/recursive-proof" }
-zkaleido-sp1-guest-env = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.4.0" }
+zkaleido-sp1-guest-env = { git = "https://github.com/alpenlabs/zkaleido", tag = "v0.5.0" }
 
 [patch.crates-io]
-secp256k1 = { git = "https://github.com/sp1-patches/rust-secp256k1", tag = "patch-0.29.1-sp1-6.2.0" }
-secp256k1-sys = { git = "https://github.com/sp1-patches/rust-secp256k1", tag = "patch-0.29.1-sp1-6.2.0" }
-k256 = { git = "https://github.com/sp1-patches/elliptic-curves", tag = "patch-k256-13.4-sp1-6.2.0" }
-substrate-bn = { git = "https://github.com/sp1-patches/bn", tag = "patch-0.6.0-sp1-6.2.0-substrate-bn" }
-sha2 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", package = "sha2", tag = "patch-sha2-0.10.9-sp1-6.2.0" }
+secp256k1 = { git = "https://github.com/sp1-patches/rust-secp256k1", tag = "patch-0.29.1-sp1-6.10.0" }
+secp256k1-sys = { git = "https://github.com/sp1-patches/rust-secp256k1", tag = "patch-0.29.1-sp1-6.10.0" }
+# TODO: strata-predicate now uses k256 0.14, and sp1-patches only ships a
+# patch for k256 0.13.4. Until a 0.14 patch exists, Schnorr verification in
+# the guest runs without the SP1 secp256k1 precompile. Add the patch back once
+# sp1-patches publishes one.
+substrate-bn = { git = "https://github.com/sp1-patches/bn", tag = "patch-0.6.0-sp1-6.10.0-substrate-bn" }
+sha2 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", package = "sha2", tag = "patch-sha2-0.10.9-sp1-6.10.0" }

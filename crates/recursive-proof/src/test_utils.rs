@@ -1,5 +1,8 @@
 //! Test utilities for constructing Moho proofs, states, and transitions.
-use k256::schnorr::{SigningKey, signature::Signer};
+use k256::{
+    elliptic_curve::Generate,
+    schnorr::{SigningKey, signature::Signer},
+};
 use moho_types::{
     MohoState, RecursiveMohoAttestation, RecursiveMohoProof, StateRefAttestation, StateReference,
     StepMohoAttestation, StepMohoProof,
@@ -24,7 +27,7 @@ pub struct SchnorrPredicate {
 impl SchnorrPredicate {
     /// Creates a new random Schnorr predicate.
     pub fn new_random() -> Self {
-        let signing_key = SigningKey::random(&mut rand_core::OsRng);
+        let signing_key = SigningKey::generate();
         let predicate = PredicateKey::try_new(
             PredicateTypeId::Bip340Schnorr,
             signing_key.verifying_key().to_bytes().to_vec(),

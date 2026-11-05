@@ -12,11 +12,11 @@ root workspace and its lockfile. Run every command below from
 
 - **Rust.** The toolchain pinned in the root `rust-toolchain.toml`.
 - **SP1 toolchain.** Install it with `sp1up` and pin it to the same version as
-  the SP1 crates in `Cargo.lock` (currently `v6.8.1`):
+  the SP1 crates in `Cargo.lock` (currently `v6.10.0`):
 
   ```bash
   curl -fsSL https://sp1.succinct.xyz | bash
-  sp1up -v v6.8.1
+  sp1up -v v6.10.0
   cargo prove --version
   ```
 
