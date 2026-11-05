@@ -37,10 +37,15 @@ pub struct ChainError {
 /// Created by recursively chaining [`StepMohoAttestation`]s: each call to [`chain`](Self::chain)
 /// verifies continuity between the current proven state and the step's starting state, then
 /// advances the proven state to the step's target.
+///
+/// Moho does not pin the genesis. A recursive proof whose chain starts with no previous proof
+/// takes its genesis from that first step, so any valid step can start a chain. The attestation
+/// only shows that `proven` is reachable from [`genesis`](Self::genesis). Consumers must compare
+/// `genesis` against a trusted anchor before relying on `proven`.
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RecursiveMohoAttestation {
-    /// The fixed starting point of the attestation chain.
+    /// The starting point of the attestation chain, taken from the first step.
     genesis: StateRefAttestation,
 
     /// The most recent state proven as reachable from genesis through a sequence of valid steps.
@@ -52,6 +57,9 @@ impl RecursiveMohoAttestation {
         Self { genesis, proven }
     }
 
+    /// Returns the starting point of the chain.
+    ///
+    /// This is not checked against any anchor. Callers must compare it to their trusted genesis.
     pub fn genesis(&self) -> &StateRefAttestation {
         &self.genesis
     }

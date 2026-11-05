@@ -25,6 +25,13 @@ pub enum MohoError {
     /// A Merkle inclusion proof is invalid.
     #[error("invalid merkle proof")]
     InvalidMerkleProof,
+
+    /// The step predicate's inclusion proof is not for the `next_predicate` leaf.
+    #[error("step predicate proof is for leaf {index}, not next_predicate")]
+    WrongPredicateLeaf {
+        /// Leaf index the proof claims.
+        index: u64,
+    },
 }
 
 impl From<ChainError> for MohoError {

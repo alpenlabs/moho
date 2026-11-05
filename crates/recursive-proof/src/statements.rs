@@ -12,6 +12,15 @@ use crate::{
     errors::{InvalidRecursiveProofError, InvalidStepProofError},
 };
 
+/// Leaf index of `next_predicate` in the [`MohoState`](moho_types::MohoState) tree.
+///
+/// The tree hash of `MohoState` merkleizes its three fields (`inner_state`, `next_predicate`,
+/// `export_state`) padded to four leaves, so `next_predicate` is leaf 1 at depth 2.
+const NEXT_PREDICATE_LEAF_INDEX: u64 = 1;
+
+/// Depth of the [`MohoState`](moho_types::MohoState) field tree.
+const MOHO_STATE_TREE_DEPTH: usize = 2;
+
 /// Reads an SSZ-encoded [`MohoRecursiveInput`] from the zkVM, verifies and chains the proof,
 /// and commits the resulting [`MohoRecursiveOutput`] back to the zkVM.
 ///
@@ -31,12 +40,23 @@ pub fn process_recursive_moho_proof(zkvm: &impl ZkVmEnv) {
 /// Verifies the step and recursive proofs, then chains them into a single
 /// [`RecursiveMohoAttestation`].
 ///
-/// 1. Verifies that the step predicate key is included in the starting state's Merkle commitment.
+/// 1. Verifies that the step predicate key is the `next_predicate` field of the starting state's
+///    Merkle commitment.
 /// 2. Verifies the step proof against the step predicate.
 /// 3. If a previous recursive proof exists, verifies it and chains both attestations — checking
 ///    that the recursive proof's proven state matches the step proof's starting state.
 pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttestation, MohoError> {
-    // 1: Ensure the step proof's predicate key is part of the starting state's Merkle root.
+    // 1: Ensure the step proof's predicate key is the starting state's `next_predicate`.
+    //
+    // The Merkle check binds the proof to the index it claims and to the tree depth, but a
+    // valid proof for another field of the state would pass it too. So we pin the index.
+    let merkle_proof = &input.step_predicate_merkle_proof;
+    if merkle_proof.index() != NEXT_PREDICATE_LEAF_INDEX {
+        return Err(MohoError::WrongPredicateLeaf {
+            index: merkle_proof.index(),
+        });
+    }
+
     let next_predicate_hash =
         <_ as TreeHash>::tree_hash_root::<Sha256Hasher>(&input.step_predicate).into_inner();
     let expected_root = input
@@ -44,10 +64,11 @@ pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttest
         .attestation()
         .from()
         .commitment();
-    if !input
-        .step_predicate_merkle_proof
-        .verify_with_root::<Sha256NoPrefixHasher>(expected_root.inner(), &next_predicate_hash)
-    {
+    if !merkle_proof.verify_with_root_at_depth::<Sha256NoPrefixHasher>(
+        expected_root.inner(),
+        MOHO_STATE_TREE_DEPTH,
+        &next_predicate_hash,
+    ) {
         return Err(MohoError::InvalidMerkleProof);
     }
 
@@ -57,7 +78,8 @@ pub fn verify_and_chain(input: MohoRecursiveInput) -> Result<RecursiveMohoAttest
 
     // 3: Handle previous recursive proof and continuity check.
     match input.prev_recursive_proof {
-        // No previous proof: the step becomes the initial recursive attestation.
+        // No previous proof: the step becomes the initial recursive attestation. Its `from`
+        // becomes the genesis, which consumers check against their trusted anchor.
         None => {
             let (from, to) = step_att.into_parts();
             Ok(RecursiveMohoAttestation::new(from, to))
@@ -114,6 +136,9 @@ fn verify_recursive_proof(
 
 #[cfg(test)]
 mod tests {
+    use moho_types::{ExportState, InnerStateCommitment, MohoState};
+    use strata_merkle::MerkleProofB32;
+
     use super::*;
     use crate::test_utils::*;
 
@@ -174,6 +199,79 @@ mod tests {
         let result = verify_and_chain(corrected).unwrap();
         assert_eq!(*result.genesis(), *expected.from());
         assert_eq!(*result.proven(), *expected.to());
+    }
+
+    /// Builds an input whose step is signed by `attacker` and whose starting state commits
+    /// to `attacker`'s key in `inner_state`, while `next_predicate` stays `honest`.
+    fn input_with_predicate_in_inner_state(
+        moho: &SchnorrPredicate,
+        honest: &SchnorrPredicate,
+        attacker: &SchnorrPredicate,
+    ) -> (MohoRecursiveInput, MohoState) {
+        let attacker_root =
+            <_ as TreeHash>::tree_hash_root::<Sha256Hasher>(&attacker.predicate).into_inner();
+        let from_state = MohoState::new(
+            InnerStateCommitment::from(attacker_root),
+            honest.predicate.clone(),
+            ExportState::new(vec![]).unwrap(),
+        );
+        let to_state = create_state(2, attacker.predicate.clone());
+        let (step_proof, _) =
+            step_proof_with_merkle(1, 2, &from_state, &to_state, &attacker.signing_key);
+
+        let input = MohoRecursiveInput {
+            moho_predicate: moho.predicate.clone(),
+            prev_recursive_proof: None,
+            incremental_step_proof: step_proof,
+            step_predicate: attacker.predicate.clone(),
+            step_predicate_merkle_proof: create_state_field_proof(&from_state, 0),
+        };
+        (input, from_state)
+    }
+
+    #[test]
+    fn test_verify_and_chain_rejects_predicate_at_other_leaf() {
+        let moho = SchnorrPredicate::new_random();
+        let honest = SchnorrPredicate::new_random();
+        let attacker = SchnorrPredicate::new_random();
+        let (input, from_state) = input_with_predicate_in_inner_state(&moho, &honest, &attacker);
+
+        // The leaf-0 proof does reach the starting state's root.
+        let attacker_root =
+            <_ as TreeHash>::tree_hash_root::<Sha256Hasher>(&attacker.predicate).into_inner();
+        assert!(
+            input
+                .step_predicate_merkle_proof
+                .verify_with_root::<Sha256NoPrefixHasher>(
+                    from_state.compute_commitment().inner(),
+                    &attacker_root,
+                )
+        );
+
+        let result = verify_and_chain(input);
+        assert!(matches!(
+            result,
+            Err(MohoError::WrongPredicateLeaf { index: 0 })
+        ));
+    }
+
+    #[test]
+    fn test_verify_and_chain_rejects_wrong_depth() {
+        let moho = SchnorrPredicate::new_random();
+        let step = SchnorrPredicate::new_random();
+
+        for depth in [0, 1, 3] {
+            let mut input = create_input(1, 2, None, &moho, &step);
+            let mut cohashes = input.step_predicate_merkle_proof.cohashes();
+            cohashes.resize(depth, [0u8; 32]);
+            input.step_predicate_merkle_proof = MerkleProofB32::from_cohashes(cohashes, 1);
+
+            let result = verify_and_chain(input);
+            assert!(
+                matches!(result, Err(MohoError::InvalidMerkleProof)),
+                "depth {depth} should be rejected"
+            );
+        }
     }
 
     #[test]
