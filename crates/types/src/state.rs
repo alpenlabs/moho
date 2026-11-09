@@ -106,14 +106,13 @@ impl ExportState {
 
     /// Checks that no two containers share an ID.
     ///
-    /// [`Self::new`] already checks this. Call it on states built another way, such as by
-    /// SSZ decoding.
+    /// [`Self::new`] already checks this. SSZ decoding does not, because the generated `Decode`
+    /// impl cannot run custom checks. Call this on states decoded with `from_ssz_bytes`. The serde
+    /// impls and the runtime already do.
     ///
     /// # Errors
     ///
     /// Returns `ExportStateError::DuplicateContainerId` with the first repeated ID.
-    // TODO: the SSZ-generated `Decode` impl cannot run this check. If ssz-gen gains a
-    // post-decode validation hook, move the check there so callers can't forget it.
     pub fn validate(&self) -> Result<(), ExportStateError> {
         let mut seen = [false; 256];
         for container in self.containers.iter() {
