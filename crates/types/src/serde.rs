@@ -313,7 +313,10 @@ mod tests {
     use strata_predicate::PredicateKey;
 
     use super::*;
-    use crate::relation::{StateRefAttestation, StepMohoAttestation};
+    use crate::{
+        relation::{StateRefAttestation, StepMohoAttestation},
+        test_utils::export_state_strategy,
+    };
 
     type Hash32 = [u8; 32];
 
@@ -334,23 +337,6 @@ mod tests {
                 condition: condition.try_into().unwrap(),
             }
         })
-    }
-
-    fn export_container_strategy() -> impl Strategy<Value = ExportContainer> {
-        (any::<u8>(), prop::collection::vec(any::<Hash32>(), 0..10)).prop_map(
-            |(container_id, entries)| {
-                let mut container = ExportContainer::new(container_id);
-                for entry in entries {
-                    container.add_entry(entry).expect("failed to add entry");
-                }
-                container
-            },
-        )
-    }
-
-    fn export_state_strategy() -> impl Strategy<Value = ExportState> {
-        prop::collection::vec(export_container_strategy(), 0..5)
-            .prop_map(|containers| ExportState::new(containers).unwrap())
     }
 
     fn moho_state_strategy() -> impl Strategy<Value = MohoState> {
