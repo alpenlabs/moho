@@ -138,13 +138,9 @@ impl ExportState {
     ///
     /// # Errors
     ///
-    /// Returns `ExportStateError::AddEntryFailed` if the MMR capacity is exceeded.
-    ///
-    /// # Panics
-    ///
-    /// This method will never panic in practice because `MAX_EXPORT_CONTAINERS = 256` exactly
-    /// matches the full range of `u8` container IDs (0-255). Since each container_id is unique,
-    /// we can never exceed the container list capacity.
+    /// Returns `ExportStateError::AddEntryFailed` if the MMR capacity is exceeded, or
+    /// `ExportStateError::SszError` if a new container is needed but the list is full. The list
+    /// can only be full of other IDs if it has repeated IDs, which [`Self::new`] rejects.
     pub fn add_entry(&mut self, container_id: u8, entry: Hash32) -> Result<(), ExportStateError> {
         if let Some(container) = self
             .containers
@@ -155,11 +151,7 @@ impl ExportState {
         } else {
             let mut new_container = ExportContainer::new(container_id);
             new_container.add_entry(entry)?;
-            // SAFETY: MAX_EXPORT_CONTAINERS = 256 matches the full range of u8 (0-255),
-            // so we can never exceed capacity with unique container_ids
-            self.containers
-                .push(new_container)
-                .expect("container capacity should never be exceeded with u8 container_id");
+            self.containers.push(new_container)?;
         }
         Ok(())
     }
@@ -363,6 +355,19 @@ mod tests {
                 decoded.validate(),
                 Err(ExportStateError::DuplicateContainerId(7))
             );
+        }
+
+        #[test]
+        fn test_add_entry_errors_when_list_is_full() {
+            let containers = vec![ExportContainer::new(0); 256];
+            let mut state = ExportState {
+                containers: VariableList::new(containers).unwrap(),
+            };
+
+            assert!(matches!(
+                state.add_entry(1, [0x11; 32]),
+                Err(ExportStateError::SszError(_))
+            ));
         }
 
         #[test]
