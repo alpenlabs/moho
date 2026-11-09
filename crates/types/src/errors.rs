@@ -11,10 +11,8 @@ pub enum ExportStateError {
     #[error("Failed to add entry to container: {0}")]
     AddEntryFailed(#[from] MerkleError),
 
-    /// failed
-    // TODO: this message is wrong for `ExportState::new`, which also returns this variant when
-    // there are more than `MAX_EXPORT_CONTAINERS` containers.
-    #[error("Failed to add entry to container: {0}")]
+    /// The container list would go over `MAX_EXPORT_CONTAINERS`.
+    #[error("Too many export containers: {0}")]
     SszError(#[from] SszError),
 
     /// Two containers share the same ID.
