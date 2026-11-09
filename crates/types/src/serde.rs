@@ -17,7 +17,8 @@
 //!   emitted as `0x`-prefixed lowercase hex strings; `PredicateKey` uses its own serde
 //!   representation; the embedded `Mmr64B32` is expanded to `{ entries, roots }`.
 //! - **Binary**: raw SSZ wire bytes (`as_ssz_bytes`). This preserves SSZ's canonicality and
-//!   field-validation guarantees on round-trip.
+//!   field-validation guarantees on round-trip. [`MohoState`] and [`ExportState`] are also checked
+//!   with their `validate` methods, since SSZ decoding cannot reject repeated container IDs.
 //!
 //! Implemented via private proxy structs that mirror the generated SSZ shape with serde-friendly
 //! field types; the manual `Serialize`/`Deserialize` impls branch on `is_human_readable()` and
@@ -212,9 +213,7 @@ mod hr {
                 .into_iter()
                 .map(ExportContainer::try_from)
                 .collect();
-            let containers = VariableList::new(containers?)
-                .map_err(|e| format!("export state containers: {e:?}"))?;
-            Ok(ExportState { containers })
+            ExportState::new(containers?).map_err(|e| format!("export state: {e}"))
         }
     }
 
@@ -279,6 +278,13 @@ fn deserialize_ssz_bytes<'de, T: Decode, D: Deserializer<'de>>(d: D) -> Result<T
 
 macro_rules! impl_container_serde {
     ($name:ty, $proxy:ty) => {
+        impl_container_serde!(
+            $name,
+            $proxy,
+            |_: &$name| Ok::<_, core::convert::Infallible>(())
+        );
+    };
+    ($name:ty, $proxy:ty, $validate:expr) => {
         impl Serialize for $name {
             fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
                 if s.is_human_readable() {
@@ -295,15 +301,17 @@ macro_rules! impl_container_serde {
                     let proxy = <$proxy>::deserialize(d)?;
                     <$name>::try_from(proxy).map_err(serde::de::Error::custom)
                 } else {
-                    deserialize_ssz_bytes(d)
+                    let value: $name = deserialize_ssz_bytes(d)?;
+                    $validate(&value).map_err(serde::de::Error::custom)?;
+                    Ok(value)
                 }
             }
         }
     };
 }
 
-impl_container_serde!(MohoState, hr::MohoStateProxy);
-impl_container_serde!(ExportState, hr::ExportStateProxy);
+impl_container_serde!(MohoState, hr::MohoStateProxy, MohoState::validate);
+impl_container_serde!(ExportState, hr::ExportStateProxy, ExportState::validate);
 impl_container_serde!(ExportContainer, hr::ExportContainerProxy);
 
 #[cfg(test)]
@@ -442,6 +450,49 @@ mod tests {
         let bin = bincode::serialize(&export).unwrap();
         let bin_back: ExportState = bincode::deserialize(&bin).unwrap();
         assert_eq!(export.as_ssz_bytes(), bin_back.as_ssz_bytes());
+    }
+
+    fn duplicate_export_state() -> ExportState {
+        ExportState {
+            containers: vec![ExportContainer::new(5), ExportContainer::new(5)]
+                .try_into()
+                .unwrap(),
+        }
+    }
+
+    #[test]
+    fn export_state_json_rejects_duplicate_container_ids() {
+        let json = serde_json::to_value(duplicate_export_state()).unwrap();
+
+        let err = serde_json::from_value::<ExportState>(json).unwrap_err();
+        assert!(
+            err.to_string().contains("Duplicate export container ID: 5"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn export_state_bincode_rejects_duplicate_container_ids() {
+        let bytes = bincode::serialize(&duplicate_export_state()).unwrap();
+
+        let err = bincode::deserialize::<ExportState>(&bytes).unwrap_err();
+        assert!(
+            err.to_string().contains("Duplicate export container ID: 5"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn moho_state_bincode_rejects_duplicate_container_ids() {
+        let inner = InnerStateCommitment::from([0; 32]);
+        let state = MohoState::new(inner, always_accept(), duplicate_export_state());
+        let bytes = bincode::serialize(&state).unwrap();
+
+        let err = bincode::deserialize::<MohoState>(&bytes).unwrap_err();
+        assert!(
+            err.to_string().contains("Duplicate export container ID: 5"),
+            "unexpected error: {err}"
+        );
     }
 
     #[test]
