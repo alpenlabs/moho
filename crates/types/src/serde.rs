@@ -276,15 +276,10 @@ fn deserialize_ssz_bytes<'de, T: Decode, D: Deserializer<'de>>(d: D) -> Result<T
     T::from_ssz_bytes(&bytes).map_err(|e| serde::de::Error::custom(format!("ssz decode: {e:?}")))
 }
 
+/// `$validate` runs only on the binary path. The human-readable path validates through the
+/// proxy's `TryFrom` impl.
 macro_rules! impl_container_serde {
-    ($name:ty, $proxy:ty) => {
-        impl_container_serde!(
-            $name,
-            $proxy,
-            |_: &$name| Ok::<_, core::convert::Infallible>(())
-        );
-    };
-    ($name:ty, $proxy:ty, $validate:expr) => {
+    ($name:ty, $proxy:ty $(, $validate:path)?) => {
         impl Serialize for $name {
             fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
                 if s.is_human_readable() {
@@ -302,7 +297,7 @@ macro_rules! impl_container_serde {
                     <$name>::try_from(proxy).map_err(serde::de::Error::custom)
                 } else {
                     let value: $name = deserialize_ssz_bytes(d)?;
-                    $validate(&value).map_err(serde::de::Error::custom)?;
+                    $( $validate(&value).map_err(serde::de::Error::custom)?; )?
                     Ok(value)
                 }
             }
