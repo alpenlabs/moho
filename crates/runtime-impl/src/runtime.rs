@@ -105,7 +105,10 @@ fn deserialize_ssz<T: Decode>(buf: &[u8]) -> Result<T, ssz::DecodeError> {
 
 #[cfg(test)]
 mod tests {
-    use moho_types::{ExportContainer, ExportState, InnerStateCommitment, StateReference};
+    use moho_types::{
+        ExportContainer, ExportState, InnerStateCommitment, StateReference,
+        test_utils::export_state_unchecked,
+    };
     use ssz::Encode;
     use strata_predicate::PredicateKey;
 
@@ -152,20 +155,10 @@ mod tests {
 
         fn compute_next_export_state(prev: ExportState, output: &(u64, u64)) -> ExportState {
             if output.1 == DUPLICATE_EXPORT {
-                duplicate_export_state()
+                export_state_unchecked([3, 3])
             } else {
                 prev
             }
-        }
-    }
-
-    /// `ExportState::new` rejects repeated IDs, so set the field directly, as SSZ decoding
-    /// would.
-    fn duplicate_export_state() -> ExportState {
-        ExportState {
-            containers: vec![ExportContainer::new(3), ExportContainer::new(3)]
-                .try_into()
-                .unwrap(),
         }
     }
 
@@ -193,7 +186,10 @@ mod tests {
     #[test]
     #[should_panic(expected = "runtime: invalid moho pre-state")]
     fn rejects_duplicate_ids_in_pre_state() {
-        compute_moho_attestation::<TestProgram>(runtime_input(duplicate_export_state(), 0), &());
+        compute_moho_attestation::<TestProgram>(
+            runtime_input(export_state_unchecked([3, 3]), 0),
+            &(),
+        );
     }
 
     #[test]

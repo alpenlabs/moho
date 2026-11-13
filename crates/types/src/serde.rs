@@ -318,7 +318,7 @@ mod tests {
     use super::*;
     use crate::{
         relation::{StateRefAttestation, StepMohoAttestation},
-        test_utils::export_state_strategy,
+        test_utils::{export_state_strategy, export_state_unchecked},
     };
 
     type Hash32 = [u8; 32];
@@ -447,17 +447,9 @@ mod tests {
         assert_eq!(export.as_ssz_bytes(), bin_back.as_ssz_bytes());
     }
 
-    fn duplicate_export_state() -> ExportState {
-        ExportState {
-            containers: vec![ExportContainer::new(5), ExportContainer::new(5)]
-                .try_into()
-                .unwrap(),
-        }
-    }
-
     #[test]
     fn export_state_json_rejects_duplicate_container_ids() {
-        let json = serde_json::to_value(duplicate_export_state()).unwrap();
+        let json = serde_json::to_value(export_state_unchecked([5, 5])).unwrap();
 
         let err = serde_json::from_value::<ExportState>(json).unwrap_err();
         assert!(
@@ -468,7 +460,7 @@ mod tests {
 
     #[test]
     fn export_state_bincode_rejects_duplicate_container_ids() {
-        let bytes = bincode::serialize(&duplicate_export_state()).unwrap();
+        let bytes = bincode::serialize(&export_state_unchecked([5, 5])).unwrap();
 
         let err = bincode::deserialize::<ExportState>(&bytes).unwrap_err();
         assert!(
@@ -480,7 +472,7 @@ mod tests {
     #[test]
     fn moho_state_bincode_rejects_duplicate_container_ids() {
         let inner = InnerStateCommitment::from([0; 32]);
-        let state = MohoState::new(inner, always_accept(), duplicate_export_state());
+        let state = MohoState::new(inner, always_accept(), export_state_unchecked([5, 5]));
         let bytes = bincode::serialize(&state).unwrap();
 
         let err = bincode::deserialize::<MohoState>(&bytes).unwrap_err();

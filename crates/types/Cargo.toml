@@ -9,6 +9,7 @@ strata-predicate.workspace = true
 
 const-hex = { workspace = true, optional = true }
 hex.workspace = true
+proptest = { version = "1.11", optional = true }
 serde = { workspace = true, optional = true }
 sha2.workspace = true
 ssz.workspace = true
@@ -27,6 +28,7 @@ serde = [
   "ssz_types/serde",
   "strata-predicate/serde",
 ]
+test-utils = ["dep:proptest"]
 
 [build-dependencies]
 ssz_codegen.workspace = true

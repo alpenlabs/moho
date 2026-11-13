@@ -205,7 +205,9 @@ mod tests {
     use tree_hash::Sha256Hasher;
 
     use super::*;
-    use crate::test_utils::{export_container_strategy, export_state_strategy};
+    use crate::test_utils::{
+        export_container_strategy, export_state_strategy, export_state_unchecked,
+    };
 
     /// Helper function to create an always_accept predicate
     fn always_accept() -> PredicateKey {
@@ -344,10 +346,7 @@ mod tests {
 
         #[test]
         fn test_validate_rejects_duplicates_from_ssz_decode() {
-            let containers = vec![ExportContainer::new(7), ExportContainer::new(7)];
-            let state = ExportState {
-                containers: VariableList::new(containers).unwrap(),
-            };
+            let state = export_state_unchecked([7, 7]);
 
             let decoded = ExportState::from_ssz_bytes(&state.as_ssz_bytes()).unwrap();
             assert_eq!(
@@ -358,10 +357,7 @@ mod tests {
 
         #[test]
         fn test_add_entry_errors_when_list_is_full() {
-            let containers = vec![ExportContainer::new(0); 256];
-            let mut state = ExportState {
-                containers: VariableList::new(containers).unwrap(),
-            };
+            let mut state = export_state_unchecked([0; 256]);
 
             assert!(matches!(
                 state.add_entry(1, [0x11; 32]),
@@ -525,13 +521,7 @@ mod tests {
 
         #[test]
         fn test_validate_checks_export_state() {
-            let export = ExportState {
-                containers: VariableList::new(vec![
-                    ExportContainer::new(4),
-                    ExportContainer::new(4),
-                ])
-                .unwrap(),
-            };
+            let export = export_state_unchecked([4, 4]);
             let state =
                 MohoState::new(InnerStateCommitment::from([0; 32]), always_accept(), export);
             assert_eq!(

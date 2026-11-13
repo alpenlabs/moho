@@ -1,19 +1,31 @@
-//! Proptest strategies shared by the tests in this crate.
+//! Test helpers shared by the tests in this crate and in dependent crates.
 
 use proptest::prelude::*;
+use ssz_types::VariableList;
 
 use crate::{ExportContainer, ExportState};
 
 type Hash32 = [u8; 32];
 
+/// Builds an export state with one empty container per ID, in the given order.
+///
+/// It skips the checks in `ExportState::new`, so IDs may repeat. Use it to build states that
+/// only SSZ decoding could otherwise produce.
+pub fn export_state_unchecked(ids: impl IntoIterator<Item = u8>) -> ExportState {
+    let containers = ids.into_iter().map(ExportContainer::new).collect();
+    ExportState {
+        containers: VariableList::new(containers).expect("too many containers"),
+    }
+}
+
 /// Generates a container with an arbitrary ID and up to 10 entries.
-pub(crate) fn export_container_strategy() -> impl Strategy<Value = ExportContainer> {
+pub fn export_container_strategy() -> impl Strategy<Value = ExportContainer> {
     any::<u8>().prop_flat_map(export_container_with_id)
 }
 
 /// Generates an export state with up to 5 containers. IDs are unique, as
 /// `ExportState::new` requires, and come in arbitrary order.
-pub(crate) fn export_state_strategy() -> impl Strategy<Value = ExportState> {
+pub fn export_state_strategy() -> impl Strategy<Value = ExportState> {
     prop::sample::subsequence((0..=u8::MAX).collect::<Vec<_>>(), 0..5)
         .prop_shuffle()
         .prop_flat_map(|ids| {
