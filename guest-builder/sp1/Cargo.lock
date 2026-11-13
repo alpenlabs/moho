@@ -4821,7 +4821,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "strata-predicate"
 version = "0.1.0"
-source = "git+https://github.com/alpenlabs/strata-common?tag=v0.5.0#24b3319fe331d19032923f22b9ad98c8094056e0"
+source = "git+https://github.com/alpenlabs/strata-common?tag=v0.5.1#b37657da6aa34586ba10c8d783b271308d3293f3"
 dependencies = [
  "hex",
  "k256 0.14.0",
