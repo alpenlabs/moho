@@ -11,7 +11,11 @@ pub enum ExportStateError {
     #[error("Failed to add entry to container: {0}")]
     AddEntryFailed(#[from] MerkleError),
 
-    /// failed
-    #[error("Failed to add entry to container: {0}")]
+    /// The container list would go over `MAX_EXPORT_CONTAINERS`.
+    #[error("Too many export containers: {0}")]
     SszError(#[from] SszError),
+
+    /// Two containers share the same ID.
+    #[error("Duplicate export container ID: {0}")]
+    DuplicateContainerId(u8),
 }

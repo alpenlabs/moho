@@ -10,4 +10,5 @@ ssz.workspace = true
 ssz_derive.workspace = true
 
 [dev-dependencies]
+moho-types = { workspace = true, features = ["test-utils"] }
 strata-predicate.workspace = true

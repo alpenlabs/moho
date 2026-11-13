@@ -46,6 +46,15 @@ impl MohoState {
         self.export_state
     }
 
+    /// Checks the rules that SSZ decoding cannot enforce. See [`ExportState::validate`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the export state is invalid.
+    pub fn validate(&self) -> Result<(), ExportStateError> {
+        self.export_state.validate()
+    }
+
     /// Computes the commitment to this Moho state via tree hash.
     pub fn compute_commitment(&self) -> MohoStateCommitment {
         MohoStateCommitment::from(<_ as TreeHash>::tree_hash_root::<Sha256Hasher>(self))
@@ -82,9 +91,38 @@ impl fmt::Display for MohoState {
 // Compatibility constructors and accessors for SSZ-generated types
 impl ExportState {
     /// Creates a new export state with the given containers.
+    ///
+    /// # Errors
+    ///
+    /// Returns `ExportStateError::SszError` if there are more than `MAX_EXPORT_CONTAINERS`
+    /// containers, or `ExportStateError::DuplicateContainerId` if two containers share an ID.
     pub fn new(containers: Vec<ExportContainer>) -> Result<Self, ExportStateError> {
-        let containers = VariableList::new(containers)?;
-        Ok(Self { containers })
+        let state = Self {
+            containers: VariableList::new(containers)?,
+        };
+        state.validate()?;
+        Ok(state)
+    }
+
+    /// Checks that no two containers share an ID.
+    ///
+    /// [`Self::new`] already checks this. SSZ decoding does not, because the generated `Decode`
+    /// impl cannot run custom checks. Call this on states decoded with `from_ssz_bytes`. The serde
+    /// impls and the runtime already do.
+    ///
+    /// # Errors
+    ///
+    /// Returns `ExportStateError::DuplicateContainerId` with the first repeated ID.
+    pub fn validate(&self) -> Result<(), ExportStateError> {
+        let mut seen = [false; 256];
+        for container in self.containers.iter() {
+            let id = container.container_id;
+            if seen[id as usize] {
+                return Err(ExportStateError::DuplicateContainerId(id));
+            }
+            seen[id as usize] = true;
+        }
+        Ok(())
     }
 
     /// Returns a slice of all containers.
@@ -99,13 +137,9 @@ impl ExportState {
     ///
     /// # Errors
     ///
-    /// Returns `ExportStateError::AddEntryFailed` if the MMR capacity is exceeded.
-    ///
-    /// # Panics
-    ///
-    /// This method will never panic in practice because `MAX_EXPORT_CONTAINERS = 256` exactly
-    /// matches the full range of `u8` container IDs (0-255). Since each container_id is unique,
-    /// we can never exceed the container list capacity.
+    /// Returns `ExportStateError::AddEntryFailed` if the MMR capacity is exceeded, or
+    /// `ExportStateError::SszError` if a new container is needed but the list is full. The list
+    /// can only be full of other IDs if it has repeated IDs, which [`Self::new`] rejects.
     pub fn add_entry(&mut self, container_id: u8, entry: Hash32) -> Result<(), ExportStateError> {
         if let Some(container) = self
             .containers
@@ -116,11 +150,7 @@ impl ExportState {
         } else {
             let mut new_container = ExportContainer::new(container_id);
             new_container.add_entry(entry)?;
-            // SAFETY: MAX_EXPORT_CONTAINERS = 256 matches the full range of u8 (0-255),
-            // so we can never exceed capacity with unique container_ids
-            self.containers
-                .push(new_container)
-                .expect("container capacity should never be exceeded with u8 container_id");
+            self.containers.push(new_container)?;
         }
         Ok(())
     }
@@ -175,6 +205,9 @@ mod tests {
     use tree_hash::Sha256Hasher;
 
     use super::*;
+    use crate::test_utils::{
+        export_container_strategy, export_state_strategy, export_state_unchecked,
+    };
 
     /// Helper function to create an always_accept predicate
     fn always_accept() -> PredicateKey {
@@ -191,23 +224,6 @@ mod tests {
                 condition: condition.try_into().unwrap(),
             }
         })
-    }
-
-    fn export_container_strategy() -> impl Strategy<Value = ExportContainer> {
-        (any::<u8>(), prop::collection::vec(any::<Hash32>(), 0..10)).prop_map(
-            |(container_id, entries)| {
-                let mut container = ExportContainer::new(container_id);
-                for entry in entries {
-                    container.add_entry(entry).expect("failed to add entry");
-                }
-                container
-            },
-        )
-    }
-
-    fn export_state_strategy() -> impl Strategy<Value = ExportState> {
-        prop::collection::vec(export_container_strategy(), 0..5)
-            .prop_map(|containers| ExportState::new(containers).unwrap())
     }
 
     fn moho_state_strategy() -> impl Strategy<Value = MohoState> {
@@ -304,6 +320,49 @@ mod tests {
             let containers = state.containers();
             // MMR should have changed after adding entry
             assert_ne!(containers[0].entries_mmr(), &initial_mmr);
+        }
+
+        #[test]
+        fn test_new_rejects_duplicate_container_ids() {
+            let containers = vec![
+                ExportContainer::new(1),
+                ExportContainer::new(2),
+                ExportContainer::new(1),
+            ];
+            assert_eq!(
+                ExportState::new(containers),
+                Err(ExportStateError::DuplicateContainerId(1))
+            );
+        }
+
+        #[test]
+        fn test_new_rejects_too_many_containers() {
+            let containers = (0..=256).map(|i| ExportContainer::new(i as u8)).collect();
+            assert!(matches!(
+                ExportState::new(containers),
+                Err(ExportStateError::SszError(_))
+            ));
+        }
+
+        #[test]
+        fn test_validate_rejects_duplicates_from_ssz_decode() {
+            let state = export_state_unchecked([7, 7]);
+
+            let decoded = ExportState::from_ssz_bytes(&state.as_ssz_bytes()).unwrap();
+            assert_eq!(
+                decoded.validate(),
+                Err(ExportStateError::DuplicateContainerId(7))
+            );
+        }
+
+        #[test]
+        fn test_add_entry_errors_when_list_is_full() {
+            let mut state = export_state_unchecked([0; 256]);
+
+            assert!(matches!(
+                state.add_entry(1, [0x11; 32]),
+                Err(ExportStateError::SszError(_))
+            ));
         }
 
         #[test]
@@ -458,6 +517,17 @@ mod tests {
             assert_eq!(state.inner_state().inner(), &[0xCD; 32]);
             assert_eq!(state.next_predicate(), &predicate);
             assert_eq!(state.export_state().containers().len(), 0);
+        }
+
+        #[test]
+        fn test_validate_checks_export_state() {
+            let export = export_state_unchecked([4, 4]);
+            let state =
+                MohoState::new(InnerStateCommitment::from([0; 32]), always_accept(), export);
+            assert_eq!(
+                state.validate(),
+                Err(ExportStateError::DuplicateContainerId(4))
+            );
         }
 
         #[test]

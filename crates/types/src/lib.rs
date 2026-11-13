@@ -6,6 +6,8 @@ mod relation;
 #[cfg(feature = "serde")]
 mod serde;
 mod state;
+#[cfg(any(test, feature = "test-utils"))]
+pub mod test_utils;
 
 pub use errors::ExportStateError;
 pub use id::{InnerStateCommitment, MohoStateCommitment, StateReference};
