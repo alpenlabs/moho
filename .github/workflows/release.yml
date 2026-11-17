@@ -86,25 +86,3 @@ jobs:
       id-token: write
     with:
       tag: ${{ github.ref_name }}
-
-  cratesio:
-    name: Publish Release to Crates.io
-    runs-on: ubuntu-latest
-    environment: cratesio
-    permissions:
-      id-token: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Install Rust toolchain
-        run: |
-          rustup toolchain install stable --profile minimal
-          rustup default stable
-
-      - name: Publish to crates.io
-        run: cargo publish
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
